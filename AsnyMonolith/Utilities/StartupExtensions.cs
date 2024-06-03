@@ -12,7 +12,7 @@ public static class StartupExtensions
     public static void AddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly) where T : DbContext
     {
         services.Register(assembly);
-        services.AddSingleton<IAsnyMonolithIdGenerator>(new AsnyMonolithIdGenerator());
+        services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<ProducerService<T>>();
         services.AddScoped<ScheduledMessageService<T>>();
         services.AddHostedService<ConsumerMessageProcessor<T>>();

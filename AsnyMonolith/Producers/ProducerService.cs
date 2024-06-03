@@ -11,11 +11,11 @@ public sealed class ProducerService<T> where T : DbContext
     private readonly ConsumerRegistry _consumerRegistry;
 
     private readonly T _dbContext;
-    private readonly IAsnyMonolithIdGenerator _idGenerator;
+    private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
 
     public ProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry, T dbContext,
-        IAsnyMonolithIdGenerator idGenerator)
+        IAsyncMonolithIdGenerator idGenerator)
     {
         _timeProvider = timeProvider;
         _consumerRegistry = consumerRegistry;

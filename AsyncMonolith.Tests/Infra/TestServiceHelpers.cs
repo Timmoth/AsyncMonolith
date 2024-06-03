@@ -25,11 +25,11 @@ public static class TestServiceHelpers
         services.AddLogging();
 
         services.Register(Assembly.GetExecutingAssembly());
-        services.AddSingleton<IAsnyMonolithIdGenerator>(new AsnyMonolithIdGenerator());
+        services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<ProducerService<TestDbContext>>();
         services.AddScoped<ScheduledMessageService<TestDbContext>>();
 
-        services.AddSingleton<IAsnyMonolithIdGenerator>(new FakeIdGenerator());
+        services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
 
         var invocations = new TestConsumerInvocations();
         services.AddSingleton(invocations);

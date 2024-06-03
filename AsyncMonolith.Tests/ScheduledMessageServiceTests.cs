@@ -118,4 +118,34 @@ public class ScheduledMessageServiceTests : IAsyncLifetime
             count.Should().Be(0);
         }
     }
+
+
+    [Fact]
+    public async Task DeleteById_Deletes_Scheduled_Messages()
+    {
+        // Given
+        var serviceProvider = await Setup();
+        var consumerMessage = new SingleConsumerMessage
+        {
+            Name = "test-name"
+        };
+
+        var delay = 100;
+        var scheduledMessageService = serviceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
+        var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
+        var id = scheduledMessageService.Schedule(consumerMessage, delay);
+        await dbContext.SaveChangesAsync();
+
+        // When
+        await scheduledMessageService.DeleteById(id, CancellationToken.None);
+        await dbContext.SaveChangesAsync();
+
+        // Then
+        using var scope = serviceProvider.CreateScope();
+        {
+            var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
+            var count = await postDbContext.ScheduledMessages.CountAsync();
+            count.Should().Be(0);
+        }
+    }
 }

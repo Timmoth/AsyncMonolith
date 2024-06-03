@@ -2,7 +2,7 @@ using AsnyMonolith.Utilities;
 
 namespace AsyncMonolith.Tests.Infra;
 
-public class FakeIdGenerator : IAsnyMonolithIdGenerator
+public class FakeIdGenerator : IAsyncMonolithIdGenerator
 {
     public int Count { get; private set; }
 

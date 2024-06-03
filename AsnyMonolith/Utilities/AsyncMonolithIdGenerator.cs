@@ -2,12 +2,12 @@
 
 namespace AsnyMonolith.Utilities;
 
-public interface IAsnyMonolithIdGenerator
+public interface IAsyncMonolithIdGenerator
 {
     public string GenerateId();
 }
 
-public sealed class AsnyMonolithIdGenerator : IAsnyMonolithIdGenerator
+public sealed class AsyncMonolithIdGenerator : IAsyncMonolithIdGenerator
 {
     private const string ValidIdCharacters = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private const int Length = 12;
