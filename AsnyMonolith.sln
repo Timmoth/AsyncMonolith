@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsnyMonolith", "AsnyMonolith\AsnyMonolith.csproj", "{C821188B-9C36-4C46-B313-61A0B27E5C62}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsnyMonolith", "AsnyMonolith\AsnyMonolith.csproj", "{C821188B-9C36-4C46-B313-61A0B27E5C62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncMonolith.Tests", "AsyncMonolith.Tests\AsyncMonolith.Tests.csproj", "{18B7167D-A453-4534-BCC6-8317BE3EF2BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncMonolith.Tests", "AsyncMonolith.Tests\AsyncMonolith.Tests.csproj", "{18B7167D-A453-4534-BCC6-8317BE3EF2BE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", "{9C9380AA-BE83-4515-B31F-0706A2C04D74}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{18B7167D-A453-4534-BCC6-8317BE3EF2BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18B7167D-A453-4534-BCC6-8317BE3EF2BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18B7167D-A453-4534-BCC6-8317BE3EF2BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C9380AA-BE83-4515-B31F-0706A2C04D74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C9380AA-BE83-4515-B31F-0706A2C04D74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C9380AA-BE83-4515-B31F-0706A2C04D74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C9380AA-BE83-4515-B31F-0706A2C04D74}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

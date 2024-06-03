@@ -49,6 +49,16 @@ public static class StartupExtensions
             payloadConsumers.Add(consumerType.Name);
         }
 
+        foreach (var consumerPayload in assembly.GetTypes()
+                     .Where(t => t.IsClass && !t.IsAbstract && t.IsAssignableTo(typeof(IConsumerPayload)))
+                     .Select(t => t.Name))
+        {
+            if (!payloadConsumerDictionary.ContainsKey(consumerPayload))
+            {
+                throw new Exception($"No consumers exist for payload: '{consumerPayload}'");
+            }
+        }
+
         services.AddSingleton(new ConsumerRegistry(consumerServiceDictionary, payloadConsumerDictionary));
     }
 }
