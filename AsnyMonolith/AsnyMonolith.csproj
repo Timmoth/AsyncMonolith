@@ -5,6 +5,16 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>preview</LangVersion>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>AsyncMonolith</PackageId>
+		<PackageVersion>1.0.1</PackageVersion>
+		<Authors>Tim Jones</Authors>
+		<Company>Aptacode</Company>
+		<Description>Messaging library for monolithic dotnet apps</Description>
+		<PackageProjectUrl>https://github.com/Timmoth/AsyncMonolith</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>

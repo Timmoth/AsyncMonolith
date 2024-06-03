@@ -1,0 +1,29 @@
+name: Publish nuget package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AsnyMonolith
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build and Package
+        run: |
+          dotnet restore
+          dotnet build -c Release
+          dotnet pack --configuration Release --output nupkg
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
