@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace AsnyMonolith.Consumers;
+namespace Demo;
 
 [Table("submitted_values")]
 public sealed class SubmittedValue

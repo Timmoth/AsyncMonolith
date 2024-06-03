@@ -2,19 +2,19 @@
 
 public sealed class ConsumerRegistry
 {
-    public readonly IReadOnlyDictionary<string, List<string>> ConsumerNameDictionary;
+    public readonly IReadOnlyDictionary<string, List<string>> PayloadConsumerDictionary;
     public readonly IReadOnlyDictionary<string, Type> ConsumerTypeDictionary;
 
     public ConsumerRegistry(IReadOnlyDictionary<string, Type> consumerTypeDictionary,
-        IReadOnlyDictionary<string, List<string>> consumerNameDictionary)
+        IReadOnlyDictionary<string, List<string>> payloadConsumerDictionary)
     {
         ConsumerTypeDictionary = consumerTypeDictionary;
-        ConsumerNameDictionary = consumerNameDictionary;
+        PayloadConsumerDictionary = payloadConsumerDictionary;
     }
 
     public List<string> ResolvePayloadConsumerTypes(string payloadType)
     {
-        if (!ConsumerNameDictionary.TryGetValue(payloadType, out var names))
+        if (!PayloadConsumerDictionary.TryGetValue(payloadType, out var names))
             throw new Exception($"Failed to resolve consumers for payload: {payloadType}");
 
         return names;

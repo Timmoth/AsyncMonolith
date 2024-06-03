@@ -23,30 +23,29 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var successfullyConsumed = 0;
+        var scheduledMessageChainLength = 0;
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 if (await ConsumeNext(stoppingToken))
-                    successfullyConsumed++;
+                    scheduledMessageChainLength++;
                 else
-                    successfullyConsumed = 0;
+                    scheduledMessageChainLength = 0;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error scheduling next message");
             }
 
-            var delay = successfullyConsumed switch
+            await Task.Delay(scheduledMessageChainLength switch
             {
                 <= 1 => 1000,
                 <= 2 => 500,
                 <= 5 => 250,
                 <= 10 => 100,
                 _ => 50
-            };
-            await Task.Delay(delay, stoppingToken);
+            }, stoppingToken);
         }
     }
 

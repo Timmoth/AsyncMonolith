@@ -1,7 +1,7 @@
 using AsnyMonolith.Consumers;
 using AsnyMonolith.Producers;
 
-namespace Demo.Controllers;
+namespace Demo;
 
 public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
 {

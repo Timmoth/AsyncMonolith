@@ -1,6 +1,6 @@
 using AsnyMonolith.Consumers;
 
-namespace Demo.Controllers;
+namespace Demo;
 
 public class ValuePersisted : IConsumerPayload
 {

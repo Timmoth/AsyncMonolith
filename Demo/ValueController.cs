@@ -2,7 +2,7 @@ using AsnyMonolith.Producers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Demo.Controllers
+namespace Demo
 {
     [ApiController]
     [Route("api/values")]
@@ -21,7 +21,7 @@ namespace Demo.Controllers
         {
             var newValue = Random.Shared.NextDouble() * 100;
             var sum = await _dbContext.SubmittedValues.SumAsync(v => v.Value, cancellationToken: cancellationToken);
-           
+
             _producerService.Produce(new ValueSubmitted()
             {
                 Value = newValue

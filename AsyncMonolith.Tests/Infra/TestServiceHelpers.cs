@@ -24,6 +24,12 @@ public static class TestServiceHelpers
         services.AddSingleton<TimeProvider>(fakeTime);
         services.AddLogging();
 
+        services.Configure<AsyncMonolithSettings>(options =>
+        {
+            options.AttemptDelay = 10;
+            options.MaxAttempts = 5;
+        });
+
         services.Register(Assembly.GetExecutingAssembly());
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<ProducerService<TestDbContext>>();

@@ -9,8 +9,25 @@ namespace AsnyMonolith.Utilities;
 
 public static class StartupExtensions
 {
-    public static void AddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly) where T : DbContext
+    public static void AddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly, AsyncMonolithSettings? settings = null) where T : DbContext
     {
+        settings ??= AsyncMonolithSettings.Default;
+        if (settings.AttemptDelay < 0)
+        {
+            throw new ArgumentException("AsyncMonolithSettings.AttemptDelay must be positive.");
+        }
+
+        if (settings.MaxAttempts < 1)
+        {
+            throw new ArgumentException("AsyncMonolithSettings.MaxAttempts must be at least 1.");
+        }
+
+        services.Configure<AsyncMonolithSettings>(options =>
+        {
+            options.AttemptDelay = settings.AttemptDelay;
+            options.MaxAttempts = settings.MaxAttempts;
+        });
+
         services.Register(assembly);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<ProducerService<T>>();

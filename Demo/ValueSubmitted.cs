@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using AsnyMonolith.Consumers;
 
-namespace Demo.Controllers;
+namespace Demo;
 
 public class ValueSubmitted : IConsumerPayload
 {

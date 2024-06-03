@@ -19,7 +19,7 @@ namespace Demo
 
             builder.Services.AddLogging();
             builder.Services.AddSingleton(TimeProvider.System);
-            builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly());
+            builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(), AsyncMonolithSettings.Default);
             builder.Services.AddControllers();
 
             var app = builder.Build();

@@ -47,10 +47,9 @@ public sealed class ProducerService<T> where T : DbContext
 
     public void Produce(ScheduledMessage message)
     {
-        var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(message.PayloadType);
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         var set = _dbContext.Set<ConsumerMessage>();
-        foreach (var consumerId in consumers)
+        foreach (var consumerId in _consumerRegistry.ResolvePayloadConsumerTypes(message.PayloadType))
             set.Add(new ConsumerMessage
             {
                 Id = _idGenerator.GenerateId(),
