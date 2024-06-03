@@ -20,7 +20,13 @@ Setup
     // Register services
     builder.Services.AddLogging();
     builder.Services.AddSingleton(TimeProvider.System);
-    builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly());
+    builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(), new AsyncMonolithSettings()
+    {
+        AttemptDelay = 10, // Seconds before a failed message is retried
+        MaxAttempts = 5, // Number of times a failed message is retried 
+        ProcessorMinDelay = 10, // Minimum millisecond delay before the next message is processed
+        ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next message is processed
+    });
     builder.Services.AddControllers();
 
     // Define Consumer Payloads
