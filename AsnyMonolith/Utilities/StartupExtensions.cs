@@ -22,6 +22,19 @@ public static class StartupExtensions
             throw new ArgumentException("AsyncMonolithSettings.MaxAttempts must be at least 1.");
         }
 
+        if (settings.ProcessorMaxDelay < 1)
+        {
+            throw new ArgumentException("AsyncMonolithSettings.ProcessorMaxDelay must be at least 1.");
+        }
+        if (settings.ProcessorMinDelay < 0)
+        {
+            throw new ArgumentException("AsyncMonolithSettings.ProcessorMaxDelay must be positive.");
+        }
+        if (settings.ProcessorMinDelay > settings.ProcessorMaxDelay)
+        {
+            throw new ArgumentException("AsyncMonolithSettings.ProcessorMaxDelay must be greater then AsyncMonolithSettings.ProcessorMinDelay.");
+        }
+
         services.Configure<AsyncMonolithSettings>(options =>
         {
             options.AttemptDelay = settings.AttemptDelay;

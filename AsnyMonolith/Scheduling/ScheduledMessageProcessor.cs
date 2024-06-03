@@ -1,29 +1,35 @@
 ﻿using AsnyMonolith.Producers;
+using AsnyMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AsnyMonolith.Scheduling;
 
 public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
 {
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
-    private readonly IServiceProvider _services;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     private readonly TimeProvider _timeProvider;
+    private readonly IOptions<AsyncMonolithSettings> _options;
+    private const int MaxChainLength = 10;
 
-    public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger, IServiceProvider services,
-        TimeProvider timeProvider)
+    public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger,
+        TimeProvider timeProvider, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
-        _services = services;
         _timeProvider = timeProvider;
+        _options = options;
+        _scopeFactory = scopeFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var scheduledMessageChainLength = 0;
+        var deltaDelay = (_options.Value.ProcessorMaxDelay - _options.Value.ProcessorMinDelay) / MaxChainLength;
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -38,20 +44,17 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
                 _logger.LogError(ex, "Error scheduling next message");
             }
 
-            await Task.Delay(scheduledMessageChainLength switch
+            var delay = _options.Value.ProcessorMaxDelay - deltaDelay * Math.Clamp(scheduledMessageChainLength, 0, MaxChainLength);
+            if (delay >= 10)
             {
-                <= 1 => 1000,
-                <= 2 => 500,
-                <= 5 => 250,
-                <= 10 => 100,
-                _ => 50
-            }, stoppingToken);
+                await Task.Delay(delay, stoppingToken);
+            }
         }
     }
 
     public async Task<bool> ConsumeNext(CancellationToken cancellationToken)
     {
-        using var scope = _services.CreateScope();
+        using var scope = _scopeFactory.CreateScope();
         var producer = scope.ServiceProvider.GetRequiredService<ProducerService<T>>();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
