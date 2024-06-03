@@ -54,14 +54,19 @@ Setup
         }
     }
 
-    // Produce messages
+    // Produce / schedule messages
     private readonly ProducerService<ApplicationDbContext> _producerService;
+    private readonly ScheduledMessageService<ApplicationDbContext> _scheduledMessageService;
 
     _producerService.Produce(new ValueSubmitted()
     {
       Value = newValue
     });
 
+    _scheduledMessageService.Schedule(new ValueSubmitted
+    {
+        Value = Random.Shared.NextDouble() * 100
+    }, "*/5 * * * * *", "UTC");
     await _dbContext.SaveChangesAsync(cancellationToken);
 ```
 
@@ -74,10 +79,10 @@ Setup
 
 ## Scheduling Messages
 
-- **Delay**: Scheduled messages will be produced repeatedly at the frequency of the delay provided
+- **Frequency**: Scheduled messages will be produced repeatedly at the frequency defined by the given chron expression in the given timezone
 - **Save Changes**: Ensure that you call `SaveChangesAsync` after creating a scheduled message, unless you are producing a message inside a consumer, where it is called automatically.
 - **Transactional Persistence**: Schedule messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
-- 
+
 ## Consuming Messages
 
 - **Independent Consumption**: Each message will be consumed independently by each consumer set up to handle it.
