@@ -6,6 +6,7 @@ namespace Demo;
 public class TotalValueConsumer : BaseConsumer<ValuePersisted>
 {
     private readonly ProducerService<ApplicationDbContext> _producerService;
+
     public TotalValueConsumer(ProducerService<ApplicationDbContext> producerService)
     {
         _producerService = producerService;

@@ -2,8 +2,8 @@
 
 public sealed class ConsumerRegistry
 {
-    public readonly IReadOnlyDictionary<string, List<string>> PayloadConsumerDictionary;
     public readonly IReadOnlyDictionary<string, Type> ConsumerTypeDictionary;
+    public readonly IReadOnlyDictionary<string, List<string>> PayloadConsumerDictionary;
 
     public ConsumerRegistry(IReadOnlyDictionary<string, Type> consumerTypeDictionary,
         IReadOnlyDictionary<string, List<string>> payloadConsumerDictionary)

@@ -16,7 +16,7 @@ public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
 
     public override Task Consume(ValueSubmitted message, CancellationToken cancellationToken)
     {
-        var newValue = new SubmittedValue()
+        var newValue = new SubmittedValue
         {
             Value = message.Value
         };

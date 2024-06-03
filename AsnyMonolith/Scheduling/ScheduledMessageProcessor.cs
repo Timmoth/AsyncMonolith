@@ -10,12 +10,12 @@ namespace AsnyMonolith.Scheduling;
 
 public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
 {
+    private const int MaxChainLength = 10;
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
+    private readonly IOptions<AsyncMonolithSettings> _options;
     private readonly IServiceScopeFactory _scopeFactory;
 
     private readonly TimeProvider _timeProvider;
-    private readonly IOptions<AsyncMonolithSettings> _options;
-    private const int MaxChainLength = 10;
 
     public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger,
         TimeProvider timeProvider, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory)
@@ -44,11 +44,9 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
                 _logger.LogError(ex, "Error scheduling next message");
             }
 
-            var delay = _options.Value.ProcessorMaxDelay - deltaDelay * Math.Clamp(scheduledMessageChainLength, 0, MaxChainLength);
-            if (delay >= 10)
-            {
-                await Task.Delay(delay, stoppingToken);
-            }
+            var delay = _options.Value.ProcessorMaxDelay -
+                        deltaDelay * Math.Clamp(scheduledMessageChainLength, 0, MaxChainLength);
+            if (delay >= 10) await Task.Delay(delay, stoppingToken);
         }
     }
 
@@ -67,7 +65,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
 
         if (message == null) return false;
 
-        message.AvailableAfter = currentTime + message.Delay;
+        message.AvailableAfter = message.GetNextOccurrence(_timeProvider);
 
         try
         {

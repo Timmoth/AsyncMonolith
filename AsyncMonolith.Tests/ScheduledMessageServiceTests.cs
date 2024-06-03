@@ -62,12 +62,11 @@ public class ScheduledMessageServiceTests : IAsyncLifetime
             Name = "test-name"
         };
 
-        var delay = 100;
         var scheduledMessageService = serviceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
         var tags = new[] { "test-tag" };
         // When
-        scheduledMessageService.Schedule(consumerMessage, delay, tags);
+        scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", tags);
         await dbContext.SaveChangesAsync();
 
         // Then
@@ -76,7 +75,7 @@ public class ScheduledMessageServiceTests : IAsyncLifetime
             var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var messages = await postDbContext.ScheduledMessages.ToListAsync();
             var message = Assert.Single(messages);
-            message.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds() + delay);
+            message.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 1);
             message.Id.Should().Be("fake-id-0");
             message.Tags.Should().BeEquivalentTo(tags);
             message.PayloadType = nameof(SingleConsumerMessage);
@@ -102,8 +101,8 @@ public class ScheduledMessageServiceTests : IAsyncLifetime
         var scheduledMessageService = serviceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
         var tags = new[] { "test-tag" };
-        scheduledMessageService.Schedule(consumerMessage1, delay, tags);
-        scheduledMessageService.Schedule(consumerMessage2, delay, tags);
+        scheduledMessageService.Schedule(consumerMessage1, "* * * * * *", "UTC", tags);
+        scheduledMessageService.Schedule(consumerMessage2, "* * * * * *", "UTC", tags);
         await dbContext.SaveChangesAsync();
 
         // When
@@ -133,7 +132,7 @@ public class ScheduledMessageServiceTests : IAsyncLifetime
         var delay = 100;
         var scheduledMessageService = serviceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
-        var id = scheduledMessageService.Schedule(consumerMessage, delay);
+        var id = scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC");
         await dbContext.SaveChangesAsync();
 
         // When

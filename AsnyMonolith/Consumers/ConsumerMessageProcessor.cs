@@ -9,12 +9,13 @@ namespace AsnyMonolith.Consumers;
 
 public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
 {
+    private const int MaxChainLength = 10;
     private readonly ConsumerRegistry _consumerRegistry;
     private readonly ILogger<ConsumerMessageProcessor<T>> _logger;
+    private readonly IOptions<AsyncMonolithSettings> _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
-    private readonly IOptions<AsyncMonolithSettings> _options;
-    private const int MaxChainLength = 10;
+
     public ConsumerMessageProcessor(ILogger<ConsumerMessageProcessor<T>> logger,
         TimeProvider timeProvider,
         ConsumerRegistry consumerRegistry, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory)
@@ -44,11 +45,9 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                 _logger.LogError(ex, "Error consuming message");
             }
 
-            var delay = _options.Value.ProcessorMaxDelay - deltaDelay * Math.Clamp(consumedMessageChainLength, 0, MaxChainLength);
-            if (delay >= 10)
-            {
-                await Task.Delay(delay, stoppingToken);
-            }
+            var delay = _options.Value.ProcessorMaxDelay -
+                        deltaDelay * Math.Clamp(consumedMessageChainLength, 0, MaxChainLength);
+            if (delay >= 10) await Task.Delay(delay, stoppingToken);
         }
     }
 

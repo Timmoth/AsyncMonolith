@@ -4,5 +4,4 @@ namespace Demo;
 
 public class ValuePersisted : IConsumerPayload
 {
-
 }

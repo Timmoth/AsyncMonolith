@@ -69,12 +69,13 @@ public class ScheduledMessageProcessorTests : IAsyncLifetime
             var scheduledMessageService =
                 scope.ServiceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
 
-            scheduledMessageService.Schedule(consumerMessage, 0, "test-tag");
+            scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", "test-tag");
 
             await dbContext.SaveChangesAsync();
         }
 
         // When
+        FakeTime.SetUtcNow(FakeTime.GetUtcNow().AddSeconds(1));
         var processor = serviceProvider.GetRequiredService<ScheduledMessageProcessor<TestDbContext>>();
 
         var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
@@ -122,7 +123,7 @@ public class ScheduledMessageProcessorTests : IAsyncLifetime
             var scheduledMessageService =
                 scope.ServiceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
 
-            scheduledMessageService.Schedule(consumerMessage, 100, "test-tag");
+            scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", "test-tag");
 
             await dbContext.SaveChangesAsync();
         }
@@ -140,7 +141,7 @@ public class ScheduledMessageProcessorTests : IAsyncLifetime
             var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var message = await postDbContext.ScheduledMessages.FirstOrDefaultAsync();
             message.Should().NotBeNull();
-            message!.AvailableAfter.Should().Be(FakeTime.GetUtcNow().AddSeconds(100).ToUnixTimeSeconds());
+            message!.AvailableAfter.Should().Be(FakeTime.GetUtcNow().AddSeconds(1).ToUnixTimeSeconds());
         }
     }
 }

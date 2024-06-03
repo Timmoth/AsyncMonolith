@@ -9,31 +9,23 @@ namespace AsnyMonolith.Utilities;
 
 public static class StartupExtensions
 {
-    public static void AddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly, AsyncMonolithSettings? settings = null) where T : DbContext
+    public static void AddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly,
+        AsyncMonolithSettings? settings = null) where T : DbContext
     {
         settings ??= AsyncMonolithSettings.Default;
         if (settings.AttemptDelay < 0)
-        {
             throw new ArgumentException("AsyncMonolithSettings.AttemptDelay must be positive.");
-        }
 
         if (settings.MaxAttempts < 1)
-        {
             throw new ArgumentException("AsyncMonolithSettings.MaxAttempts must be at least 1.");
-        }
 
         if (settings.ProcessorMaxDelay < 1)
-        {
             throw new ArgumentException("AsyncMonolithSettings.ProcessorMaxDelay must be at least 1.");
-        }
         if (settings.ProcessorMinDelay < 0)
-        {
             throw new ArgumentException("AsyncMonolithSettings.ProcessorMaxDelay must be positive.");
-        }
         if (settings.ProcessorMinDelay > settings.ProcessorMaxDelay)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.ProcessorMaxDelay must be greater then AsyncMonolithSettings.ProcessorMinDelay.");
-        }
+            throw new ArgumentException(
+                "AsyncMonolithSettings.ProcessorMaxDelay must be greater then AsyncMonolithSettings.ProcessorMinDelay.");
 
         services.Configure<AsyncMonolithSettings>(options =>
         {
@@ -82,12 +74,8 @@ public static class StartupExtensions
         foreach (var consumerPayload in assembly.GetTypes()
                      .Where(t => t.IsClass && !t.IsAbstract && t.IsAssignableTo(typeof(IConsumerPayload)))
                      .Select(t => t.Name))
-        {
             if (!payloadConsumerDictionary.ContainsKey(consumerPayload))
-            {
                 throw new Exception($"No consumers exist for payload: '{consumerPayload}'");
-            }
-        }
 
         services.AddSingleton(new ConsumerRegistry(consumerServiceDictionary, payloadConsumerDictionary));
     }

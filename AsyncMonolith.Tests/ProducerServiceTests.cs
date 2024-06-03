@@ -146,7 +146,8 @@ public class ProducerServiceTests
             Id = "test-id",
             Tags = new[] { "test-tag" },
             AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
-            Delay = 100,
+            ChronExpression = "* * * * *",
+            ChronTimezone = "",
             PayloadType = nameof(SingleConsumerMessage),
             Payload = expectedPayload
         };
@@ -189,7 +190,8 @@ public class ProducerServiceTests
             Id = "test-id",
             Tags = new[] { "test-tag" },
             AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
-            Delay = 100,
+            ChronExpression = "* * * * *",
+            ChronTimezone = "UTC",
             PayloadType = nameof(MultiConsumerMessage),
             Payload = payload
         };

@@ -98,6 +98,7 @@ public class ConsumerMessageProcessorTests : IAsyncLifetime
 
             await dbContext.SaveChangesAsync();
         }
+
         var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
 
         // When

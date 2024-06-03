@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace Demo;
 
@@ -11,7 +10,5 @@ public sealed class SubmittedValue
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    [Column("value")]
-    public required double Value { get; set; }
-
+    [Column("value")] public required double Value { get; set; }
 }

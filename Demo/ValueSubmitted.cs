@@ -5,6 +5,5 @@ namespace Demo;
 
 public class ValueSubmitted : IConsumerPayload
 {
-    [JsonPropertyName("value")]
-    public required double Value { get; set; }
+    [JsonPropertyName("value")] public required double Value { get; set; }
 }

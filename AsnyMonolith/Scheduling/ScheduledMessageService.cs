@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using AsnyMonolith.Consumers;
 using AsnyMonolith.Utilities;
+using Cronos;
 using Microsoft.EntityFrameworkCore;
 
 namespace AsnyMonolith.Scheduling;
@@ -18,18 +19,30 @@ public sealed class ScheduledMessageService<T> where T : DbContext
         _idGenerator = idGenerator;
     }
 
-    public string Schedule<TK>(TK message, long delay, params string[] tags) where TK : IConsumerPayload
+    public string Schedule<TK>(TK message, string chronExpression, string chronTimezone, params string[] tags)
+        where TK : IConsumerPayload
     {
-        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         var payload = JsonSerializer.Serialize(message);
         var id = _idGenerator.GenerateId();
+
+        var expression = CronExpression.Parse(chronExpression, CronFormat.IncludeSeconds);
+        if (expression == null)
+            throw new InvalidOperationException(
+                $"Couldn't determine scheduled message chron expression: '{chronExpression}'");
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById(chronTimezone);
+        if (timezone == null)
+            throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{chronTimezone}'");
+        var next = expression.GetNextOccurrence(_timeProvider.GetUtcNow(), timezone);
+        if (next == null) throw new InvalidOperationException("Couldn't determine next scheduled message occurrence");
+
         _dbContext.Set<ScheduledMessage>().Add(new ScheduledMessage
         {
             Id = id,
             PayloadType = typeof(TK).Name,
-            AvailableAfter = currentTime + delay,
+            AvailableAfter = next.Value.ToUnixTimeSeconds(),
             Tags = tags,
-            Delay = delay,
+            ChronExpression = chronExpression,
+            ChronTimezone = chronTimezone,
             Payload = payload
         });
 
