@@ -20,7 +20,13 @@ Setup
     // Register services
     builder.Services.AddLogging();
     builder.Services.AddSingleton(TimeProvider.System);
-    builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly());
+    builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(), new AsyncMonolithSettings()
+    {
+        AttemptDelay = 10, // Seconds before a failed message is retried
+        MaxAttempts = 5, // Number of times a failed message is retried 
+        ProcessorMinDelay = 10, // Minimum millisecond delay before the next message is processed
+        ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next message is processed
+    });
     builder.Services.AddControllers();
 
     // Define Consumer Payloads
@@ -64,13 +70,13 @@ Setup
 ## Producing Messages
 
 - **Save Changes**: Ensure that you call `SaveChangesAsync` after producing a message, unless you are producing a message inside a consumer, where it is called automatically.
-- **Transactional Persistence**: Produce messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring messages and your domain changes are persisted transactionally.
+- **Transactional Persistence**: Produce messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
 
 ## Scheduling Messages
 
 - **Delay**: Scheduled messages will be produced repeatedly at the frequency of the delay provided
 - **Save Changes**: Ensure that you call `SaveChangesAsync` after creating a scheduled message, unless you are producing a message inside a consumer, where it is called automatically.
-- **Transactional Persistence**: Schedule messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring messages and your domain changes are persisted transactionally.
+- **Transactional Persistence**: Schedule messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
 - 
 ## Consuming Messages
 
