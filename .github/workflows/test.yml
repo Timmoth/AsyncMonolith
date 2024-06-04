@@ -16,4 +16,4 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Test
-      run: dotnet test --verbosity normal
+      run: dotnet test AsyncMonolith.Tests --verbosity normal
