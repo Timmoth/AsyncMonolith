@@ -77,6 +77,8 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Successfully scheduled message of type: '{payload}'", message.PayloadType);
+
         return true;
     }
 }

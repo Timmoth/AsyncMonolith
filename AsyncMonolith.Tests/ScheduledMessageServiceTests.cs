@@ -97,7 +97,6 @@ public class ScheduledMessageServiceTests : IAsyncLifetime
             Name = "test-name"
         };
 
-        var delay = 100;
         var scheduledMessageService = serviceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
         var tags = new[] { "test-tag" };
@@ -129,7 +128,6 @@ public class ScheduledMessageServiceTests : IAsyncLifetime
             Name = "test-name"
         };
 
-        var delay = 100;
         var scheduledMessageService = serviceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
         var id = scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC");

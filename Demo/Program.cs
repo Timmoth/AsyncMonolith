@@ -12,7 +12,10 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         var dbId = Guid.NewGuid().ToString();
-        builder.Services.AddDbContext<ApplicationDbContext>((sp, options) => { options.UseInMemoryDatabase(dbId); }
+        builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
+            {
+                options.UseInMemoryDatabase(dbId);
+            }
         );
 
         builder.Services.AddLogging();
@@ -25,7 +28,9 @@ public class Program
                 ProcessorMinDelay = 10,
                 ProcessorMaxDelay = 1000
             });
+
         builder.Services.AddControllers();
+        builder.Services.AddScoped<TotalValueService>();
 
         var app = builder.Build();
 

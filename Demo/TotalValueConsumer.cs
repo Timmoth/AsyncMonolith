@@ -1,19 +1,21 @@
 using AsnyMonolith.Consumers;
-using AsnyMonolith.Producers;
+using Microsoft.EntityFrameworkCore;
 
 namespace Demo;
 
 public class TotalValueConsumer : BaseConsumer<ValuePersisted>
 {
-    private readonly ProducerService<ApplicationDbContext> _producerService;
-
-    public TotalValueConsumer(ProducerService<ApplicationDbContext> producerService)
+    private readonly TotalValueService _totalValueService;
+    private readonly ApplicationDbContext _dbContext;
+    public TotalValueConsumer(TotalValueService totalValueService, ApplicationDbContext dbContext)
     {
-        _producerService = producerService;
+        _totalValueService = totalValueService;
+        _dbContext = dbContext;
     }
 
-    public override Task Consume(ValuePersisted message, CancellationToken cancellationToken)
+    public override async Task Consume(ValuePersisted message, CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        var totalValue = await _dbContext.SubmittedValues.SumAsync(v => v.Value, cancellationToken);
+        _totalValueService.Set(totalValue);
     }
 }
