@@ -1,4 +1,4 @@
-# AsyncMonolith
+# AsyncMonolith ![Image](AsyncMonolith/logo.png)
 
 AsyncMonolith is a lightweight dotnet library that facillitates simple asynchronous processes in monolithic dotnet apps.
 
