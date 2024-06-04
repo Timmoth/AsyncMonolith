@@ -20,6 +20,8 @@ Async Monolith is not a replacement for a message broker, there are many reasons
 - Message ordering (Not currently supported)
 - Communicating between different services (It's in the name)
 
+I'd reccomend watching this [video](https://www.youtube.com/watch?v=DOaDpHh1FsQ) by Derik Comartin before deciding to use Async Monolith.
+
 # Dev log
 
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an ef migration.
@@ -107,6 +109,9 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 
 ```csharp
 
+    // Install AsyncMonolith
+    dotnet add package AsyncMonolith
+
     // Add Db Sets
     public class ApplicationDbContext : DbContext
     {
@@ -171,4 +176,5 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
         Value = Random.Shared.NextDouble() * 100
     }, "*/5 * * * * *", "UTC");
     await _dbContext.SaveChangesAsync(cancellationToken);
+
 ```
