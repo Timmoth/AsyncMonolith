@@ -23,7 +23,7 @@ Async Monolith is not a replacement for a message broker, there are many reasons
 I'd reccomend watching this [video](https://www.youtube.com/watch?v=DOaDpHh1FsQ) by Derik Comartin before deciding to use Async Monolith.
 
 Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles.
-Using DbType.PostgreSql or DbType.MySql will allow AsyncMonolith to lock rows ensuring they are only retrieved and processed once.
+Using `DbType.PostgreSql` or `DbType.MySql` will allow AsyncMonolith to lock rows ensuring they are only retrieved and processed once.
 
 # Dev log
 
