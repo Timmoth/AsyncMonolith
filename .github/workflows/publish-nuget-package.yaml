@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: AsnyMonolith
+        working-directory: AsyncMonolith
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
