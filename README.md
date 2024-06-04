@@ -1,4 +1,5 @@
 # AsyncMonolith ![Image](AsyncMonolith/logo.png)
+[![NuGet](https://img.shields.io/nuget/v/AsyncMonolith)](https://www.nuget.org/packages/AsyncMonolith)
 
 AsyncMonolith is a lightweight dotnet library that facillitates simple asynchronous processes in monolithic dotnet apps.
 
@@ -113,7 +114,7 @@ Make sure to check this table before updating the nuget package in your solution
 - **Frequency**: Scheduled messages will be produced repeatedly at the frequency defined by the given chron expression in the given timezone
 - **Save Changes**: Ensure that you call `SaveChangesAsync` after creating a scheduled message, unless you are producing a message inside a consumer, where it is called automatically.
 - **Transactional Persistence**: Schedule messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
-- **Processing**: Schedule messages will be processed sequentially after they are made available by their chron job, at which point they will be turned into Consumer Messages and inserted into the 'consumer_messages' table to be handled by their respective consumers.
+- **Processing**: Schedule messages will be processed sequentially after they are made available by their chron job, at which point they will be turned into Consumer Messages and inserted into the `consumer_messages` table to be handled by their respective consumers.
 
 ## Consuming Messages
 
@@ -132,6 +133,6 @@ Make sure to check this table before updating the nuget package in your solution
 
 ## Consumer Failures
 
-- **Retry Logic**: Messages will be retried up to 'MaxAttempts' times (with a 'AttemptDelay' seconds between attempts) until they are moved to the 'poisoned_messages' table.
-- **Manual Intervention**: If a message is moved to the 'poisoned_messages' table, it will need to be manually removed from the database or moved back to the 'consumer_messages' table to be retried. Note that the poisoned message will only be retried a single time unless you set 'attempts' back to 0.
-- **Monitoring**: Periodically monitor the 'poisoned_messages' table to ensure there are not too many failed messages.
+- **Retry Logic**: Messages will be retried up to `MaxAttempts` times (with a `AttemptDelay` seconds between attempts) until they are moved to the `poisoned_messages` table.
+- **Manual Intervention**: If a message is moved to the `poisoned_messages` table, it will need to be manually removed from the database or moved back to the `consumer_messages` table to be retried. Note that the poisoned message will only be retried a single time unless you set `attempts` back to 0.
+- **Monitoring**: Periodically monitor the `poisoned_messages` table to ensure there are not too many failed messages.
