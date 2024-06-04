@@ -2,6 +2,17 @@
 
 AsyncMonolith is a lightweight dotnet library that facillitates simple asynchronous processes in monolithic dotnet apps.
 
+# Overview
+
+- Makes building event driven architectures simple
+- Produce messages transactionally along with changes to your domain
+- Messages stored in your DB context so you have full control over them
+- Supports running multiple instances / versions of your application
+- Schedule messages to be processed using Chron expressions
+- Automatic message retries
+- Automatically routes messages to multiple consumers 
+
+# Dev log
 
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an ef migration.
 | Version      | Description | Requires Migration |
@@ -10,7 +21,8 @@ Make sure to check this table before updating the nuget package in your solution
 | 1.0.1      | Added Configurable settings    | No |
 | 1.0.0      | Initial   | Yes |
 
-Quick start guide (for a more detailed example look at the Demo project)
+# Quick start guide 
+(for a more detailed example look at the Demo project)
 
 ```csharp
 
