@@ -8,7 +8,7 @@
 		<LangVersion>preview</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith</PackageId>
-		<PackageVersion>1.0.3</PackageVersion>
+		<PackageVersion>1.0.4</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>Messaging library for monolithic dotnet apps</Description>
@@ -16,6 +16,8 @@
 		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
+		<Title>Async Monolith</Title>
+		<PackageIcon>logo.png</PackageIcon>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -29,5 +31,11 @@
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
 			<_Parameter1>AsyncMonolith.Tests</_Parameter1>
 		</AssemblyAttribute>
+	</ItemGroup>
+	<ItemGroup>
+	  <None Update="logo.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 </Project>

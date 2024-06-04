@@ -14,7 +14,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
 {
     private const int MaxChainLength = 10;
 
-    private const string PgSql = @"
+    private const string PgSql = $@"
                     SELECT * 
                     FROM scheduled_messages 
                     WHERE available_after <= @currentTime 

@@ -12,5 +12,6 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<SubmittedValue> SubmittedValues { get; set; } = default!;
     public DbSet<ConsumerMessage> ConsumerMessages { get; set; } = default!;
+    public DbSet<PoisonedMessage> PoisonedMessages { get; set; } = default!;
     public DbSet<ScheduledMessage> ScheduledMessages { get; set; } = default!;
 }

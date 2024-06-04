@@ -11,5 +11,6 @@ public class TestDbContext : DbContext
     }
 
     public DbSet<ConsumerMessage> ConsumerMessages { get; set; } = default!;
+    public DbSet<PoisonedMessage> PoisonedMessages { get; set; } = default!;
     public DbSet<ScheduledMessage> ScheduledMessages { get; set; } = default!;
 }

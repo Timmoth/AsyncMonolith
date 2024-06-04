@@ -17,7 +17,6 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                     SELECT * 
                     FROM consumer_messages 
                     WHERE available_after <= @currentTime 
-                    AND (attempts IS NULL OR attempts <= @maxAttempts)
                     ORDER BY created_at 
                     FOR UPDATE SKIP LOCKED 
                     LIMIT 1";
@@ -26,7 +25,6 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                     SELECT * 
                     FROM consumer_messages 
                     WHERE available_after <= @currentTime 
-                    AND (attempts IS NULL OR attempts <= @maxAttempts)
                     ORDER BY created_at 
                     LIMIT 1 
                     FOR UPDATE SKIP LOCKED";
@@ -89,15 +87,14 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             var message = _options.Value.DbType switch
             {
                 DbType.Ef => await consumerSet
-                    .Where(m => m.AvailableAfter <= currentTime && m.Attempts <= _options.Value.MaxAttempts)
+                    .Where(m => m.AvailableAfter <= currentTime)
                     .OrderBy(m => Guid.NewGuid())
                     .FirstOrDefaultAsync(cancellationToken),
                 DbType.PostgreSql => await consumerSet
-                    .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime),
-                        new NpgsqlParameter("@maxAttempts", _options.Value.MaxAttempts))
+                    .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime))
                     .FirstOrDefaultAsync(cancellationToken),    
                 DbType.MySql => await consumerSet
-                    .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime), new MySqlParameter("@maxAttempts", _options.Value.MaxAttempts))
+                    .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime))
                     .FirstOrDefaultAsync(cancellationToken),
                 _ => throw new NotImplementedException("Consumer failed, invalid Db Type")
             };
@@ -115,7 +112,6 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                     throw new Exception($"Couldn't resolve consumer service of type: '{message.ConsumerType}'");
 
                 await consumer.Consume(message, cancellationToken);
-
                 consumerSet.Remove(message);
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
@@ -123,16 +119,34 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             {
                 _logger.LogError(ex,
                     message.Attempts > _options.Value.MaxAttempts
-                        ? "Failed to consume message on attempt {attempt}, will NOT retry"
-                        : "Failed to consume message on attempt {attempt}, will retry", message.Attempts);
+                        ? "Failed to consume message on attempt {attempt}, moving to poisoned messages."
+                        : "Failed to consume message on attempt {attempt}, will retry.", message.Attempts);
 
                 failure = true;
             }
 
             if (failure)
             {
-                message.AvailableAfter = currentTime + _options.Value.AttemptDelay;
                 message.Attempts++;
+                if (message.Attempts < _options.Value.MaxAttempts)
+                {
+                    message.AvailableAfter = currentTime + _options.Value.AttemptDelay;
+                }
+                else
+                {
+                    consumerSet.Remove(message);
+                    var poisonedSet = dbContext.Set<PoisonedMessage>();
+                    poisonedSet.Add(new PoisonedMessage()
+                    {
+                        Id = message.Id,
+                        Attempts = message.Attempts,
+                        AvailableAfter = message.AvailableAfter,
+                        ConsumerType = message.ConsumerType,
+                        CreatedAt = message.CreatedAt,
+                        Payload = message.Payload,
+                        PayloadType = message.PayloadType
+                    });
+                }
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
 
@@ -148,7 +162,6 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             await dbContextTransaction.RollbackAsync(cancellationToken);
             _logger.LogError(ex, "Error consuming message");
         }
-
 
         return true;
     }
