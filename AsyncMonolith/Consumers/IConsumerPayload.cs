@@ -1,4 +1,4 @@
-﻿namespace AsnyMonolith.Consumers;
+﻿namespace AsyncMonolith.Consumers;
 
 public interface IConsumerPayload
 {

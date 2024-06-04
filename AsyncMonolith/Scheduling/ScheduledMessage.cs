@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Cronos;
 
-namespace AsnyMonolith.Scheduling;
+namespace AsyncMonolith.Scheduling;
 
 [Table("scheduled_messages")]
 public class ScheduledMessage
@@ -13,9 +13,9 @@ public class ScheduledMessage
     [Column("id")]
     public required string Id { get; set; }
 
-    [JsonPropertyName("tags")]
-    [Column("tags")]
-    public required string[] Tags { get; set; }
+    [JsonPropertyName("tag")]
+    [Column("tag")]
+    public required string? Tag { get; set; }
 
     [JsonPropertyName("available_after")]
     [Column("available_after")]

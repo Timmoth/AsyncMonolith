@@ -1,4 +1,4 @@
-using AsnyMonolith.Utilities;
+using AsyncMonolith.Utilities;
 
 namespace AsyncMonolith.Tests.Infra;
 

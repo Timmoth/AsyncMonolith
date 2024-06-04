@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace AsnyMonolith.Utilities;
+namespace AsyncMonolith.Utilities;
 
 public interface IAsyncMonolithIdGenerator
 {

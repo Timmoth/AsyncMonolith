@@ -1,12 +1,13 @@
-using AsnyMonolith.Consumers;
+using AsyncMonolith.Consumers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Demo;
 
 public class TotalValueConsumer : BaseConsumer<ValuePersisted>
 {
-    private readonly TotalValueService _totalValueService;
     private readonly ApplicationDbContext _dbContext;
+    private readonly TotalValueService _totalValueService;
+
     public TotalValueConsumer(TotalValueService totalValueService, ApplicationDbContext dbContext)
     {
         _totalValueService = totalValueService;

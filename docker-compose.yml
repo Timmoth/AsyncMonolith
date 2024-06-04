@@ -1,0 +1,23 @@
+version: '3.4'
+
+services:
+  demo:
+    image: ${DOCKER_REGISTRY-}demo
+    build:
+      context: .
+      dockerfile: Demo/Dockerfile
+
+  async_monolith_demo_postgres:
+    image: postgres:latest
+    container_name: async_monolith_demo_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: application
+    ports:
+      - "5442:5432"
+    volumes:
+      - async_monolith_demo_postgres:/var/lib/postgresql/data
+
+volumes:
+  async_monolith_demo_postgres:

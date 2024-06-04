@@ -1,5 +1,5 @@
-using AsnyMonolith.Consumers;
-using AsnyMonolith.Producers;
+using AsyncMonolith.Consumers;
+using AsyncMonolith.Producers;
 
 namespace Demo;
 

@@ -1,7 +1,8 @@
 using System.Text.Json;
-using AsnyMonolith.Producers;
-using AsnyMonolith.Scheduling;
+using AsyncMonolith.Producers;
+using AsyncMonolith.Scheduling;
 using AsyncMonolith.Tests.Infra;
+using AsyncMonolith.Utilities;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +17,7 @@ public class ProducerServiceTests
     private ServiceProvider Setup()
     {
         var services = new ServiceCollection();
-        var (fakeTime, _) = services.AddTestServices();
+        var (fakeTime, _) = services.AddTestServices(AsyncMonolithSettings.Default);
         FakeTime = fakeTime;
         services.AddInMemoryDb();
         return services.BuildServiceProvider();
@@ -144,7 +145,7 @@ public class ProducerServiceTests
         var scheduledMessage = new ScheduledMessage
         {
             Id = "test-id",
-            Tags = new[] { "test-tag" },
+            Tag = "test-tag",
             AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
             ChronExpression = "* * * * *",
             ChronTimezone = "",
@@ -188,7 +189,7 @@ public class ProducerServiceTests
         var scheduledMessage = new ScheduledMessage
         {
             Id = "test-id",
-            Tags = new[] { "test-tag" },
+            Tag = "test-tag",
             AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
             ChronExpression = "* * * * *",
             ChronTimezone = "UTC",

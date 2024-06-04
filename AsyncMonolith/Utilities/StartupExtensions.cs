@@ -1,11 +1,11 @@
 ﻿using System.Reflection;
-using AsnyMonolith.Consumers;
-using AsnyMonolith.Producers;
-using AsnyMonolith.Scheduling;
+using AsyncMonolith.Consumers;
+using AsyncMonolith.Producers;
+using AsyncMonolith.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AsnyMonolith.Utilities;
+namespace AsyncMonolith.Utilities;
 
 public static class StartupExtensions
 {
@@ -22,7 +22,7 @@ public static class StartupExtensions
         if (settings.ProcessorMaxDelay < 1)
             throw new ArgumentException("AsyncMonolithSettings.ProcessorMaxDelay must be at least 1.");
         if (settings.ProcessorMinDelay < 0)
-            throw new ArgumentException("AsyncMonolithSettings.ProcessorMaxDelay must be positive.");
+            throw new ArgumentException("AsyncMonolithSettings.ProcessorMinDelay must be positive.");
         if (settings.ProcessorMinDelay > settings.ProcessorMaxDelay)
             throw new ArgumentException(
                 "AsyncMonolithSettings.ProcessorMaxDelay must be greater then AsyncMonolithSettings.ProcessorMinDelay.");
@@ -31,6 +31,9 @@ public static class StartupExtensions
         {
             options.AttemptDelay = settings.AttemptDelay;
             options.MaxAttempts = settings.MaxAttempts;
+            options.ProcessorMaxDelay = settings.ProcessorMaxDelay;
+            options.ProcessorMinDelay = settings.ProcessorMinDelay;
+            options.DbType = settings.DbType;
         });
 
         services.Register(assembly);

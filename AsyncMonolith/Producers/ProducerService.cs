@@ -1,10 +1,10 @@
 ﻿using System.Text.Json;
-using AsnyMonolith.Consumers;
-using AsnyMonolith.Scheduling;
-using AsnyMonolith.Utilities;
+using AsyncMonolith.Consumers;
+using AsyncMonolith.Scheduling;
+using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 
-namespace AsnyMonolith.Producers;
+namespace AsyncMonolith.Producers;
 
 public sealed class ProducerService<T> where T : DbContext
 {

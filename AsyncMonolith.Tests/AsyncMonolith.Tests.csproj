@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageReference Include="Testcontainers" Version="3.8.0" />
+    <PackageReference Include="Testcontainers.MySql" Version="3.8.0" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="3.8.0" />
     <PackageReference Include="xunit" Version="2.8.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
@@ -30,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AsnyMonolith\AsnyMonolith.csproj" />
+    <ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
   </ItemGroup>
 
   <ItemGroup>

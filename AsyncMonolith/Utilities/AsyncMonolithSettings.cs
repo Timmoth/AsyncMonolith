@@ -1,4 +1,11 @@
-﻿namespace AsnyMonolith.Utilities;
+﻿namespace AsyncMonolith.Utilities;
+
+public enum DbType
+{
+    Ef = 0,
+    PostgreSql = 1,
+    MySql = 2
+}
 
 public class AsyncMonolithSettings
 {
@@ -6,6 +13,7 @@ public class AsyncMonolithSettings
     public int AttemptDelay { get; set; } = 10;
     public int ProcessorMaxDelay { get; set; } = 1000;
     public int ProcessorMinDelay { get; set; } = 10;
+    public DbType DbType { get; set; } = DbType.Ef;
 
     public static AsyncMonolithSettings Default => new()
     {

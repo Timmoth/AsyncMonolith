@@ -1,17 +1,16 @@
-﻿namespace Demo
+﻿namespace Demo;
+
+public class TotalValueService
 {
-    public class TotalValueService
+    private static double TotalValue { get; set; }
+
+    public void Set(double totalValue)
     {
-        private static double TotalValue { get; set; }
+        TotalValue = totalValue;
+    }
 
-        public void Set(double totalValue)
-        {
-            TotalValue = totalValue;
-        }
-
-        public double Get()
-        {
-            return TotalValue;
-        }
+    public double Get()
+    {
+        return TotalValue;
     }
 }

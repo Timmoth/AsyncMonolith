@@ -1,248 +1,255 @@
-using AsnyMonolith.Consumers;
-using AsnyMonolith.Producers;
+using AsyncMonolith.Consumers;
+using AsyncMonolith.Producers;
 using AsyncMonolith.Tests.Infra;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Time.Testing;
-using Testcontainers.PostgreSql;
 
 namespace AsyncMonolith.Tests;
 
-public class ConsumerMessageProcessorTests : IAsyncLifetime
+public class ConsumerMessageProcessorTests : DbTestsBase
 {
-    private readonly PostgreSqlContainer _postgreSqlContainer = new PostgreSqlBuilder().Build();
-    private TestConsumerInvocations _testConsumerInvocations = default!;
-    public FakeTimeProvider FakeTime = default!;
-
-    public Task InitializeAsync()
+    [Theory]
+    [MemberData(nameof(GetTestDbContainers))]
+    public async Task ConsumerMessageProcessor_Invokes_Consumer(TestDbContainerBase dbContainer)
     {
-        return _postgreSqlContainer.StartAsync();
-    }
+        try
+        {
+            // Given
+            var serviceProvider = await Setup(dbContainer);
 
-    public Task DisposeAsync()
-    {
-        return _postgreSqlContainer.DisposeAsync().AsTask();
-    }
-
-    private async Task<ServiceProvider> Setup()
-    {
-        var services = new ServiceCollection();
-        services.AddTestServices();
-        services.AddDbContext<TestDbContext>((sp, options) =>
+            using (var scope = serviceProvider.CreateScope())
             {
-                options.UseNpgsql(_postgreSqlContainer.GetConnectionString(), o => { });
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+
+                producer.Produce(new SingleConsumerMessage
+                {
+                    Name = "test-name"
+                });
+
+                await dbContext.SaveChangesAsync();
             }
-        );
-        var (fakeTime, invocations) = services.AddTestServices();
-        _testConsumerInvocations = invocations;
-        FakeTime = fakeTime;
 
-        services.AddSingleton<ConsumerMessageProcessor<TestDbContext>>();
-        var serviceProvider = services.BuildServiceProvider();
+            // When
+            var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
 
-        using var scope = serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-        await dbContext.Database.EnsureCreatedAsync();
+            var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
 
-        await dbContext.SaveChangesAsync();
-
-        return serviceProvider;
-    }
-
-
-    [Fact]
-    public async Task ConsumerMessageProcessor_Invokes_Consumer()
-    {
-        // Given
-        var serviceProvider = await Setup();
-
-        using (var scope = serviceProvider.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
-
-            producer.Produce(new SingleConsumerMessage
-            {
-                Name = "test-name"
-            });
-
-            await dbContext.SaveChangesAsync();
+            // Then
+            consumedMessage.Should().BeTrue();
+            TestConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(1);
         }
-
-        // When
-        var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
-
-        var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
-
-        // Then
-        consumedMessage.Should().BeTrue();
-        _testConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(1);
-    }
-
-    [Fact]
-    public async Task ConsumerMessageProcessor_Returns_False_If_No_Available_Messages()
-    {
-        // Given
-        var serviceProvider = await Setup();
-
-        using (var scope = serviceProvider.CreateScope())
+        finally
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
-
-            producer.Produce(new SingleConsumerMessage
-            {
-                Name = "test-name"
-            }, FakeTime.GetUtcNow().ToUnixTimeSeconds() + 100);
-
-            await dbContext.SaveChangesAsync();
-        }
-
-        var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
-
-        // When
-        var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
-
-        // Then
-        consumedMessage.Should().BeFalse();
-        _testConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(0);
-    }
-
-    [Fact]
-    public async Task ConsumerMessageProcessor_Returns_False_If_Only_Max_Attempted_Messages()
-    {
-        // Given
-        var serviceProvider = await Setup();
-
-        using (var scope = serviceProvider.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
-
-            producer.Produce(new SingleConsumerMessage
-            {
-                Name = "test-name"
-            });
-
-            await dbContext.SaveChangesAsync();
-
-            var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
-            message!.Attempts = 6;
-            await dbContext.SaveChangesAsync();
-        }
-
-        // When
-        var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
-
-        var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
-
-        // Then
-        consumedMessage.Should().BeFalse();
-        _testConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(0);
-    }
-
-    [Fact]
-    public async Task ConsumerMessageProcessor_Increments_Message_Attempts()
-    {
-        // Given
-        var serviceProvider = await Setup();
-
-        using (var scope = serviceProvider.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
-
-            producer.Produce(new ExceptionConsumerMessage
-            {
-                Name = "test-name"
-            });
-
-            await dbContext.SaveChangesAsync();
-        }
-
-        // When
-        var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
-
-        await processor.ConsumeNext(CancellationToken.None);
-
-        // Then
-        using (var scope = serviceProvider.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-            var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
-            message?.Attempts.Should().Be(1);
+            await dbContainer.DisposeAsync();
         }
     }
 
-    [Fact]
-    public async Task ConsumerMessageProcessor_Increments_Message_AvailableAfter()
+    [Theory]
+    [MemberData(nameof(GetTestDbContainers))]
+    public async Task ConsumerMessageProcessor_Returns_False_If_No_Available_Messages(TestDbContainerBase dbContainer)
     {
-        // Given
-        var serviceProvider = await Setup();
-
-        using (var scope = serviceProvider.CreateScope())
+        try
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+            // Given
+            var serviceProvider = await Setup(dbContainer);
 
-            producer.Produce(new ExceptionConsumerMessage
+            using (var scope = serviceProvider.CreateScope())
             {
-                Name = "test-name"
-            });
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
 
-            await dbContext.SaveChangesAsync();
+                producer.Produce(new SingleConsumerMessage
+                {
+                    Name = "test-name"
+                }, FakeTime.GetUtcNow().ToUnixTimeSeconds() + 100);
+
+                await dbContext.SaveChangesAsync();
+            }
+
+            var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
+
+            // When
+            var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
+
+            // Then
+            consumedMessage.Should().BeFalse();
+            TestConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(0);
         }
-
-        // When
-        var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
-
-        await processor.ConsumeNext(CancellationToken.None);
-
-        // Then
-        using (var scope = serviceProvider.CreateScope())
+        finally
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-            var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
-            message?.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 10);
+            await dbContainer.DisposeAsync();
         }
     }
 
-    [Fact]
-    public async Task ConsumerMessageProcessor_Removes_Consumed_Messages()
+    [Theory]
+    [MemberData(nameof(GetTestDbContainers))]
+    public async Task ConsumerMessageProcessor_Returns_False_If_Only_Max_Attempted_Messages(
+        TestDbContainerBase dbContainer)
     {
-        // Given
-        var serviceProvider = await Setup();
-
-        var preMessageCount = 0;
-        using (var scope = serviceProvider.CreateScope())
+        try
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+            // Given
+            var serviceProvider = await Setup(dbContainer);
 
-            producer.Produce(new SingleConsumerMessage
+            using (var scope = serviceProvider.CreateScope())
             {
-                Name = "test-name"
-            });
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
 
-            await dbContext.SaveChangesAsync();
+                producer.Produce(new SingleConsumerMessage
+                {
+                    Name = "test-name"
+                });
 
-            preMessageCount = await dbContext.ConsumerMessages.CountAsync();
+                await dbContext.SaveChangesAsync();
+
+                var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
+                message!.Attempts = 6;
+                await dbContext.SaveChangesAsync();
+            }
+
+            // When
+            var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
+
+            var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
+
+            // Then
+            consumedMessage.Should().BeFalse();
+            TestConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(0);
         }
-
-        // When
-        var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
-
-        var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
-
-        // Then
-        consumedMessage.Should().BeTrue();
-
-        using (var scope = serviceProvider.CreateScope())
+        finally
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-            var remaining = await dbContext.ConsumerMessages.CountAsync();
-            remaining.Should().Be(preMessageCount - 1);
+            await dbContainer.DisposeAsync();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GetTestDbContainers))]
+    public async Task ConsumerMessageProcessor_Increments_Message_Attempts(TestDbContainerBase dbContainer)
+    {
+        try
+        {
+            // Given
+            var serviceProvider = await Setup(dbContainer);
+
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+
+                producer.Produce(new ExceptionConsumerMessage
+                {
+                    Name = "test-name"
+                });
+
+                await dbContext.SaveChangesAsync();
+            }
+
+            // When
+            var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
+
+            await processor.ConsumeNext(CancellationToken.None);
+
+            // Then
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
+                message?.Attempts.Should().Be(1);
+            }
+        }
+        finally
+        {
+            await dbContainer.DisposeAsync();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GetTestDbContainers))]
+    public async Task ConsumerMessageProcessor_Increments_Message_AvailableAfter(TestDbContainerBase dbContainer)
+    {
+        try
+        {
+            // Given
+            var serviceProvider = await Setup(dbContainer);
+
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+
+                producer.Produce(new ExceptionConsumerMessage
+                {
+                    Name = "test-name"
+                });
+
+                await dbContext.SaveChangesAsync();
+            }
+
+            // When
+            var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
+
+            await processor.ConsumeNext(CancellationToken.None);
+
+            // Then
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
+                message?.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 10);
+            }
+        }
+        finally
+        {
+            await dbContainer.DisposeAsync();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GetTestDbContainers))]
+    public async Task ConsumerMessageProcessor_Removes_Consumed_Messages(TestDbContainerBase dbContainer)
+    {
+        try
+        {
+            // Given
+            var serviceProvider = await Setup(dbContainer);
+
+            var preMessageCount = 0;
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+
+                producer.Produce(new SingleConsumerMessage
+                {
+                    Name = "test-name"
+                });
+
+                await dbContext.SaveChangesAsync();
+
+                preMessageCount = await dbContext.ConsumerMessages.CountAsync();
+            }
+
+            // When
+            var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
+
+            var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
+
+            // Then
+            consumedMessage.Should().BeTrue();
+
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var remaining = await dbContext.ConsumerMessages.CountAsync();
+                remaining.Should().Be(preMessageCount - 1);
+            }
+        }
+        finally
+        {
+            await dbContainer.DisposeAsync();
         }
     }
 }

@@ -8,7 +8,7 @@
 		<LangVersion>preview</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith</PackageId>
-		<PackageVersion>1.0.2</PackageVersion>
+		<PackageVersion>1.0.3</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>Messaging library for monolithic dotnet apps</Description>
@@ -23,6 +23,11 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
 	</ItemGroup>
-
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>AsyncMonolith.Tests</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
 </Project>

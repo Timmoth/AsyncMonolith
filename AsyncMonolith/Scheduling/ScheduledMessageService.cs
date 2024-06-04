@@ -1,10 +1,10 @@
 ﻿using System.Text.Json;
-using AsnyMonolith.Consumers;
-using AsnyMonolith.Utilities;
+using AsyncMonolith.Consumers;
+using AsyncMonolith.Utilities;
 using Cronos;
 using Microsoft.EntityFrameworkCore;
 
-namespace AsnyMonolith.Scheduling;
+namespace AsyncMonolith.Scheduling;
 
 public sealed class ScheduledMessageService<T> where T : DbContext
 {
@@ -19,7 +19,7 @@ public sealed class ScheduledMessageService<T> where T : DbContext
         _idGenerator = idGenerator;
     }
 
-    public string Schedule<TK>(TK message, string chronExpression, string chronTimezone, params string[] tags)
+    public string Schedule<TK>(TK message, string chronExpression, string chronTimezone, string? tag = null)
         where TK : IConsumerPayload
     {
         var payload = JsonSerializer.Serialize(message);
@@ -40,7 +40,7 @@ public sealed class ScheduledMessageService<T> where T : DbContext
             Id = id,
             PayloadType = typeof(TK).Name,
             AvailableAfter = next.Value.ToUnixTimeSeconds(),
-            Tags = tags,
+            Tag = tag,
             ChronExpression = chronExpression,
             ChronTimezone = chronTimezone,
             Payload = payload
@@ -52,12 +52,15 @@ public sealed class ScheduledMessageService<T> where T : DbContext
     public async Task DeleteByTag(string tag, CancellationToken cancellationToken)
     {
         var set = _dbContext.Set<ScheduledMessage>();
-        await set.Where(t => t.Tags.Contains(tag)).ExecuteDeleteAsync(cancellationToken);
+        var messages = await set.Where(t => t.Tag == tag).ToListAsync(cancellationToken);
+        set.RemoveRange(messages);
     }
 
     public async Task DeleteById(string id, CancellationToken cancellationToken)
     {
         var set = _dbContext.Set<ScheduledMessage>();
-        await set.Where(t => t.Id == id).ExecuteDeleteAsync(cancellationToken);
+        var message = await set.Where(t => t.Id == id).FirstOrDefaultAsync(cancellationToken);
+        if(message != null)
+            set.Remove(message);
     }
 }

@@ -24,6 +24,7 @@ Async Monolith is not a replacement for a message broker, there are many reasons
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an ef migration.
 | Version      | Description | Requires Migration |
 | ----------- | ----------- |----------- |
+| 1.0.3      | Added mysql support   | Yes |
 | 1.0.2      | Scheduled messages use Chron expressions   | Yes |
 | 1.0.1      | Added Configurable settings    | No |
 | 1.0.0      | Initial   | Yes |
@@ -53,6 +54,7 @@ Make sure to check this table before updating the nuget package in your solution
         MaxAttempts = 5, // Number of times a failed message is retried 
         ProcessorMinDelay = 10, // Minimum millisecond delay before the next message is processed
         ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next message is processed
+        DbType = DbType.PostgreSql, // Type of database being used (use DbType.Ef if not supported)
     });
     builder.Services.AddControllers();
 

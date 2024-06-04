@@ -1,5 +1,5 @@
-﻿using AsnyMonolith.Consumers;
-using AsnyMonolith.Scheduling;
+﻿using AsyncMonolith.Consumers;
+using AsyncMonolith.Scheduling;
 using Microsoft.EntityFrameworkCore;
 
 namespace Demo;

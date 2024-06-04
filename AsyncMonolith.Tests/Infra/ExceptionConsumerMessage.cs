@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using AsnyMonolith.Consumers;
+using AsyncMonolith.Consumers;
 
 namespace AsyncMonolith.Tests.Infra;
 

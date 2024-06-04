@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace AsnyMonolith.Consumers;
+namespace AsyncMonolith.Consumers;
 
 public abstract class BaseConsumer<T> : IConsumer where T : IConsumerPayload
 {

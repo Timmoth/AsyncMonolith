@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace AsnyMonolith.Consumers;
+namespace AsyncMonolith.Consumers;
 
 [Table("consumer_messages")]
 public sealed class ConsumerMessage

@@ -1,5 +1,6 @@
-using AsnyMonolith.Consumers;
+using AsyncMonolith.Consumers;
 using AsyncMonolith.Tests.Infra;
+using AsyncMonolith.Utilities;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,7 +11,7 @@ public class ConsumerRegistryTests
     private ServiceProvider Setup()
     {
         var services = new ServiceCollection();
-        services.AddTestServices();
+        services.AddTestServices(AsyncMonolithSettings.Default);
         services.AddInMemoryDb();
 
         return services.BuildServiceProvider();

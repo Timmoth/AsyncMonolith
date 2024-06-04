@@ -1,6 +1,6 @@
 using System.Reflection;
-using AsnyMonolith.Scheduling;
-using AsnyMonolith.Utilities;
+using AsyncMonolith.Scheduling;
+using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Demo;
@@ -11,10 +11,11 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        var dbId = Guid.NewGuid().ToString();
         builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
             {
-                options.UseInMemoryDatabase(dbId);
+                options.UseNpgsql(
+                    "Host=async_monolith_demo_postgres;Port=5432;Username=postgres;Password=mypassword;Database=application",
+                    o => { });
             }
         );
 
@@ -25,8 +26,9 @@ public class Program
             {
                 AttemptDelay = 10,
                 MaxAttempts = 5,
-                ProcessorMinDelay = 10,
-                ProcessorMaxDelay = 1000
+                ProcessorMinDelay = 50,
+                ProcessorMaxDelay = 1000,
+                DbType = DbType.PostgreSql
             });
 
         builder.Services.AddControllers();
@@ -44,12 +46,15 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            dbContext.Database.EnsureDeleted();
+            dbContext.Database.EnsureCreated();
+
             var scheduledMessageService =
                 scope.ServiceProvider.GetRequiredService<ScheduledMessageService<ApplicationDbContext>>();
 
             scheduledMessageService.Schedule(new ValueSubmitted
             {
-                Value = Random.Shared.NextDouble() * 100
+                Value = 1
             }, "*/5 * * * * *", "UTC");
             dbContext.SaveChanges();
         }
