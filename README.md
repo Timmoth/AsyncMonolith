@@ -7,7 +7,7 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 
 - Makes building event driven architectures simple
 - Produce messages transactionally along with changes to your domain
-- Messages stored in your DB context so you have full control over them
+- Messages are stored in your DB context so you have full control over them
 - Supports running multiple instances / versions of your application
 - Schedule messages to be processed using Chron expressions
 - Automatic message retries
@@ -23,11 +23,11 @@ Async Monolith is not a replacement for a message broker, there are many reasons
 I'd reccomend watching this [video](https://www.youtube.com/watch?v=DOaDpHh1FsQ) by Derik Comartin before deciding to use Async Monolith.
 
 Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles.
-Using DbType.PostgreSql or DbType.MySql will allow AsyncMonolith to lock rows ensuring they are only processed once.
+Using DbType.PostgreSql or DbType.MySql will allow AsyncMonolith to lock rows ensuring they are only retrieved and processed once.
 
 # Dev log
 
-Make sure to check this table before updating the nuget package in your solution, you may be required to add an ef migration.
+Make sure to check this table before updating the nuget package in your solution, you may be required to add an `dotnet ef migration`.
 | Version      | Description | Requires Migration |
 | ----------- | ----------- |----------- |
 | 1.0.4      | Added poisoned message table   | Yes |
