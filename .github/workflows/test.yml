@@ -5,8 +5,10 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AsnyMonolith
     steps:
     - name: Checkout
       uses: actions/checkout@v3
