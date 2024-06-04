@@ -10,7 +10,14 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 - Supports running multiple instances / versions of your application
 - Schedule messages to be processed using Chron expressions
 - Automatic message retries
-- Automatically routes messages to multiple consumers 
+- Automatically routes messages to multiple consumers
+
+# Warnings
+
+Async Monolith is not a replacement for a message broker, there are many reasons why you may require one including:
+- Extremely high message throughput (Async Monolith will tax your DB)
+- Message ordering (Not currently supported)
+- Communicating between different services (It's in the name)
 
 # Dev log
 
