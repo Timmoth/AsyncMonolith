@@ -24,7 +24,7 @@ public class SpamController : ControllerBase
         if (SpamResultService.Start != null && SpamResultService.End == null)
         {
             var duration = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds() - SpamResultService.Start;
-            return Ok($"Running. consumed: {SpamResultService.Count} / {count}. {duration / SpamResultService.Count}ms per message");
+            return Ok($"Running. consumed: {SpamResultService.Count} / {count}. {duration / (SpamResultService.Count + 1)}ms per message");
         }
 
         if (SpamResultService.Start != null && SpamResultService.End != null)
@@ -32,7 +32,7 @@ public class SpamController : ControllerBase
             var duration = SpamResultService.End - SpamResultService.Start;
             SpamResultService.Start = null;
             SpamResultService.End = null;
-            return Ok($"Finished consumed: {SpamResultService.Count} / {count}. {duration / SpamResultService.Count}ms per message");
+            return Ok($"Finished consumed: {SpamResultService.Count} / {count}. {duration / (SpamResultService.Count + 1)}ms per message");
         }
 
         SpamResultService.Count = 0;

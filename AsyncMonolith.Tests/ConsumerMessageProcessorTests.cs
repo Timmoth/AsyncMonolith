@@ -34,10 +34,10 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             // When
             var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
 
-            var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
+            var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().BeTrue();
+            consumedMessage.Should().Be(1);
             TestConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(1);
         }
         finally
@@ -48,7 +48,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
 
     [Theory]
     [MemberData(nameof(GetTestDbContainers))]
-    public async Task ConsumerMessageProcessor_Returns_False_If_No_Available_Messages(TestDbContainerBase dbContainer)
+    public async Task ConsumerMessageProcessor_Returns_0_If_No_Available_Messages(TestDbContainerBase dbContainer)
     {
         try
         {
@@ -71,10 +71,10 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
 
             // When
-            var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
+            var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().BeFalse();
+            consumedMessage.Should().Be(0);
             TestConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(0);
         }
         finally
@@ -108,7 +108,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             // When
             var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
 
-            await processor.ConsumeNext(CancellationToken.None);
+            await processor.ProcessBatch(CancellationToken.None);
 
             // Then
             using (var scope = serviceProvider.CreateScope())
@@ -149,7 +149,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             // When
             var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
 
-            await processor.ConsumeNext(CancellationToken.None);
+            await processor.ProcessBatch(CancellationToken.None);
 
             // Then
             using (var scope = serviceProvider.CreateScope())
@@ -194,7 +194,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             // When
             var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
 
-            await processor.ConsumeNext(CancellationToken.None);
+            await processor.ProcessBatch(CancellationToken.None);
 
             // Then
             using (var scope = serviceProvider.CreateScope())
@@ -227,7 +227,6 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             // Given
             var serviceProvider = await Setup(dbContainer);
 
-            var preMessageCount = 0;
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
@@ -239,23 +238,21 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 });
 
                 await dbContext.SaveChangesAsync();
-
-                preMessageCount = await dbContext.ConsumerMessages.CountAsync();
             }
 
             // When
             var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
 
-            var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
+            var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().BeTrue();
+            consumedMessage.Should().Be(1);
 
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var remaining = await dbContext.ConsumerMessages.CountAsync();
-                remaining.Should().Be(preMessageCount - 1);
+                remaining.Should().Be(0);
             }
         }
         finally

@@ -4,7 +4,6 @@ using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace AsyncMonolith.Utilities;
 
@@ -38,6 +37,9 @@ public static class StartupExtensions
         if (settings.DbType == DbType.Ef && settings.ScheduledMessageProcessorCount > 1)
             throw new ArgumentException("AsyncMonolithSettings.ScheduledMessageProcessorCount can only be set to 1 when using 'DbType.Ef'.");
 
+        if (settings.ConsumerMessageBatchSize < 1)
+            throw new ArgumentException("AsyncMonolithSettings.ConsumerMessageBatchSize must be at least 1.");
+
         services.Configure<AsyncMonolithSettings>(options =>
         {
             options.AttemptDelay = settings.AttemptDelay;
@@ -46,6 +48,7 @@ public static class StartupExtensions
             options.ProcessorMinDelay = settings.ProcessorMinDelay;
             options.ConsumerMessageProcessorCount = settings.ConsumerMessageProcessorCount;
             options.ScheduledMessageProcessorCount = settings.ScheduledMessageProcessorCount;
+            options.ConsumerMessageBatchSize = settings.ConsumerMessageBatchSize;
             options.DbType = settings.DbType;
         });
 

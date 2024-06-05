@@ -41,8 +41,9 @@ public class Program
                 MaxAttempts = 5,
                 ProcessorMinDelay = 20,
                 ProcessorMaxDelay = 100,
-                ConsumerMessageProcessorCount = 2,
+                ConsumerMessageProcessorCount = 1,
                 ScheduledMessageProcessorCount = 1,
+                ConsumerMessageBatchSize = 10,
                 DbType = DbType.PostgreSql
             });
 

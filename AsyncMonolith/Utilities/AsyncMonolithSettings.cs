@@ -15,6 +15,7 @@ public class AsyncMonolithSettings
     public int ProcessorMinDelay { get; set; } = 10;
     public int ConsumerMessageProcessorCount { get; set; } = 1;
     public int ScheduledMessageProcessorCount { get; set; } = 1;
+    public int ConsumerMessageBatchSize { get; set; } = 5;
     public DbType DbType { get; set; } = DbType.Ef;
 
     public static AsyncMonolithSettings Default => new()
@@ -24,6 +25,7 @@ public class AsyncMonolithSettings
         ProcessorMaxDelay = 1000,
         ProcessorMinDelay = 20,
         ConsumerMessageProcessorCount = 1,
-        ScheduledMessageProcessorCount = 1
+        ScheduledMessageProcessorCount = 1,
+        ConsumerMessageBatchSize = 5
     };
 }
