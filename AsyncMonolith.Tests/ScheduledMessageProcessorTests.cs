@@ -28,7 +28,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var scheduledMessageService =
-                    scope.ServiceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
+                    scope.ServiceProvider.GetRequiredService<ScheduleService<TestDbContext>>();
 
                 scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", "test-tag");
 
@@ -90,7 +90,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var scheduledMessageService =
-                    scope.ServiceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
+                    scope.ServiceProvider.GetRequiredService<ScheduleService<TestDbContext>>();
 
                 scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", "test-tag");
 

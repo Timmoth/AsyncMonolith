@@ -6,13 +6,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AsyncMonolith.Scheduling;
 
-public sealed class ScheduledMessageService<T> where T : DbContext
+public sealed class ScheduleService<T> where T : DbContext
 {
     private readonly T _dbContext;
     private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
 
-    public ScheduledMessageService(TimeProvider timeProvider, T dbContext, IAsyncMonolithIdGenerator idGenerator)
+    public ScheduleService(TimeProvider timeProvider, T dbContext, IAsyncMonolithIdGenerator idGenerator)
     {
         _timeProvider = timeProvider;
         _dbContext = dbContext;

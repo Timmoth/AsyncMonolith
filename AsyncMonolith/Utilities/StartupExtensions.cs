@@ -39,7 +39,7 @@ public static class StartupExtensions
         services.Register(assembly);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<ProducerService<T>>();
-        services.AddScoped<ScheduledMessageService<T>>();
+        services.AddScoped<ScheduleService<T>>();
         services.AddHostedService<ConsumerMessageProcessor<T>>();
         services.AddHostedService<ScheduledMessageProcessor<T>>();
     }

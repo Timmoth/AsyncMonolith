@@ -36,7 +36,7 @@ public static class TestServiceHelpers
         services.Register(Assembly.GetExecutingAssembly());
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<ProducerService<TestDbContext>>();
-        services.AddScoped<ScheduledMessageService<TestDbContext>>();
+        services.AddScoped<ScheduleService<TestDbContext>>();
 
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
 

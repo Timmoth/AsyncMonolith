@@ -50,7 +50,7 @@ public class Program
             dbContext.Database.EnsureCreated();
 
             var scheduledMessageService =
-                scope.ServiceProvider.GetRequiredService<ScheduledMessageService<ApplicationDbContext>>();
+                scope.ServiceProvider.GetRequiredService<ScheduleService<ApplicationDbContext>>();
 
             scheduledMessageService.Schedule(new ValueSubmitted
             {

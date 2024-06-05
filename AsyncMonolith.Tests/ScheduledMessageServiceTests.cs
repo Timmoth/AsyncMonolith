@@ -22,7 +22,7 @@ public class ScheduledMessageServiceTests : DbTestsBase
                 Name = "test-name"
             };
 
-            var scheduledMessageService = serviceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
+            var scheduledMessageService = serviceProvider.GetRequiredService<ScheduleService<TestDbContext>>();
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var tag = "test-tag";
 
@@ -66,7 +66,7 @@ public class ScheduledMessageServiceTests : DbTestsBase
                 Name = "test-name"
             };
 
-            var scheduledMessageService = serviceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
+            var scheduledMessageService = serviceProvider.GetRequiredService<ScheduleService<TestDbContext>>();
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var tag = "test-tag";
             scheduledMessageService.Schedule(consumerMessage1, "* * * * * *", "UTC", tag);
@@ -105,7 +105,7 @@ public class ScheduledMessageServiceTests : DbTestsBase
                 Name = "test-name"
             };
 
-            var scheduledMessageService = serviceProvider.GetRequiredService<ScheduledMessageService<TestDbContext>>();
+            var scheduledMessageService = serviceProvider.GetRequiredService<ScheduleService<TestDbContext>>();
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var id = scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC");
             await dbContext.SaveChangesAsync();
