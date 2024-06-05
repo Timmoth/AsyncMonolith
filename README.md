@@ -16,7 +16,7 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 - Makes it very easy to write unit / integration tests
 
 ## Warnings
-- Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles.For this reason it is reccomended that you only use `DbType.Ef` when you are running a single instance of your app OR for development purposes. Using `DbType.PostgreSql` or `DbType.MySql` will allow AsyncMonolith to lock rows ensuring they are only retrieved and processed once.
+- Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles. For this reason it is reccomended that you only use `DbType.Ef` when you are running a single instance of your app OR for development purposes. Using `DbType.PostgreSql` or `DbType.MySql` will allow AsyncMonolith to lock rows ensuring they are only retrieved and processed once.
 - Test your desired throughput
 
 ### 'Don't use a database as a queue' - maybe
@@ -26,8 +26,9 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 # Dev log
 
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an `dotnet ef migration`.
-| Version      | Description | Requires Migration |
+| Version      | Description | Migration Required |
 | ----------- | ----------- |----------- |
+| 1.0.6      | Added concurrent processors | No |
 | 1.0.5      | Added OpenTelemetry support   | No |
 | 1.0.4      | Added poisoned message table   | Yes |
 | 1.0.3      | Added mysql support   | Yes |
@@ -75,7 +76,9 @@ Make sure to check this table before updating the nuget package in your solution
   - The query takes place every second and incrementally speeds up for every consecutive message processed.
   - Once there are no messages left, it will return to sampling the table every second.
 - **Automatic Save Changes**: Each consumer will call `SaveChangesAsync` automatically after the abstract `Consume` method returns.
-
+- **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `DbType.Ef`.
+- **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure. 
+  
 Example
 ```csharp
 public class DeleteUsersPosts : BaseConsumer<UserDeleted>
@@ -150,7 +153,9 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
         MaxAttempts = 5, // Number of times a failed message is retried 
         ProcessorMinDelay = 10, // Minimum millisecond delay before the next message is processed
         ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next message is processed
-        DbType = DbType.PostgreSql, // Type of database being used (use DbType.Ef if not supported)
+        DbType = DbType.PostgreSql, // Type of database being used (use DbType.Ef if not supported),
+        ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
+        ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
     });
     builder.Services.AddControllers();
 
@@ -215,7 +220,7 @@ Stores all scheduled messages awaiting processing by the `ScheduledMessageProces
 Stores consumer messages that have reached `AsyncMonolith.MaxAttempts`, poisoned messages will then need to be manually moved back to the `consumer_messages` table or deleted.
 
 ## ConsumerMessageProcessor
-A background service that periodically fetches available messages from the consumer_messages table. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
+A background service that periodically fetches available messages from the 'consumer_messages' table. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
 
 ## ScheduledMessageProcessor
 A background service that fetches available messages from the `scheduled_messages` table. Once found, each consumer set up to handle the payload is resolved, and a message is written to the `consumer_messages` table for each of them.
@@ -224,4 +229,28 @@ A background service that fetches available messages from the `scheduled_message
 Used to resolve all the consumers able to process a given payload, and resolve instances of the consumers when processing a message. The registry is populated on startup by calling `builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly());` which uses reflection to find all consumer & payload types.
 
 ## Notes
-The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another message. For each consecutive message fetched, the delay is reduced until the processor only waits `AsyncMonolithSettings.ProcessorMinDelay` between cycles. If no new messages are fetched within a cycle, the processor returns to waiting `AsyncMonolithSettings.ProcessorMaxDelay` before fetching another message.
+- The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another message. For each consecutive message fetched, the delay is reduced until the processor only waits `AsyncMonolithSettings.ProcessorMinDelay` between cycles. If no new messages are fetched within a cycle, the processor returns to waiting `AsyncMonolithSettings.ProcessorMaxDelay` before fetching another message.
+- Configuring concurrent consumer / scheduled message processors will throw a startup exception when using `DbType.Ef` (due to no built in support for row level locking)
+
+## Contributing
+
+Contributions are welcome! Here’s how you can get involved:
+
+1. **Fork the repository**: Click the "Fork" button at the top right of this page.
+2. **Clone your fork**:
+    ```bash
+    git clone https://github.com/Timmoth/AsyncMonolith.git
+    ```
+3. **Create a branch**: Make your changes in a new branch.
+    ```bash
+    git checkout -b my-feature-branch
+    ```
+4. **Commit your changes**:
+    ```bash
+    git commit -m 'Add some feature'
+    ```
+5. **Push to the branch**:
+    ```bash
+    git push origin my-feature-branch
+    ```
+6. **Open a pull request**: Describe your changes and submit your PR.
