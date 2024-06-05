@@ -12,18 +12,16 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 - Schedule messages to be processed using Chron expressions
 - Automatic message retries
 - Automatically routes messages to multiple consumers
+- Keep your infrastructure simple, It only requires a dotnet API and database
+- Makes it very easy to write unit / integration tests
 
-# Warnings
+## Warnings
+- Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles.For this reason it is reccomended that you only use `DbType.Ef` when you are running a single instance of your app OR for development purposes. Using `DbType.PostgreSql` or `DbType.MySql` will allow AsyncMonolith to lock rows ensuring they are only retrieved and processed once.
+- Test your desired throughput
 
-Async Monolith is not a replacement for a message broker, there are many reasons why you may require one including:
-- Extremely high message throughput (Async Monolith will tax your DB)
-- Message ordering (Not currently supported)
-- Communicating between different services (It's in the name)
-
-I'd reccomend watching this [video](https://www.youtube.com/watch?v=DOaDpHh1FsQ) by Derik Comartin before deciding to use Async Monolith.
-
-Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles.
-Using `DbType.PostgreSql` or `DbType.MySql` will allow AsyncMonolith to lock rows ensuring they are only retrieved and processed once.
+### 'Don't use a database as a queue' - maybe
+- Async Monolith is not a guaranteed replacement for a message broker, there are many reasons why you may require one.
+- I'd reccomend watching this [video](https://www.youtube.com/watch?v=DOaDpHh1FsQ) by Derik Comartin or [this one](https://www.youtube.com/watch?v=_r2DaswYPjM) by Chris Patterson before deciding to use Async Monolith.
 
 # Dev log
 
