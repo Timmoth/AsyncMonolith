@@ -4,6 +4,7 @@ using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace AsyncMonolith.Utilities;
 
@@ -27,12 +28,24 @@ public static class StartupExtensions
             throw new ArgumentException(
                 "AsyncMonolithSettings.ProcessorMaxDelay must be greater then AsyncMonolithSettings.ProcessorMinDelay.");
 
+        if (settings.ConsumerMessageProcessorCount < 1)
+            throw new ArgumentException("AsyncMonolithSettings.ConsumerMessageProcessorCount must be at least 1.");
+        if (settings.DbType == DbType.Ef && settings.ConsumerMessageProcessorCount > 1)
+            throw new ArgumentException("AsyncMonolithSettings.ConsumerMessageProcessorCount can only be set to 1 when using 'DbType.Ef'.");
+
+        if (settings.ScheduledMessageProcessorCount < 1)
+            throw new ArgumentException("AsyncMonolithSettings.ScheduledMessageProcessorCount must be at least 1.");
+        if (settings.DbType == DbType.Ef && settings.ScheduledMessageProcessorCount > 1)
+            throw new ArgumentException("AsyncMonolithSettings.ScheduledMessageProcessorCount can only be set to 1 when using 'DbType.Ef'.");
+
         services.Configure<AsyncMonolithSettings>(options =>
         {
             options.AttemptDelay = settings.AttemptDelay;
             options.MaxAttempts = settings.MaxAttempts;
             options.ProcessorMaxDelay = settings.ProcessorMaxDelay;
             options.ProcessorMinDelay = settings.ProcessorMinDelay;
+            options.ConsumerMessageProcessorCount = settings.ConsumerMessageProcessorCount;
+            options.ScheduledMessageProcessorCount = settings.ScheduledMessageProcessorCount;
             options.DbType = settings.DbType;
         });
 
@@ -40,8 +53,25 @@ public static class StartupExtensions
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<ProducerService<T>>();
         services.AddScoped<ScheduleService<T>>();
-        services.AddHostedService<ConsumerMessageProcessor<T>>();
-        services.AddHostedService<ScheduledMessageProcessor<T>>();
+        if (settings.ConsumerMessageProcessorCount > 1)
+        {
+            services.AddHostedService(serviceProvider =>
+                new ConsumerMessageProcessorFactory<T>(serviceProvider, settings.ConsumerMessageProcessorCount));
+        }
+        else
+        {
+            services.AddHostedService<ConsumerMessageProcessor<T>>();
+        }
+
+        if (settings.ScheduledMessageProcessorCount > 1)
+        {
+            services.AddHostedService(serviceProvider =>
+                new ScheduledMessageProcessorFactory<T>(serviceProvider, settings.ScheduledMessageProcessorCount));
+        }
+        else
+        {
+            services.AddHostedService<ScheduledMessageProcessor<T>>();
+        }
     }
 
     public static void Register(this IServiceCollection services, Assembly assembly)

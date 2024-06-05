@@ -1,7 +1,7 @@
 using AsyncMonolith.Producers;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Demo;
+namespace Demo.Counter;
 
 [ApiController]
 [Route("api/values")]
@@ -10,7 +10,6 @@ public class ValueController : ControllerBase
     private readonly ApplicationDbContext _dbContext;
     private readonly ProducerService<ApplicationDbContext> _producerService;
     private readonly TotalValueService _totalValueService;
-
     public ValueController(ProducerService<ApplicationDbContext> producerService, ApplicationDbContext dbContext,
         TotalValueService totalValueService)
     {

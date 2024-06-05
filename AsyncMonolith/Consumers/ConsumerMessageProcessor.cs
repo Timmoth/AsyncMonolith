@@ -87,7 +87,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             {
                 DbType.Ef => await consumerSet
                     .Where(m => m.AvailableAfter <= currentTime)
-                    .OrderBy(m => Guid.NewGuid())
+                    .OrderBy(m => m.CreatedAt)
                     .FirstOrDefaultAsync(cancellationToken),
                 DbType.PostgreSql => await consumerSet
                     .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime))

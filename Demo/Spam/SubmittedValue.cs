@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Demo;
+namespace Demo.Spam;
 
 [Table("submitted_values")]
 public sealed class SubmittedValue

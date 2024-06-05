@@ -1,6 +1,7 @@
 using System.Reflection;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
+using Demo.Counter;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -26,7 +27,7 @@ public class Program
             {
                 if (builder.Environment.IsDevelopment()) x.SetSampler<AlwaysOnSampler>();
 
-                x.AddSource("async_monolith");
+                x.AddSource(AsyncMonolithInstrumentation.ActivitySourceName);
                 x.AddConsoleExporter();
             })
             .ConfigureResource(c => c.AddService("async_monolith.demo").Build());
@@ -38,8 +39,10 @@ public class Program
             {
                 AttemptDelay = 10,
                 MaxAttempts = 5,
-                ProcessorMinDelay = 50,
-                ProcessorMaxDelay = 1000,
+                ProcessorMinDelay = 20,
+                ProcessorMaxDelay = 100,
+                ConsumerMessageProcessorCount = 2,
+                ScheduledMessageProcessorCount = 1,
                 DbType = DbType.PostgreSql
             });
 

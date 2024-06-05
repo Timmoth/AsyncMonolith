@@ -1,5 +1,6 @@
 ﻿using AsyncMonolith.Consumers;
 using AsyncMonolith.Scheduling;
+using Demo.Spam;
 using Microsoft.EntityFrameworkCore;
 
 namespace Demo;
@@ -14,4 +15,5 @@ public class ApplicationDbContext : DbContext
     public DbSet<ConsumerMessage> ConsumerMessages { get; set; } = default!;
     public DbSet<PoisonedMessage> PoisonedMessages { get; set; } = default!;
     public DbSet<ScheduledMessage> ScheduledMessages { get; set; } = default!;
+
 }

@@ -1,7 +1,8 @@
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
+using Demo.Spam;
 
-namespace Demo;
+namespace Demo.Counter;
 
 public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
 {

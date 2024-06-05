@@ -1,4 +1,4 @@
-﻿namespace Demo;
+﻿namespace Demo.Counter;
 
 public class TotalValueService
 {

@@ -1,7 +1,7 @@
 using AsyncMonolith.Consumers;
 using Microsoft.EntityFrameworkCore;
 
-namespace Demo;
+namespace Demo.Counter;
 
 public class TotalValueConsumer : BaseConsumer<ValuePersisted>
 {
