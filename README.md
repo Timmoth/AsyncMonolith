@@ -28,6 +28,7 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an `dotnet ef migration`.
 | Version      | Description | Migration Required |
 | ----------- | ----------- |----------- |
+| 1.0.7      | Added consumer message batching | No |
 | 1.0.6      | Added concurrent processors | No |
 | 1.0.5      | Added OpenTelemetry support   | No |
 | 1.0.4      | Added poisoned message table   | Yes |
@@ -77,6 +78,7 @@ Make sure to check this table before updating the nuget package in your solution
   - Once there are no messages left, it will return to sampling the table every second.
 - **Automatic Save Changes**: Each consumer will call `SaveChangesAsync` automatically after the abstract `Consume` method returns.
 - **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `DbType.Ef`.
+- **Batching**: Consumer messages will be read from the `consumer_messages` table in batches defined by `ConsumerMessageBatchSize`. 
 - **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure. 
   
 Example
@@ -153,7 +155,8 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
         MaxAttempts = 5, // Number of times a failed message is retried 
         ProcessorMinDelay = 10, // Minimum millisecond delay before the next message is processed
         ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next message is processed
-        DbType = DbType.PostgreSql, // Type of database being used (use DbType.Ef if not supported),
+        DbType = DbType.PostgreSql, // Type of database being used (use DbType.Ef if not supported)
+        ConsumerMessageBatchSize = 5, // The number of consumer messages to be queries from the database and processed each processor cycle
         ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
         ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
     });
@@ -220,7 +223,7 @@ Stores all scheduled messages awaiting processing by the `ScheduledMessageProces
 Stores consumer messages that have reached `AsyncMonolith.MaxAttempts`, poisoned messages will then need to be manually moved back to the `consumer_messages` table or deleted.
 
 ## ConsumerMessageProcessor
-A background service that periodically fetches available messages from the 'consumer_messages' table. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
+A background service that periodically fetches available messages from the 'consumer_messages' table (in batches). Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
 
 ## ScheduledMessageProcessor
 A background service that fetches available messages from the `scheduled_messages` table. Once found, each consumer set up to handle the payload is resolved, and a message is written to the `consumer_messages` table for each of them.
