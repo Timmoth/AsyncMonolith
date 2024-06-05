@@ -21,6 +21,8 @@ public class PostgreSqlTestDbContainer : TestDbContainerBase
         );
     }
 
-    public override DbType GetDbType() => DbType.PostgreSql;
-
+    public override DbType GetDbType()
+    {
+        return DbType.PostgreSql;
+    }
 }

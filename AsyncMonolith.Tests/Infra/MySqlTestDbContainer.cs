@@ -24,5 +24,8 @@ public class MySqlTestDbContainer : TestDbContainerBase
         );
     }
 
-    public override DbType GetDbType() => DbType.MySql;
+    public override DbType GetDbType()
+    {
+        return DbType.MySql;
+    }
 }

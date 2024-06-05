@@ -2,6 +2,8 @@ using System.Reflection;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 namespace Demo;
 
@@ -19,7 +21,17 @@ public class Program
             }
         );
 
-        builder.Services.AddLogging();
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(x =>
+            {
+                if (builder.Environment.IsDevelopment()) x.SetSampler<AlwaysOnSampler>();
+
+                x.AddSource("async_monolith");
+                x.AddConsoleExporter();
+            })
+            .ConfigureResource(c => c.AddService("async_monolith.demo").Build());
+
+
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(),
             new AsyncMonolithSettings
@@ -39,7 +51,6 @@ public class Program
         app.UseHttpsRedirection();
 
         app.UseAuthorization();
-
 
         app.MapControllers();
 

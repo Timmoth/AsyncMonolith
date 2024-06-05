@@ -60,7 +60,7 @@ public sealed class ScheduleService<T> where T : DbContext
     {
         var set = _dbContext.Set<ScheduledMessage>();
         var message = await set.Where(t => t.Id == id).FirstOrDefaultAsync(cancellationToken);
-        if(message != null)
+        if (message != null)
             set.Remove(message);
     }
 }

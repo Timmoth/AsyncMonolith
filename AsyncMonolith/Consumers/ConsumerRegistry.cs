@@ -12,7 +12,7 @@ public sealed class ConsumerRegistry
         PayloadConsumerDictionary = payloadConsumerDictionary;
     }
 
-    public List<string> ResolvePayloadConsumerTypes(string payloadType)
+    public IReadOnlyList<string> ResolvePayloadConsumerTypes(string payloadType)
     {
         if (!PayloadConsumerDictionary.TryGetValue(payloadType, out var names))
             throw new Exception($"Failed to resolve consumers for payload: {payloadType}");

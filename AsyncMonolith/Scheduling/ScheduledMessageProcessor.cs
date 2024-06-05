@@ -1,4 +1,5 @@
-﻿using AsyncMonolith.Producers;
+﻿using System.Diagnostics;
+using AsyncMonolith.Producers;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
 {
     private const int MaxChainLength = 10;
 
-    private const string PgSql = $@"
+    private const string PgSql = @"
                     SELECT * 
                     FROM scheduled_messages 
                     WHERE available_after <= @currentTime 
@@ -31,7 +32,6 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
     private readonly IOptions<AsyncMonolithSettings> _options;
     private readonly IServiceScopeFactory _scopeFactory;
-
     private readonly TimeProvider _timeProvider;
 
     public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger,
@@ -86,7 +86,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
                     .FirstOrDefaultAsync(cancellationToken),
                 DbType.PostgreSql => await set
                     .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime))
-                    .FirstOrDefaultAsync(cancellationToken),  
+                    .FirstOrDefaultAsync(cancellationToken),
                 DbType.MySql => await set
                     .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime))
                     .FirstOrDefaultAsync(cancellationToken),
@@ -97,14 +97,23 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
                 // No messages waiting.
                 return false;
 
-            message.AvailableAfter = message.GetNextOccurrence(_timeProvider);
+            using var activity =
+                AsyncMonolithInstrumentation.ActivitySource.StartActivity(AsyncMonolithInstrumentation
+                    .ProcessScheduledMessageActivity);
+            activity?.AddTag("scheduled_message.id", message.Id);
+            activity?.AddTag("scheduled_message.chron.expression", message.ChronExpression);
+            activity?.AddTag("scheduled_message.chron.timezone", message.ChronTimezone);
+            activity?.AddTag("scheduled_message.payload.type", message.PayloadType);
+            activity?.AddTag("scheduled_message.tag", message.Tag);
 
             var producer = scope.ServiceProvider.GetRequiredService<ProducerService<T>>();
             producer.Produce(message);
 
+            message.AvailableAfter = message.GetNextOccurrence(_timeProvider);
             await dbContext.SaveChangesAsync(cancellationToken);
             await dbContextTransaction.CommitAsync(cancellationToken);
             _logger.LogInformation("Successfully scheduled message of type: '{payload}'", message.PayloadType);
+            activity?.SetStatus(ActivityStatusCode.Ok);
         }
         catch (Exception)
         {

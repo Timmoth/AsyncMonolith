@@ -184,7 +184,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 {
                     Name = "test-name"
                 });
-                
+
                 await dbContext.SaveChangesAsync();
                 message = await dbContext.ConsumerMessages.SingleAsync();
                 message.Attempts = 10;

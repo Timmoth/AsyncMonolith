@@ -21,6 +21,8 @@ public class EfTestDbContainer : TestDbContainerBase
         );
     }
 
-    public override DbType GetDbType() => DbType.Ef;
-
+    public override DbType GetDbType()
+    {
+        return DbType.Ef;
+    }
 }

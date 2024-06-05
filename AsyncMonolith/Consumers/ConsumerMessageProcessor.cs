@@ -1,4 +1,5 @@
-﻿using AsyncMonolith.Utilities;
+﻿using System.Diagnostics;
+using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -54,12 +55,10 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         {
             try
             {
-
                 if (await ConsumeNext(stoppingToken))
                     consumedMessageChainLength++;
                 else
                     consumedMessageChainLength = 0;
-
             }
             catch (Exception ex)
             {
@@ -76,13 +75,13 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
-        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
 
         await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
             var consumerSet = dbContext.Set<ConsumerMessage>();
+            var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
 
             var message = _options.Value.DbType switch
             {
@@ -92,7 +91,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                     .FirstOrDefaultAsync(cancellationToken),
                 DbType.PostgreSql => await consumerSet
                     .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime))
-                    .FirstOrDefaultAsync(cancellationToken),    
+                    .FirstOrDefaultAsync(cancellationToken),
                 DbType.MySql => await consumerSet
                     .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime))
                     .FirstOrDefaultAsync(cancellationToken),
@@ -103,6 +102,13 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                 // No messages waiting.
                 return false;
 
+            using var activity =
+                AsyncMonolithInstrumentation.ActivitySource.StartActivity(AsyncMonolithInstrumentation
+                    .ProcessConsumerMessageActivity);
+            activity?.AddTag("consumer_message.id", message.Id);
+            activity?.AddTag("consumer_message.attempt", message.Attempts + 1);
+            activity?.AddTag("consumer_message.payload.type", message.PayloadType);
+            activity?.AddTag("consumer_message.type", message.ConsumerType);
             var failure = false;
 
             try
@@ -117,8 +123,12 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             }
             catch (Exception ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                activity?.AddTag("exception.type", nameof(ex));
+                activity?.AddTag("exception.message", ex.Message);
+
                 _logger.LogError(ex,
-                    message.Attempts > _options.Value.MaxAttempts
+                    message.Attempts + 1 >= _options.Value.MaxAttempts
                         ? "Failed to consume message on attempt {attempt}, moving to poisoned messages."
                         : "Failed to consume message on attempt {attempt}, will retry.", message.Attempts);
 
@@ -131,12 +141,13 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                 if (message.Attempts < _options.Value.MaxAttempts)
                 {
                     message.AvailableAfter = currentTime + _options.Value.AttemptDelay;
+                    activity?.AddTag("consumer_message.destination", "consumer_messages");
                 }
                 else
                 {
                     consumerSet.Remove(message);
                     var poisonedSet = dbContext.Set<PoisonedMessage>();
-                    poisonedSet.Add(new PoisonedMessage()
+                    poisonedSet.Add(new PoisonedMessage
                     {
                         Id = message.Id,
                         Attempts = message.Attempts,
@@ -146,20 +157,26 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                         Payload = message.Payload,
                         PayloadType = message.PayloadType
                     });
+                    activity?.AddTag("consumer_message.destination", "poisoned_messages");
                 }
+
                 await dbContext.SaveChangesAsync(cancellationToken);
+            }
+            else
+            {
+                activity?.AddTag("consumer_message.destination", "removed");
             }
 
             await dbContextTransaction.CommitAsync(cancellationToken);
 
             if (!failure)
             {
+                activity?.SetStatus(ActivityStatusCode.Ok);
                 _logger.LogInformation("Successfully processed message for consumer: '{id}'", message.ConsumerType);
             }
         }
         catch (Exception ex)
         {
-            await dbContextTransaction.RollbackAsync(cancellationToken);
             _logger.LogError(ex, "Error consuming message");
         }
 
