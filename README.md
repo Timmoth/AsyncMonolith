@@ -28,6 +28,7 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an `dotnet ef migration`.
 | Version      | Description | Requires Migration |
 | ----------- | ----------- |----------- |
+| 1.0.5      | Added OpenTelemetry support   | No |
 | 1.0.4      | Added poisoned message table   | Yes |
 | 1.0.3      | Added mysql support   | Yes |
 | 1.0.2      | Scheduled messages use Chron expressions   | Yes |
@@ -104,6 +105,21 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 - **Retry Logic**: Messages will be retried up to `MaxAttempts` times (with a `AttemptDelay` seconds between attempts) until they are moved to the `poisoned_messages` table.
 - **Manual Intervention**: If a message is moved to the `poisoned_messages` table, it will need to be manually removed from the database or moved back to the `consumer_messages` table to be retried. Note that the poisoned message will only be retried a single time unless you set `attempts` back to 0.
 - **Monitoring**: Periodically monitor the `poisoned_messages` table to ensure there are not too many failed messages.
+
+## OpenTelemetry Support
+
+Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to your OpenTelemetry configuration if you want to receive consumer / scheduled processor traces.
+```csharp
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(x =>
+            {
+                if (builder.Environment.IsDevelopment()) x.SetSampler<AlwaysOnSampler>();
+
+                x.AddSource(AsyncMonolithInstrumentation.ActivitySourceName);
+                x.AddConsoleExporter();
+            })
+            .ConfigureResource(c => c.AddService("async_monolith.demo").Build());
+```
 
 # Quick start guide 
 (for a more detailed example look at the Demo project)
