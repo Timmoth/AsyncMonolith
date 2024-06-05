@@ -1,4 +1,4 @@
-# AsyncMonolith ![Image](AsyncMonolith/logo.png)
+# AsyncMonolith ![Logo](AsyncMonolith/logo.png)
 [![NuGet](https://img.shields.io/nuget/v/AsyncMonolith)](https://www.nuget.org/packages/AsyncMonolith)
 
 AsyncMonolith is a lightweight dotnet library that facillitates simple asynchronous processes in monolithic dotnet apps.
@@ -106,6 +106,9 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 - **Retry Logic**: Messages will be retried up to `MaxAttempts` times (with a `AttemptDelay` seconds between attempts) until they are moved to the `poisoned_messages` table.
 - **Manual Intervention**: If a message is moved to the `poisoned_messages` table, it will need to be manually removed from the database or moved back to the `consumer_messages` table to be retried. Note that the poisoned message will only be retried a single time unless you set `attempts` back to 0.
 - **Monitoring**: Periodically monitor the `poisoned_messages` table to ensure there are not too many failed messages.
+
+# Diagram
+![Logo](Diagrams/AsyncMonolith.svg)
 
 # Quick start guide 
 (for a more detailed example look at the Demo project)
