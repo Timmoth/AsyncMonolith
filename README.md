@@ -106,6 +106,21 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 - **Manual Intervention**: If a message is moved to the `poisoned_messages` table, it will need to be manually removed from the database or moved back to the `consumer_messages` table to be retried. Note that the poisoned message will only be retried a single time unless you set `attempts` back to 0.
 - **Monitoring**: Periodically monitor the `poisoned_messages` table to ensure there are not too many failed messages.
 
+## OpenTelemetry Support
+
+Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to your OpenTelemetry configuration if you want to receive consumer / scheduled processor traces.
+```csharp
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(x =>
+            {
+                if (builder.Environment.IsDevelopment()) x.SetSampler<AlwaysOnSampler>();
+
+                x.AddSource(AsyncMonolithInstrumentation.ActivitySourceName);
+                x.AddConsoleExporter();
+            })
+            .ConfigureResource(c => c.AddService("async_monolith.demo").Build());
+```
+
 # Quick start guide 
 (for a more detailed example look at the Demo project)
 
