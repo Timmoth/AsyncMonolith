@@ -107,9 +107,6 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 - **Manual Intervention**: If a message is moved to the `poisoned_messages` table, it will need to be manually removed from the database or moved back to the `consumer_messages` table to be retried. Note that the poisoned message will only be retried a single time unless you set `attempts` back to 0.
 - **Monitoring**: Periodically monitor the `poisoned_messages` table to ensure there are not too many failed messages.
 
-# Diagram
-![Logo](Diagrams/AsyncMonolith.svg)
-
 # Quick start guide 
 (for a more detailed example look at the Demo project)
 
@@ -184,3 +181,33 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
     await _dbContext.SaveChangesAsync(cancellationToken);
 
 ```
+
+# Internals
+![Logo](Diagrams/AsyncMonolith.svg)
+
+## ProducerService
+Resolves consumers for a given payload and writes messages to the `consumer_messages` table for processing.
+
+## ScheduleService
+Writes scheduled messages to the `scheduled_messages` table.
+
+## DbSet: ConsumerMessage
+Stores all messages awaiting processing by the `ConsumerMessageProcessor`.
+
+## Dbset: ScheduledMessage
+Stores all scheduled messages awaiting processing by the `ScheduledMessageProcessor`.
+
+## DbSet: PoisonedMessage
+Stores consumer messages that have reached `AsyncMonolith.MaxAttempts`, poisoned messages will then need to be manually moved back to the `consumer_messages` table or deleted.
+
+## ConsumerMessageProcessor
+A background service that periodically fetches available messages from the consumer_messages table. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
+
+## ScheduledMessageProcessor
+A background service that fetches available messages from the `scheduled_messages` table. Once found, each consumer set up to handle the payload is resolved, and a message is written to the `consumer_messages` table for each of them.
+
+## ConsumerRegistry
+Used to resolve all the consumers able to process a given payload, and resolve instances of the consumers when processing a message. The registry is populated on startup by calling `builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly());` which uses reflection to find all consumer & payload types.
+
+## Notes
+The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another message. For each consecutive message fetched, the delay is reduced until the processor only waits `AsyncMonolithSettings.ProcessorMinDelay` between cycles. If no new messages are fetched within a cycle, the processor returns to waiting `AsyncMonolithSettings.ProcessorMaxDelay` before fetching another message.
