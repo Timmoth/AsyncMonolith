@@ -1,7 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection.Emit;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using AsyncMonolith.Consumers;
 using Cronos;
+using Microsoft.EntityFrameworkCore;
 
 namespace AsyncMonolith.Scheduling;
 
@@ -50,5 +55,19 @@ public class ScheduledMessage
         if (next == null) throw new InvalidOperationException("Couldn't determine next scheduled message occurrence");
 
         return next.Value.ToUnixTimeSeconds();
+    }
+
+    public void UpdateSchedule(string chronExpression, string chronTimezone, TimeProvider timeProvider)
+    {
+        ChronExpression = chronExpression;
+        ChronTimezone = chronTimezone;
+        AvailableAfter = GetNextOccurrence(timeProvider);
+    }
+
+    public void UpdatePayload<TK>(TK message) where TK : IConsumerPayload
+    {
+        var payload = JsonSerializer.Serialize(message);
+        Payload = payload;
+        PayloadType = typeof(TK).Name;
     }
 }

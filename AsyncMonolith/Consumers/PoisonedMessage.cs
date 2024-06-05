@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace AsyncMonolith.Consumers;
 
-[Table("poisoned_consumer_messages")]
+[Table("poisoned_messages")]
 public sealed class PoisonedMessage
 {
     [Key]
