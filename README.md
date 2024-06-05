@@ -28,6 +28,7 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an `dotnet ef migration`.
 | Version      | Description | Requires Migration |
 | ----------- | ----------- |----------- |
+| 1.0.5      | Added OpenTelemetry support   | No |
 | 1.0.4      | Added poisoned message table   | Yes |
 | 1.0.3      | Added mysql support   | Yes |
 | 1.0.2      | Scheduled messages use Chron expressions   | Yes |
