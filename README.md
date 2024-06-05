@@ -76,8 +76,9 @@ Make sure to check this table before updating the nuget package in your solution
   - The query takes place every second and incrementally speeds up for every consecutive message processed.
   - Once there are no messages left, it will return to sampling the table every second.
 - **Automatic Save Changes**: Each consumer will call `SaveChangesAsync` automatically after the abstract `Consume` method returns.
-- **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `DbType.Ef`
-
+- **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `DbType.Ef`.
+- **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure. 
+  
 Example
 ```csharp
 public class DeleteUsersPosts : BaseConsumer<UserDeleted>
@@ -229,4 +230,27 @@ Used to resolve all the consumers able to process a given payload, and resolve i
 
 ## Notes
 - The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another message. For each consecutive message fetched, the delay is reduced until the processor only waits `AsyncMonolithSettings.ProcessorMinDelay` between cycles. If no new messages are fetched within a cycle, the processor returns to waiting `AsyncMonolithSettings.ProcessorMaxDelay` before fetching another message.
-- Configuring concurrent consumer / scheduled message processors will through a startup exception when using `DbType.Ef` (due to no built in support for row level locking)
+- Configuring concurrent consumer / scheduled message processors will throw a startup exception when using `DbType.Ef` (due to no built in support for row level locking)
+
+## Contributing
+
+Contributions are welcome! Here’s how you can get involved:
+
+1. **Fork the repository**: Click the "Fork" button at the top right of this page.
+2. **Clone your fork**:
+    ```bash
+    git clone https://github.com/Timmoth/AsyncMonolith.git
+    ```
+3. **Create a branch**: Make your changes in a new branch.
+    ```bash
+    git checkout -b my-feature-branch
+    ```
+4. **Commit your changes**:
+    ```bash
+    git commit -m 'Add some feature'
+    ```
+5. **Push to the branch**:
+    ```bash
+    git push origin my-feature-branch
+    ```
+6. **Open a pull request**: Describe your changes and submit your PR.
