@@ -28,6 +28,8 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an `dotnet ef migration`.
 | Version      | Description | Migration Required |
 | ----------- | ----------- |----------- |
+| 1.0.8      | Added scheduled message batching | No |
+| 1.0.7      | Added consumer message batching | No |
 | 1.0.6      | Added concurrent processors | No |
 | 1.0.5      | Added OpenTelemetry support   | No |
 | 1.0.4      | Added poisoned message table   | Yes |
@@ -75,6 +77,7 @@ Make sure to check this table before updating the nuget package in your solution
 - **Periodic Querying**: Each instance of your app will periodically query the `consumer_messages` table for a batch of available messages to process.
   - The query takes place at the frequency defined by `ProcessorMaxDelay`, if a full batch is returned it will delay by `ProcessorMinDelay`.
 - **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `DbType.Ef`.
+- **Batching**: Consumer messages will be read from the `consumer_messages` table in batches defined by `ConsumerMessageBatchSize`. 
 - **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure. 
   
 Example
@@ -221,7 +224,7 @@ Stores all scheduled messages awaiting processing by the `ScheduledMessageProces
 Stores consumer messages that have reached `AsyncMonolith.MaxAttempts`, poisoned messages will then need to be manually moved back to the `consumer_messages` table or deleted.
 
 ## ConsumerMessageProcessor
-A background service that periodically fetches available messages from the 'consumer_messages' table in batches. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
+A background service that periodically fetches available messages from the 'consumer_messages' table. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
 
 ## ScheduledMessageProcessor
 A background service that fetches available messages from the `scheduled_messages` table. Once found, each consumer set up to handle the payload is resolved, and a message is written to the `consumer_messages` table for each of them.
