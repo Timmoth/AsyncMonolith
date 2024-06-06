@@ -15,6 +15,9 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 - Keep your infrastructure simple, It only requires a dotnet API and database
 - Makes it very easy to write unit / integration tests
 
+# Support
+Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd be more then happy to jump on a call to debug, help configure or answer any questions.
+
 ## Warnings
 - Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles. For this reason it is reccomended that you only use `DbType.Ef` when you are running a single instance of your app OR for development purposes. Using `DbType.PostgreSql` or `DbType.MySql` will allow AsyncMonolith to lock rows ensuring they are only retrieved and processed once.
 - Test your desired throughput
