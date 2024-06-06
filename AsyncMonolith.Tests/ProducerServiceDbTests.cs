@@ -55,7 +55,6 @@ public class ProducerServiceDbTests : DbTestsBase
     [Theory]
     [InlineData(DbType.MySql)]
     [InlineData(DbType.PostgreSql)]
-    [InlineData(DbType.Ef)]
     public async Task Producer_Inserts_List_Of_ConsumerMessages(DbType dbType)
     {
         var dbContainer = GetTestDbContainer(dbType);
@@ -88,6 +87,70 @@ public class ProducerServiceDbTests : DbTestsBase
             using var scope = serviceProvider.CreateScope();
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
+                var messages = await postDbContext.ConsumerMessages.ToListAsync();
+                messages.Count.Should().Be(2);
+
+                var message1 = Assert.Single(messages.Where(m => m.Id == "fake-id-1"));
+                message1.AvailableAfter.Should().Be(delay);
+                message1.Attempts.Should().Be(0);
+                message1.InsertId.Should().Be("fake-id-0");
+                message1.Id.Should().Be("fake-id-1");
+                message1.ConsumerType = nameof(SingleConsumer);
+                message1.PayloadType = nameof(SingleConsumerMessage);
+                message1.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage1));
+
+                var message2 = Assert.Single(messages.Where(m => m.Id == "fake-id-3"));
+                message2.AvailableAfter.Should().Be(delay);
+                message2.Attempts.Should().Be(0);
+                message2.InsertId.Should().Be("fake-id-2");
+                message2.Id.Should().Be("fake-id-3");
+                message2.ConsumerType = nameof(SingleConsumer);
+                message2.PayloadType = nameof(SingleConsumerMessage);
+                message2.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage2));
+            }
+        }
+        finally
+        {
+            await dbContainer.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task Ef_Producer_Inserts_List_Of_ConsumerMessages()
+    {
+        var dbContainer = GetTestDbContainer(DbType.Ef);
+
+        try
+        {
+            // Given
+            var serviceProvider = await Setup(dbContainer);
+            var scope = serviceProvider.CreateScope();
+            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+
+            var delay = 10;
+            var consumerMessage1 = new SingleConsumerMessage
+            {
+                Name = "test-name"
+            };
+            var consumerMessage2 = new SingleConsumerMessage
+            {
+                Name = "test-name-2"
+            };
+            var insertMessages = new List<SingleConsumerMessage>
+            {
+                consumerMessage1,
+                consumerMessage2
+            };
+
+            // When
+            await producer.ProduceList(insertMessages, delay);
+            await dbContext.SaveChangesAsync();
+
+            // Then
+            using var postScope = serviceProvider.CreateScope();
+            {
+                var postDbContext = postScope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var messages = await postDbContext.ConsumerMessages.ToListAsync();
                 messages.Count.Should().Be(2);
 
