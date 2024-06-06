@@ -37,8 +37,8 @@ public static class StartupExtensions
         if (settings.DbType == DbType.Ef && settings.ScheduledMessageProcessorCount > 1)
             throw new ArgumentException("AsyncMonolithSettings.ScheduledMessageProcessorCount can only be set to 1 when using 'DbType.Ef'.");
 
-        if (settings.ConsumerMessageBatchSize < 1)
-            throw new ArgumentException("AsyncMonolithSettings.ConsumerMessageBatchSize must be at least 1.");
+        if (settings.ProcessorBatchSize < 1)
+            throw new ArgumentException("AsyncMonolithSettings.ProcessorBatchSize must be at least 1.");
 
         services.Configure<AsyncMonolithSettings>(options =>
         {
@@ -46,9 +46,9 @@ public static class StartupExtensions
             options.MaxAttempts = settings.MaxAttempts;
             options.ProcessorMaxDelay = settings.ProcessorMaxDelay;
             options.ProcessorMinDelay = settings.ProcessorMinDelay;
+            options.ProcessorBatchSize = settings.ProcessorBatchSize;
             options.ConsumerMessageProcessorCount = settings.ConsumerMessageProcessorCount;
             options.ScheduledMessageProcessorCount = settings.ScheduledMessageProcessorCount;
-            options.ConsumerMessageBatchSize = settings.ConsumerMessageBatchSize;
             options.DbType = settings.DbType;
         });
 

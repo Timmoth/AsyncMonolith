@@ -13,20 +13,18 @@ namespace AsyncMonolith.Scheduling;
 
 public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
 {
-    private const int MaxChainLength = 10;
-
     private const string PgSql = @"
                     SELECT * 
                     FROM scheduled_messages 
                     WHERE available_after <= @currentTime 
                     FOR UPDATE SKIP LOCKED 
-                    LIMIT 1";
+                    LIMIT @batchSize";
 
     private const string MySql = @"
                     SELECT * 
                     FROM scheduled_messages 
                     WHERE available_after <= @currentTime 
-                    LIMIT 1 
+                    LIMIT @batchSize 
                     FOR UPDATE SKIP LOCKED";
 
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
@@ -45,75 +43,75 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var scheduledMessageChainLength = 0;
-        var deltaDelay = (_options.Value.ProcessorMaxDelay - _options.Value.ProcessorMinDelay) / MaxChainLength;
         while (!stoppingToken.IsCancellationRequested)
         {
+            var delay = _options.Value.ProcessorMaxDelay;
             try
             {
-                if (await ConsumeNext(stoppingToken))
-                    scheduledMessageChainLength++;
-                else
-                    scheduledMessageChainLength = 0;
+                var processedScheduledMessages = await ProcessBatch(stoppingToken);
+
+                if (processedScheduledMessages >= _options.Value.ProcessorBatchSize)
+                {
+                    delay = _options.Value.ProcessorMinDelay;
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error scheduling next message");
             }
 
-            var delay = _options.Value.ProcessorMaxDelay -
-                        deltaDelay * Math.Clamp(scheduledMessageChainLength, 0, MaxChainLength);
             if (delay >= 10) await Task.Delay(delay, stoppingToken);
         }
     }
 
-    internal async Task<bool> ConsumeNext(CancellationToken cancellationToken)
+    internal async Task<int> ProcessBatch(CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
+        var producer = scope.ServiceProvider.GetRequiredService<ProducerService<T>>();
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-
+        var processedScheduledMessageCount = 0;
         await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
             var set = dbContext.Set<ScheduledMessage>();
 
-            var message = _options.Value.DbType switch
+            var messages = _options.Value.DbType switch
             {
                 DbType.Ef => await set
                     .Where(m => m.AvailableAfter <= currentTime)
-                    .OrderBy(m => Guid.NewGuid())
-                    .FirstOrDefaultAsync(cancellationToken),
+                    .OrderBy(m => m.AvailableAfter)
+                    .Take(_options.Value.ProcessorBatchSize)
+                    .ToListAsync(cancellationToken),
                 DbType.PostgreSql => await set
-                    .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime))
-                    .FirstOrDefaultAsync(cancellationToken),
+                    .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime), new NpgsqlParameter("@batchSize", _options.Value.ScheduledMessageBatchSize))
+                    .ToListAsync(cancellationToken),
                 DbType.MySql => await set
-                    .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime))
-                    .FirstOrDefaultAsync(cancellationToken),
+                    .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime), new MySqlParameter("@batchSize", _options.Value.ScheduledMessageBatchSize))
+                    .ToListAsync(cancellationToken),
                 _ => throw new NotImplementedException("Scheduled Message Processor failed, invalid Db Type")
             };
 
-            if (message == null)
+            if (messages.Count == 0)
                 // No messages waiting.
-                return false;
+                return 0;
 
             using var activity =
                 AsyncMonolithInstrumentation.ActivitySource.StartActivity(AsyncMonolithInstrumentation
                     .ProcessScheduledMessageActivity);
-            activity?.AddTag("scheduled_message.id", message.Id);
-            activity?.AddTag("scheduled_message.chron.expression", message.ChronExpression);
-            activity?.AddTag("scheduled_message.chron.timezone", message.ChronTimezone);
-            activity?.AddTag("scheduled_message.payload.type", message.PayloadType);
-            activity?.AddTag("scheduled_message.tag", message.Tag);
+            activity?.AddTag("scheduled_message.count", messages.Count);
 
-            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<T>>();
-            producer.Produce(message);
+            foreach (var message in messages)
+            {
+                producer.Produce(message);
+                message.AvailableAfter = message.GetNextOccurrence(_timeProvider);
+                processedScheduledMessageCount++;
+            }
 
-            message.AvailableAfter = message.GetNextOccurrence(_timeProvider);
             await dbContext.SaveChangesAsync(cancellationToken);
             await dbContextTransaction.CommitAsync(cancellationToken);
-            _logger.LogInformation("Successfully scheduled message of type: '{payload}'", message.PayloadType);
             activity?.SetStatus(ActivityStatusCode.Ok);
+            _logger.LogInformation("Successfully scheduled message");
         }
         catch (Exception)
         {
@@ -121,6 +119,6 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
             throw;
         }
 
-        return true;
+        return processedScheduledMessageCount;
     }
 }

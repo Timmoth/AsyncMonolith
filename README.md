@@ -40,7 +40,7 @@ Make sure to check this table before updating the nuget package in your solution
 
 ## Producing Messages
 
-- **Save Changes**: Ensure that you call `SaveChangesAsync` after producing a message, unless you are producing a message inside a consumer, where it is called automatically.
+- **Save Changes**: Ensure that you call `SaveChangesAsync` after producing a message.
 - **Transactional Persistence**: Produce messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
 
   Example
@@ -56,7 +56,7 @@ Make sure to check this table before updating the nuget package in your solution
 ## Scheduling Messages
 
 - **Frequency**: Scheduled messages will be produced repeatedly at the frequency defined by the given `chron_expression` in the given `chron_timezone`
-- **Save Changes**: Ensure that you call `SaveChangesAsync` after creating a scheduled message, unless you are producing a message inside a consumer, where it is called automatically.
+- **Save Changes**: Ensure that you call `SaveChangesAsync` after creating a scheduled message.
 - **Transactional Persistence**: Schedule messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
 - **Processing**: Schedule messages will be processed sequentially after they are made available by their chron job, at which point they will be turned into Consumer Messages and inserted into the `consumer_messages` table to be handled by their respective consumers.
 
@@ -72,10 +72,8 @@ Make sure to check this table before updating the nuget package in your solution
 ## Consuming Messages
 
 - **Independent Consumption**: Each message will be consumed independently by each consumer set up to handle it.
-- **Periodic Querying**: Each instance of your app will periodically query the `consumer_messages` table for available messages to process.
-  - The query takes place every second and incrementally speeds up for every consecutive message processed.
-  - Once there are no messages left, it will return to sampling the table every second.
-- **Automatic Save Changes**: Each consumer will call `SaveChangesAsync` automatically after the abstract `Consume` method returns.
+- **Periodic Querying**: Each instance of your app will periodically query the `consumer_messages` table for a batch of available messages to process.
+  - The query takes place at the frequency defined by `ProcessorMaxDelay`, if a full batch is returned it will delay by `ProcessorMinDelay`.
 - **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `DbType.Ef`.
 - **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure. 
   
@@ -151,8 +149,9 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
     {
         AttemptDelay = 10, // Seconds before a failed message is retried
         MaxAttempts = 5, // Number of times a failed message is retried 
-        ProcessorMinDelay = 10, // Minimum millisecond delay before the next message is processed
-        ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next message is processed
+        ProcessorMinDelay = 10, // Minimum millisecond delay before the next batch is processed
+        ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next batch is processed
+		ProcessorBatchSize = 5, // The number of messages to process in a single batch
         DbType = DbType.PostgreSql, // Type of database being used (use DbType.Ef if not supported),
         ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
         ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
@@ -181,6 +180,7 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
         public override Task Consume(ValueSubmitted message, CancellationToken cancellationToken)
         {
             ...
+			await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 
@@ -197,6 +197,7 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
     {
         Value = Random.Shared.NextDouble() * 100
     }, "*/5 * * * * *", "UTC");
+	
     await _dbContext.SaveChangesAsync(cancellationToken);
 
 ```
@@ -220,7 +221,7 @@ Stores all scheduled messages awaiting processing by the `ScheduledMessageProces
 Stores consumer messages that have reached `AsyncMonolith.MaxAttempts`, poisoned messages will then need to be manually moved back to the `consumer_messages` table or deleted.
 
 ## ConsumerMessageProcessor
-A background service that periodically fetches available messages from the 'consumer_messages' table. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
+A background service that periodically fetches available messages from the 'consumer_messages' table in batches. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
 
 ## ScheduledMessageProcessor
 A background service that fetches available messages from the `scheduled_messages` table. Once found, each consumer set up to handle the payload is resolved, and a message is written to the `consumer_messages` table for each of them.

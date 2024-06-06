@@ -15,7 +15,7 @@ public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
         _producerService = producerService;
     }
 
-    public override Task Consume(ValueSubmitted message, CancellationToken cancellationToken)
+    public override async Task Consume(ValueSubmitted message, CancellationToken cancellationToken)
     {
         var newValue = new SubmittedValue
         {
@@ -24,7 +24,6 @@ public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
 
         _dbContext.SubmittedValues.Add(newValue);
         _producerService.Produce(new ValuePersisted());
-
-        return Task.CompletedTask;
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

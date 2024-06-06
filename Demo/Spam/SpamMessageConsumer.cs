@@ -1,5 +1,4 @@
 using AsyncMonolith.Consumers;
-using Demo.Counter;
 
 namespace Demo.Spam;
 

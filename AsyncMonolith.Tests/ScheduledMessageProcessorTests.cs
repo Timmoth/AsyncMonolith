@@ -39,13 +39,13 @@ public class ScheduledMessageProcessorTests : DbTestsBase
             FakeTime.SetUtcNow(FakeTime.GetUtcNow().AddSeconds(1));
             var processor = serviceProvider.GetRequiredService<ScheduledMessageProcessor<TestDbContext>>();
 
-            var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
+            var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().BeTrue();
+            consumedMessage.Should().Be(1);
             using (var scope = serviceProvider.CreateScope())
             {
-                var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
+                var postDbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var messages = await postDbContext.ConsumerMessages.ToListAsync();
                 messages.Count.Should().Be(2);
 
@@ -101,13 +101,13 @@ public class ScheduledMessageProcessorTests : DbTestsBase
             // When
             var processor = serviceProvider.GetRequiredService<ScheduledMessageProcessor<TestDbContext>>();
 
-            var consumedMessage = await processor.ConsumeNext(CancellationToken.None);
+            var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().BeTrue();
+            consumedMessage.Should().Be(1);
             using (var scope = serviceProvider.CreateScope())
             {
-                var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
+                var postDbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var message = await postDbContext.ScheduledMessages.FirstOrDefaultAsync();
                 message.Should().NotBeNull();
                 message!.AvailableAfter.Should().Be(FakeTime.GetUtcNow().AddSeconds(1).ToUnixTimeSeconds());

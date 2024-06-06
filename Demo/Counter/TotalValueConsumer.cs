@@ -18,5 +18,6 @@ public class TotalValueConsumer : BaseConsumer<ValuePersisted>
     {
         var totalValue = await _dbContext.SubmittedValues.SumAsync(v => v.Value, cancellationToken);
         _totalValueService.Set(totalValue);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

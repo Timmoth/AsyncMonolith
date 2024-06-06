@@ -12,8 +12,6 @@ namespace AsyncMonolith.Consumers;
 
 public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
 {
-    private const int MaxChainLength = 10;
-
     private const string PgSql = @"
                     SELECT * 
                     FROM consumer_messages 
@@ -49,102 +47,102 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var consumedMessageChainLength = 0;
-        // The amount of time to decrease the delay by per successfully processed message
-        var deltaDelay = (_options.Value.ProcessorMaxDelay - _options.Value.ProcessorMinDelay) / MaxChainLength;
         while (!stoppingToken.IsCancellationRequested)
         {
-            var processedMessageCount = await ProcessBatch(stoppingToken);
-            if (processedMessageCount > 0)
-                consumedMessageChainLength += processedMessageCount;
-            else
-                consumedMessageChainLength = 0;
+            var delay = _options.Value.ProcessorMaxDelay;
+            try
+            {
+                var processedMessageCount = await ProcessBatch(stoppingToken);
+                if (processedMessageCount == _options.Value.ProcessorBatchSize)
+                {
+                    delay = _options.Value.ProcessorMinDelay;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,"Error processing consumer message batch.");
+            }
 
-            var delay = _options.Value.ProcessorMaxDelay -
-                        deltaDelay * Math.Clamp(consumedMessageChainLength, 0, MaxChainLength);
             if (delay >= 10) await Task.Delay(delay, stoppingToken);
         }
     }
 
     internal async Task<int> ProcessBatch(CancellationToken stoppingToken)
     {
-        var processedMessageCount = 0;
-
-        try
+        using var scope = _scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<T>();
+        await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(stoppingToken);
+        var consumerSet = dbContext.Set<ConsumerMessage>();
+        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
+        var messages = _options.Value.DbType switch
         {
-            using var scope = _scopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<T>();
-            await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(stoppingToken);
-            var consumerSet = dbContext.Set<ConsumerMessage>();
-            var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-            var messages = _options.Value.DbType switch
-            {
-                DbType.Ef => await consumerSet
-                    .Where(m => m.AvailableAfter <= currentTime)
-                    .OrderBy(m => m.CreatedAt)
-                    .Take(_options.Value.ConsumerMessageBatchSize)
-                    .ToListAsync(stoppingToken),
-                DbType.PostgreSql => await consumerSet
-                    .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime), new NpgsqlParameter("@batchSize", _options.Value.ConsumerMessageBatchSize))
-                    .ToListAsync(stoppingToken),
-                DbType.MySql => await consumerSet
-                    .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime), new MySqlParameter("@batchSize", _options.Value.ConsumerMessageBatchSize))
-                    .ToListAsync(stoppingToken),
-                _ => throw new NotImplementedException("Consumer failed, invalid Db Type")
-            };
+            DbType.Ef => await consumerSet
+                .Where(m => m.AvailableAfter <= currentTime)
+                .OrderBy(m => m.CreatedAt)
+                .Take(_options.Value.ProcessorBatchSize)
+                .ToListAsync(stoppingToken),
+            DbType.PostgreSql => await consumerSet
+                .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime), new NpgsqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+                .ToListAsync(stoppingToken),
+            DbType.MySql => await consumerSet
+                .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime), new MySqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+                .ToListAsync(stoppingToken),
+            _ => throw new NotImplementedException("Consumer failed, invalid Db Type")
+        };
 
-            var tasks = new List<Task<(ConsumerMessage, bool)>>();
-            foreach (var message in messages)
+        if (messages.Count == 0)
+        {
+            return 0;
+        }
+
+        var tasks = new List<Task<(ConsumerMessage, bool)>>();
+        foreach (var message in messages)
+        {
+            tasks.Add(Process(message, stoppingToken));
+        }
+
+        var processedMessageCount = 0;
+        foreach (var (message, success) in await Task.WhenAll(tasks))
+        {
+            if (success)
             {
-                tasks.Add(Process(message, stoppingToken));
+                processedMessageCount++;
+                // Remove the message
+                consumerSet.Remove(message);
             }
-
-            foreach (var (message, success) in await Task.WhenAll(tasks))
+            else
             {
-                if (success)
+                // Increment the number of attempts
+                message.Attempts++;
+                if (message.Attempts < _options.Value.MaxAttempts)
                 {
-                    processedMessageCount++;
-                    // Remove the message
-                    consumerSet.Remove(message);
+                    // Retry the message after a delay
+                    message.AvailableAfter = _timeProvider.GetUtcNow().ToUnixTimeSeconds() + _options.Value.AttemptDelay;
                 }
                 else
                 {
-                    // Increment the number of attempts
-                    message.Attempts++;
-                    if (message.Attempts < _options.Value.MaxAttempts)
+                    // Move the message into the poisoned message table
+                    consumerSet.Remove(message);
+                    var poisonedSet = dbContext.Set<PoisonedMessage>();
+                    poisonedSet.Add(new PoisonedMessage
                     {
-                        // Retry the message after a delay
-                        message.AvailableAfter = _timeProvider.GetUtcNow().ToUnixTimeSeconds() + _options.Value.AttemptDelay;
-                    }
-                    else
-                    {
-                        // Move the message into the poisoned message table
-                        consumerSet.Remove(message);
-                        var poisonedSet = dbContext.Set<PoisonedMessage>();
-                        poisonedSet.Add(new PoisonedMessage
-                        {
-                            Id = message.Id,
-                            Attempts = message.Attempts,
-                            AvailableAfter = message.AvailableAfter,
-                            ConsumerType = message.ConsumerType,
-                            CreatedAt = message.CreatedAt,
-                            Payload = message.Payload,
-                            PayloadType = message.PayloadType
-                        });
-                    }
+                        Id = message.Id,
+                        Attempts = message.Attempts,
+                        AvailableAfter = message.AvailableAfter,
+                        ConsumerType = message.ConsumerType,
+                        CreatedAt = message.CreatedAt,
+                        Payload = message.Payload,
+                        PayloadType = message.PayloadType
+                    });
                 }
             }
-
-            // Save changes to the message tables
-            await dbContext.SaveChangesAsync(stoppingToken);
-
-            // Commit transaction
-            await dbContextTransaction.CommitAsync(stoppingToken);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error consuming message");
-        }
+
+        // Save changes to the message tables
+        await dbContext.SaveChangesAsync(stoppingToken);
+
+        // Commit transaction
+        await dbContextTransaction.CommitAsync(stoppingToken);
 
         return processedMessageCount;
     }
@@ -159,11 +157,10 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         activity?.AddTag("consumer_message.payload.type", message.PayloadType);
         activity?.AddTag("consumer_message.type", message.ConsumerType);
 
-        using var scope = _scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<T>();
-
         try
         {
+            using var scope = _scopeFactory.CreateScope();
+
             // Resolve the consumer
             if (scope.ServiceProvider.GetRequiredService(_consumerRegistry.ResolveConsumerType(message))
                 is not IConsumer consumer)
@@ -171,8 +168,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
 
             // Execute the consumer
             await consumer.Consume(message, cancellationToken);
-            // Save consumer changes
-            await dbContext.SaveChangesAsync(cancellationToken);
+
             activity?.SetStatus(ActivityStatusCode.Ok);
             _logger.LogInformation("Successfully processed message for consumer: '{id}'", message.ConsumerType);
             return (message, true);
