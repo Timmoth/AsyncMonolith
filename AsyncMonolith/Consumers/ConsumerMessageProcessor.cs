@@ -5,29 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySqlConnector;
-using Npgsql;
 
 namespace AsyncMonolith.Consumers;
 
 public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
 {
-    private const string PgSql = @"
-                    SELECT * 
-                    FROM consumer_messages 
-                    WHERE available_after <= @currentTime 
-                    ORDER BY created_at 
-                    FOR UPDATE SKIP LOCKED 
-                    LIMIT @batchSize";
-
-    private const string MySql = @"
-                    SELECT * 
-                    FROM consumer_messages 
-                    WHERE available_after <= @currentTime 
-                    ORDER BY created_at 
-                    LIMIT @batchSize 
-                    FOR UPDATE SKIP LOCKED";
-
+    private readonly ConsumerMessageFetcher _consumerMessageFetcher;
     private readonly ConsumerRegistry _consumerRegistry;
     private readonly ILogger<ConsumerMessageProcessor<T>> _logger;
     private readonly IOptions<AsyncMonolithSettings> _options;
@@ -36,13 +19,15 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
 
     public ConsumerMessageProcessor(ILogger<ConsumerMessageProcessor<T>> logger,
         TimeProvider timeProvider,
-        ConsumerRegistry consumerRegistry, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory)
+        ConsumerRegistry consumerRegistry, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory,
+        ConsumerMessageFetcher consumerMessageFetcher)
     {
         _logger = logger;
         _timeProvider = timeProvider;
         _consumerRegistry = consumerRegistry;
         _options = options;
         _scopeFactory = scopeFactory;
+        _consumerMessageFetcher = consumerMessageFetcher;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -54,13 +39,11 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             {
                 var processedMessageCount = await ProcessBatch(stoppingToken);
                 if (processedMessageCount == _options.Value.ProcessorBatchSize)
-                {
                     delay = _options.Value.ProcessorMinDelay;
-                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,"Error processing consumer message batch.");
+                _logger.LogError(ex, "Error processing consumer message batch.");
             }
 
             if (delay >= 10) await Task.Delay(delay, stoppingToken);
@@ -74,36 +57,15 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(stoppingToken);
         var consumerSet = dbContext.Set<ConsumerMessage>();
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-        var messages = _options.Value.DbType switch
-        {
-            DbType.Ef => await consumerSet
-                .Where(m => m.AvailableAfter <= currentTime)
-                .OrderBy(m => m.CreatedAt)
-                .Take(_options.Value.ProcessorBatchSize)
-                .ToListAsync(stoppingToken),
-            DbType.PostgreSql => await consumerSet
-                .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime), new NpgsqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
-                .ToListAsync(stoppingToken),
-            DbType.MySql => await consumerSet
-                .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime), new MySqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
-                .ToListAsync(stoppingToken),
-            _ => throw new NotImplementedException("Consumer failed, invalid Db Type")
-        };
+        var messages = await _consumerMessageFetcher.Fetch(consumerSet, currentTime, stoppingToken);
 
-        if (messages.Count == 0)
-        {
-            return 0;
-        }
+        if (messages.Count == 0) return 0;
 
         var tasks = new List<Task<(ConsumerMessage, bool)>>();
-        foreach (var message in messages)
-        {
-            tasks.Add(Process(message, stoppingToken));
-        }
+        foreach (var message in messages) tasks.Add(Process(message, stoppingToken));
 
         var processedMessageCount = 0;
         foreach (var (message, success) in await Task.WhenAll(tasks))
-        {
             if (success)
             {
                 processedMessageCount++;
@@ -117,7 +79,8 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                 if (message.Attempts < _options.Value.MaxAttempts)
                 {
                     // Retry the message after a delay
-                    message.AvailableAfter = _timeProvider.GetUtcNow().ToUnixTimeSeconds() + _options.Value.AttemptDelay;
+                    message.AvailableAfter =
+                        _timeProvider.GetUtcNow().ToUnixTimeSeconds() + _options.Value.AttemptDelay;
                 }
                 else
                 {
@@ -136,7 +99,6 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                     });
                 }
             }
-        }
 
         // Save changes to the message tables
         await dbContext.SaveChangesAsync(stoppingToken);
@@ -184,6 +146,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                     ? "Failed to consume message on attempt {attempt}, moving to poisoned messages."
                     : "Failed to consume message on attempt {attempt}, will retry.", message.Attempts);
         }
+
         return (message, false);
     }
 }

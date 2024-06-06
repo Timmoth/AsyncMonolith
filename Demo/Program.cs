@@ -1,4 +1,5 @@
 using System.Reflection;
+using AsyncMonolith.PostgreSql;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Demo.Counter;
@@ -34,7 +35,7 @@ public class Program
 
 
         builder.Services.AddSingleton(TimeProvider.System);
-        builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(),
+        builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(),
             new AsyncMonolithSettings
             {
                 AttemptDelay = 10,
@@ -43,8 +44,7 @@ public class Program
                 ProcessorMaxDelay = 100,
                 ConsumerMessageProcessorCount = 1,
                 ScheduledMessageProcessorCount = 1,
-                ProcessorBatchSize = 10,
-                DbType = DbType.PostgreSql
+                ProcessorBatchSize = 20
             });
 
         builder.Services.AddControllers();

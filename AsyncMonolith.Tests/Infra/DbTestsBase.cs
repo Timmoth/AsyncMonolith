@@ -19,10 +19,7 @@ public abstract class DbTestsBase
 
         dbContainer.AddDb(services);
 
-        var (fakeTime, invocations) = services.AddTestServices(new AsyncMonolithSettings
-        {
-            DbType = dbContainer.DbType
-        });
+        var (fakeTime, invocations) = services.AddTestServices(dbContainer.DbType, AsyncMonolithSettings.Default);
         TestConsumerInvocations = invocations;
         FakeTime = fakeTime;
 
@@ -46,5 +43,16 @@ public abstract class DbTestsBase
         yield return new object[] { new MySqlTestDbContainer() };
         yield return new object[] { new PostgreSqlTestDbContainer() };
         yield return new object[] { new EfTestDbContainer() };
+    }
+
+    public static TestDbContainerBase GetTestDbContainer(DbType dbType)
+    {
+        return dbType switch
+        {
+            DbType.Ef => new EfTestDbContainer(),
+            DbType.MySql => new MySqlTestDbContainer(),
+            DbType.PostgreSql => new PostgreSqlTestDbContainer(),
+            _ => throw new ArgumentOutOfRangeException(nameof(dbType), dbType, null)
+        };
     }
 }

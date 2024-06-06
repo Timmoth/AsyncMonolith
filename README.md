@@ -19,7 +19,7 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd be more then happy to jump on a call to debug, help configure or answer any questions.
 
 ## Warnings
-- Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles. For this reason it is reccomended that you only use `DbType.Ef` when you are running a single instance of your app OR for development purposes. Using `DbType.PostgreSql` or `DbType.MySql` will allow AsyncMonolith to lock rows ensuring they are only retrieved and processed once.
+- Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles. For this reason it is reccomended that you only use `AsyncMonolith.Ef` when you are running a single instance of your app OR for development purposes. Using `AsyncMonlith.PostgreSql` or `AsyncMonolith.MySql` will allow the system to lock rows ensuring they are only retrieved and processed once.
 - Test your desired throughput
 
 ### 'Don't use a database as a queue' - maybe
@@ -31,6 +31,7 @@ Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd b
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an `dotnet ef migration`.
 | Version      | Description | Migration Required |
 | ----------- | ----------- |----------- |
+| 1.0.9      | Split out Ef, PostgreSql, MySql into seperate packages | Yes |
 | 1.0.8      | Added scheduled message batching | No |
 | 1.0.7      | Added consumer message batching | No |
 | 1.0.6      | Added concurrent processors | No |
@@ -45,23 +46,45 @@ Make sure to check this table before updating the nuget package in your solution
 
 ## Producing Messages
 
-- **Save Changes**: Ensure that you call `SaveChangesAsync` after producing a message.
 - **Transactional Persistence**: Produce messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
+- **Deduplication**: By specifying a `insert_id` when producing messages the system ensures only one message with the same `insert_id` and `consumer_type` will be in the table at a given time. This is useful when you need a process to take place an amount of time after the first action in a sequence occured.
 
-  Example
+### Ef Example
+
+The produce method when using pure Ef code will just add the messages directly to your DB context, calling `SaveChangesAsync` will ensure that the messages are inserted in the same transaction as your other domain updates.
+
   ```csharp
   // Publish 'UserDeleted' to be processed in 60 seconds
-    _producerService.Produce(new UserDeleted()
+    await _producerService.Produce(new UserDeleted()
     {
       Id = id
     }, 60);
   await _dbContext.SaveChangesAsync(cancellationToken);
   ```
   
+### MySql / PostgreSql Example
+
+The produce method when using MySql or PostgreSQL makes use of `ExecuteSqlRawAsync`, if you want the messages to be inserted transactionally with your domain changes you must wrap all the changes in an explicit transaction.
+
+  ```csharp
+    await using var dbContextTransaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+	...
+	
+	// Publish 'UserDeleted' to be processed in 60 seconds
+    await _producerService.Produce(new UserDeleted()
+    {
+      Id = id
+    }, 60);
+	
+  await _dbContext.SaveChangesAsync(cancellationToken);
+  await dbContextTransaction.CommitAsync(stoppingToken);
+
+  ```
+  
 ## Scheduling Messages
 
-- **Frequency**: Scheduled messages will be produced repeatedly at the frequency defined by the given `chron_expression` in the given `chron_timezone`
-- **Save Changes**: Ensure that you call `SaveChangesAsync` after creating a scheduled message.
+- **Frequency**: Scheduled messages will be produced periodically by the `chron_expression` in the given `chron_timezone`
 - **Transactional Persistence**: Schedule messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
 - **Processing**: Schedule messages will be processed sequentially after they are made available by their chron job, at which point they will be turned into Consumer Messages and inserted into the `consumer_messages` table to be handled by their respective consumers.
 
@@ -79,7 +102,7 @@ Make sure to check this table before updating the nuget package in your solution
 - **Independent Consumption**: Each message will be consumed independently by each consumer set up to handle it.
 - **Periodic Querying**: Each instance of your app will periodically query the `consumer_messages` table for a batch of available messages to process.
   - The query takes place at the frequency defined by `ProcessorMaxDelay`, if a full batch is returned it will delay by `ProcessorMinDelay`.
-- **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `DbType.Ef`.
+- **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `AsyncMonolith.Ef`.
 - **Batching**: Consumer messages will be read from the `consumer_messages` table in batches defined by `ConsumerMessageBatchSize`. 
 - **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure. 
   
@@ -97,6 +120,7 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
     public override Task Consume(UserDeleted message, CancellationToken cancellationToken)
     {
         ...
+		await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
 ```
@@ -133,10 +157,14 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
 
 ```csharp
 
-    // Install AsyncMonolith
+    // Install the core package
     dotnet add package AsyncMonolith
+	// Install the Db specific package
+    dotnet add package AsyncMonolith.Ef
+    dotnet add package AsyncMonolith.MySql
+    dotnet add package AsyncMonolith.PostgreSql
 
-    // Add Db Sets
+    // Add Db Sets, and configure ModelBuilder
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
@@ -146,24 +174,34 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
         public DbSet<ConsumerMessage> ConsumerMessages { get; set; } = default!;
         public DbSet<PoisonedMessage> PoisonedMessages { get; set; } = default!;
         public DbSet<ScheduledMessage> ScheduledMessages { get; set; } = default!;
+		
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			modelBuilder.ConfigureAsyncMonolith();
+			base.OnModelCreating(modelBuilder);
+		}
     }
 
-    // Register services
+    // Register required services
     builder.Services.AddLogging();
     builder.Services.AddSingleton(TimeProvider.System);
-    builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(), new AsyncMonolithSettings()
+	
+	// Register AsyncMonolith using either:
+	// services.AddEfAsyncMonolith
+	// services.AddMySqlAsyncMonolith
+	// services.AddPostgreSqlAsyncMonolith
+	
+    builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(), new AsyncMonolithSettings()
     {
         AttemptDelay = 10, // Seconds before a failed message is retried
         MaxAttempts = 5, // Number of times a failed message is retried 
         ProcessorMinDelay = 10, // Minimum millisecond delay before the next batch is processed
         ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next batch is processed
-	ProcessorBatchSize = 5, // The number of messages to process in a single batch
-        DbType = DbType.PostgreSql, // Type of database being used (use DbType.Ef if not supported),
+		ProcessorBatchSize = 5, // The number of messages to process in a single batch
         ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
         ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
     });
-    builder.Services.AddControllers();
-
+	
     // Define Consumer Payloads
     public class ValueSubmitted : IConsumerPayload
     {
@@ -194,7 +232,7 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
     private readonly ProducerService<ApplicationDbContext> _producerService;
     private readonly ScheduledMessageService<ApplicationDbContext> _scheduledMessageService;
 
-    _producerService.Produce(new ValueSubmitted()
+    await _producerService.Produce(new ValueSubmitted()
     {
       Value = newValue
     });
@@ -237,7 +275,7 @@ Used to resolve all the consumers able to process a given payload, and resolve i
 
 ## Notes
 - The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another batch of messages. If a full batch is fetched, the delay is reduced to `AsyncMonolithSettings.ProcessorMinDelay` seconds between cycles.
-- Configuring concurrent consumer / scheduled message processors will throw a startup exception when using `DbType.Ef` (due to no built in support for row level locking)
+- Configuring concurrent consumer / scheduled message processors will throw a startup exception when using AsyncMonolith.Ef (due to no built in support for row level locking)
 
 ## Contributing
 

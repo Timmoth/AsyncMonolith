@@ -1,5 +1,4 @@
-﻿using AsyncMonolith.Scheduling;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -7,9 +6,9 @@ namespace AsyncMonolith.Consumers;
 
 public class ConsumerMessageProcessorFactory<T> : IHostedService where T : DbContext
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly int _instances;
     private readonly List<IHostedService> _hostedServices;
+    private readonly int _instances;
+    private readonly IServiceProvider _serviceProvider;
 
     public ConsumerMessageProcessorFactory(IServiceProvider serviceProvider, int instances)
     {
@@ -30,9 +29,6 @@ public class ConsumerMessageProcessorFactory<T> : IHostedService where T : DbCon
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        foreach (var hostedService in _hostedServices)
-        {
-            await hostedService.StopAsync(cancellationToken);
-        }
+        foreach (var hostedService in _hostedServices) await hostedService.StopAsync(cancellationToken);
     }
 }

@@ -1,4 +1,8 @@
 using System.Reflection;
+using AsyncMonolith.Consumers;
+using AsyncMonolith.Ef;
+using AsyncMonolith.MySql;
+using AsyncMonolith.PostgreSql;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
@@ -18,7 +22,7 @@ public static class TestServiceHelpers
     }
 
     public static (FakeTimeProvider fakeTime, TestConsumerInvocations invocations) AddTestServices(
-        this ServiceCollection services, AsyncMonolithSettings settings)
+        this ServiceCollection services, DbType dbType, AsyncMonolithSettings settings)
     {
         var fakeTime = new FakeTimeProvider(DateTimeOffset.Parse("2020-08-31T10:00:00.0000000Z"));
         services.AddSingleton<TimeProvider>(fakeTime);
@@ -30,13 +34,31 @@ public static class TestServiceHelpers
             options.MaxAttempts = settings.MaxAttempts;
             options.ProcessorMaxDelay = settings.ProcessorMaxDelay;
             options.ProcessorMinDelay = settings.ProcessorMinDelay;
-            options.DbType = settings.DbType;
         });
 
         services.Register(Assembly.GetExecutingAssembly());
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
-        services.AddScoped<ProducerService<TestDbContext>>();
         services.AddScoped<ScheduleService<TestDbContext>>();
+
+        switch (dbType)
+        {
+            case DbType.Ef:
+                services.AddScoped<ProducerService<TestDbContext>, EfProducerService<TestDbContext>>();
+                services.AddSingleton<ConsumerMessageFetcher, EfConsumerMessageFetcher>();
+                services.AddSingleton<ScheduledMessageFetcher, EfScheduledMessageFetcher>();
+                break;
+            case DbType.MySql:
+                services.AddScoped<ProducerService<TestDbContext>, MySqlProducerService<TestDbContext>>();
+                services.AddSingleton<ConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
+                services.AddSingleton<ScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
+                break;
+            case DbType.PostgreSql:
+                services.AddScoped<ProducerService<TestDbContext>, PostgreSqlProducerService<TestDbContext>>();
+                services.AddSingleton<ConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
+                services.AddSingleton<ScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
+                break;
+        }
+
 
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
 

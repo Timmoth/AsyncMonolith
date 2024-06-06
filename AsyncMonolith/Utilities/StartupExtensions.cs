@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using AsyncMonolith.Consumers;
-using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +8,14 @@ namespace AsyncMonolith.Utilities;
 
 public static class StartupExtensions
 {
-    public static void AddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly,
+    public static void ConfigureAsyncMonolith(this ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ConsumerMessage>()
+            .HasIndex(e => new { e.InsertId, e.ConsumerType })
+            .IsUnique();
+    }
+
+    public static void InternalAddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly,
         AsyncMonolithSettings? settings = null) where T : DbContext
     {
         settings ??= AsyncMonolithSettings.Default;
@@ -29,13 +35,9 @@ public static class StartupExtensions
 
         if (settings.ConsumerMessageProcessorCount < 1)
             throw new ArgumentException("AsyncMonolithSettings.ConsumerMessageProcessorCount must be at least 1.");
-        if (settings.DbType == DbType.Ef && settings.ConsumerMessageProcessorCount > 1)
-            throw new ArgumentException("AsyncMonolithSettings.ConsumerMessageProcessorCount can only be set to 1 when using 'DbType.Ef'.");
 
         if (settings.ScheduledMessageProcessorCount < 1)
             throw new ArgumentException("AsyncMonolithSettings.ScheduledMessageProcessorCount must be at least 1.");
-        if (settings.DbType == DbType.Ef && settings.ScheduledMessageProcessorCount > 1)
-            throw new ArgumentException("AsyncMonolithSettings.ScheduledMessageProcessorCount can only be set to 1 when using 'DbType.Ef'.");
 
         if (settings.ProcessorBatchSize < 1)
             throw new ArgumentException("AsyncMonolithSettings.ProcessorBatchSize must be at least 1.");
@@ -49,32 +51,23 @@ public static class StartupExtensions
             options.ProcessorBatchSize = settings.ProcessorBatchSize;
             options.ConsumerMessageProcessorCount = settings.ConsumerMessageProcessorCount;
             options.ScheduledMessageProcessorCount = settings.ScheduledMessageProcessorCount;
-            options.DbType = settings.DbType;
         });
 
         services.Register(assembly);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
-        services.AddScoped<ProducerService<T>>();
         services.AddScoped<ScheduleService<T>>();
+
         if (settings.ConsumerMessageProcessorCount > 1)
-        {
             services.AddHostedService(serviceProvider =>
                 new ConsumerMessageProcessorFactory<T>(serviceProvider, settings.ConsumerMessageProcessorCount));
-        }
         else
-        {
             services.AddHostedService<ConsumerMessageProcessor<T>>();
-        }
 
         if (settings.ScheduledMessageProcessorCount > 1)
-        {
             services.AddHostedService(serviceProvider =>
                 new ScheduledMessageProcessorFactory<T>(serviceProvider, settings.ScheduledMessageProcessorCount));
-        }
         else
-        {
             services.AddHostedService<ScheduledMessageProcessor<T>>();
-        }
     }
 
     public static void Register(this IServiceCollection services, Assembly assembly)

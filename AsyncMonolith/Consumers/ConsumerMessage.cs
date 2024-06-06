@@ -35,4 +35,8 @@ public sealed class ConsumerMessage
     [JsonPropertyName("payload")]
     [Column("payload")]
     public required string Payload { get; set; }
+
+    [JsonPropertyName("insert_id")]
+    [Column("insert_id")]
+    public required string InsertId { get; set; }
 }

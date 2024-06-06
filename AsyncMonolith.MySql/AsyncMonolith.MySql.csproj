@@ -7,33 +7,31 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<LangVersion>preview</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>AsyncMonolith</PackageId>
+		<PackageId>AsyncMonolith.MySql</PackageId>
 		<PackageVersion>1.0.9</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
-		<Description>Messaging library for monolithic dotnet apps</Description>
+		<Description>MySql interface for AsyncMonolith</Description>
 		<PackageProjectUrl>https://github.com/Timmoth/AsyncMonolith</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
-		<Title>Async Monolith</Title>
+		<Title>AsyncMonolith.MySql</Title>
 		<PackageIcon>logo.png</PackageIcon>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Cronos" Version="0.8.4" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
-	</ItemGroup>
-	<ItemGroup>
-		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-			<_Parameter1>AsyncMonolith.Tests</_Parameter1>
-		</AssemblyAttribute>
-	</ItemGroup>
-	<ItemGroup>
-		<None Update="logo.png">
+		<None Include="..\AsyncMonolith\logo.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
+	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
+  </ItemGroup>
+
 </Project>

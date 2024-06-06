@@ -15,9 +15,11 @@
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
 		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.8.1" />
 		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.8.1" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\AsyncMonolith.PostgreSql\AsyncMonolith.PostgreSql.csproj" />
 	  <ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
 	</ItemGroup>
 

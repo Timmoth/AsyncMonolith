@@ -23,7 +23,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
 
-                producer.Produce(new SingleConsumerMessage
+                await producer.Produce(new SingleConsumerMessage
                 {
                     Name = "test-name"
                 });
@@ -60,7 +60,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
 
-                producer.Produce(new SingleConsumerMessage
+                await producer.Produce(new SingleConsumerMessage
                 {
                     Name = "test-name"
                 }, FakeTime.GetUtcNow().ToUnixTimeSeconds() + 100);
@@ -97,7 +97,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
 
-                producer.Produce(new ExceptionConsumerMessage
+                await producer.Produce(new ExceptionConsumerMessage
                 {
                     Name = "test-name"
                 });
@@ -138,7 +138,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
 
-                producer.Produce(new ExceptionConsumerMessage
+                await producer.Produce(new ExceptionConsumerMessage
                 {
                     Name = "test-name"
                 });
@@ -180,7 +180,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
 
-                producer.Produce(new ExceptionConsumerMessage
+                await producer.Produce(new ExceptionConsumerMessage
                 {
                     Name = "test-name"
                 });
@@ -232,7 +232,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
 
-                producer.Produce(new SingleConsumerMessage
+                await producer.Produce(new SingleConsumerMessage
                 {
                     Name = "test-name"
                 });

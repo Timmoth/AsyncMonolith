@@ -1,4 +1,3 @@
-using AsyncMonolith.Utilities;
 using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.DependencyInjection;
 

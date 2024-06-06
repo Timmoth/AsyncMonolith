@@ -6,39 +6,26 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySqlConnector;
-using Npgsql;
 
 namespace AsyncMonolith.Scheduling;
 
 public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
 {
-    private const string PgSql = @"
-                    SELECT * 
-                    FROM scheduled_messages 
-                    WHERE available_after <= @currentTime 
-                    FOR UPDATE SKIP LOCKED 
-                    LIMIT @batchSize";
-
-    private const string MySql = @"
-                    SELECT * 
-                    FROM scheduled_messages 
-                    WHERE available_after <= @currentTime 
-                    LIMIT @batchSize 
-                    FOR UPDATE SKIP LOCKED";
-
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
+    private readonly ScheduledMessageFetcher _messageFetcher;
     private readonly IOptions<AsyncMonolithSettings> _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
 
     public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger,
-        TimeProvider timeProvider, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory)
+        TimeProvider timeProvider, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory,
+        ScheduledMessageFetcher messageFetcher)
     {
         _logger = logger;
         _timeProvider = timeProvider;
         _options = options;
         _scopeFactory = scopeFactory;
+        _messageFetcher = messageFetcher;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -51,9 +38,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
                 var processedScheduledMessages = await ProcessBatch(stoppingToken);
 
                 if (processedScheduledMessages >= _options.Value.ProcessorBatchSize)
-                {
                     delay = _options.Value.ProcessorMinDelay;
-                }
             }
             catch (Exception ex)
             {
@@ -76,21 +61,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
         {
             var set = dbContext.Set<ScheduledMessage>();
 
-            var messages = _options.Value.DbType switch
-            {
-                DbType.Ef => await set
-                    .Where(m => m.AvailableAfter <= currentTime)
-                    .OrderBy(m => m.AvailableAfter)
-                    .Take(_options.Value.ProcessorBatchSize)
-                    .ToListAsync(cancellationToken),
-                DbType.PostgreSql => await set
-                    .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime), new NpgsqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
-                    .ToListAsync(cancellationToken),
-                DbType.MySql => await set
-                    .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime), new MySqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
-                    .ToListAsync(cancellationToken),
-                _ => throw new NotImplementedException("Scheduled Message Processor failed, invalid Db Type")
-            };
+            var messages = await _messageFetcher.Fetch(set, currentTime, cancellationToken);
 
             if (messages.Count == 0)
                 // No messages waiting.

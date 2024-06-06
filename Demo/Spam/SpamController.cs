@@ -10,7 +10,9 @@ public class SpamController : ControllerBase
     private readonly ApplicationDbContext _dbContext;
     private readonly ProducerService<ApplicationDbContext> _producerService;
     private readonly TimeProvider _timeProvider;
-    public SpamController(ProducerService<ApplicationDbContext> producerService, ApplicationDbContext dbContext, TimeProvider timeProvider)
+
+    public SpamController(ProducerService<ApplicationDbContext> producerService, ApplicationDbContext dbContext,
+        TimeProvider timeProvider)
     {
         _producerService = producerService;
         _dbContext = dbContext;
@@ -24,7 +26,8 @@ public class SpamController : ControllerBase
         if (SpamResultService.Start != null && SpamResultService.End == null)
         {
             var duration = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds() - SpamResultService.Start;
-            return Ok($"Running. consumed: {SpamResultService.Count} / {count}. {duration / (SpamResultService.Count + 1)}ms per message");
+            return Ok(
+                $"Running. consumed: {SpamResultService.Count} / {count}. {duration / (SpamResultService.Count + 1)}ms per message");
         }
 
         if (SpamResultService.Start != null && SpamResultService.End != null)
@@ -32,29 +35,31 @@ public class SpamController : ControllerBase
             var duration = SpamResultService.End - SpamResultService.Start;
             SpamResultService.Start = null;
             SpamResultService.End = null;
-            return Ok($"Finished consumed: {SpamResultService.Count} / {count}. {duration / (SpamResultService.Count + 1)}ms per message");
+            return Ok(
+                $"Finished consumed: {SpamResultService.Count} / {count}. {duration / (SpamResultService.Count + 1)}ms per message");
         }
 
         SpamResultService.Count = 0;
+
+        var messages = new List<SpamMessage>();
         for (var i = 0; i < count - 1; i++)
-        {
-            _producerService.Produce(new SpamMessage()
+            messages.Add(new SpamMessage
             {
-                Last = false,
+                Last = false
             });
-        }
+
+        await _producerService.ProduceList(messages);
         await _dbContext.SaveChangesAsync(cancellationToken);
         SpamResultService.Start = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
 
         await Task.Delay(1000, cancellationToken);
-        _producerService.Produce(new SpamMessage()
+        await _producerService.Produce(new SpamMessage
         {
-            Last = true,
+            Last = true
         });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok("Started.");
     }
-
 }

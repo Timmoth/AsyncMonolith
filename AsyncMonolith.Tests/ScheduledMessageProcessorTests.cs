@@ -52,7 +52,8 @@ public class ScheduledMessageProcessorTests : DbTestsBase
                 var message1 = Assert.Single(messages.Where(m => m.ConsumerType == nameof(MultiConsumer1)));
                 message1.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds());
                 message1.Attempts.Should().Be(0);
-                message1.Id.Should().Be("fake-id-1");
+                message1.InsertId.Should().Be("fake-id-1");
+                message1.Id.Should().Be("fake-id-2");
                 message1.ConsumerType = nameof(MultiConsumer1);
                 message1.PayloadType = nameof(MultiConsumerMessage);
                 message1.Payload.Should().Be(serializedMessage);
@@ -60,7 +61,8 @@ public class ScheduledMessageProcessorTests : DbTestsBase
                 var message2 = Assert.Single(messages.Where(m => m.ConsumerType == nameof(MultiConsumer2)));
                 message2.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds());
                 message2.Attempts.Should().Be(0);
-                message2.Id.Should().Be("fake-id-2");
+                message2.InsertId.Should().Be("fake-id-1");
+                message2.Id.Should().Be("fake-id-3");
                 message2.ConsumerType = nameof(MultiConsumer2);
                 message2.PayloadType = nameof(MultiConsumerMessage);
                 message2.Payload.Should().Be(serializedMessage);

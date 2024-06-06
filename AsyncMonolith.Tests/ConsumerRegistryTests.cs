@@ -11,7 +11,7 @@ public class ConsumerRegistryTests
     private ServiceProvider Setup()
     {
         var services = new ServiceCollection();
-        services.AddTestServices(AsyncMonolithSettings.Default);
+        services.AddTestServices(DbType.Ef, AsyncMonolithSettings.Default);
         services.AddInMemoryDb();
 
         return services.BuildServiceProvider();
@@ -47,7 +47,8 @@ public class ConsumerRegistryTests
             AvailableAfter = default!,
             PayloadType = default!,
             Payload = default!,
-            Attempts = default
+            Attempts = default,
+            InsertId = null
         });
 
         // Then

@@ -11,6 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo", "Demo\Demo.csproj", 
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{806BECFB-C02C-4502-BB1D-2CC45AD361B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncMonolith.PostgreSql", "AsyncMonolith.PostgreSql\AsyncMonolith.PostgreSql.csproj", "{270D9590-C9A5-4E9A-99F4-523623DDD1BE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncMonolith.Ef", "AsyncMonolith.Ef\AsyncMonolith.Ef.csproj", "{4280E7D0-D9EC-4E2E-9FDF-FB248815E1C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncMonolith.MySql", "AsyncMonolith.MySql\AsyncMonolith.MySql.csproj", "{2F06268B-3C51-43B4-BC23-F57488FB7D54}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +39,18 @@ Global
 		{806BECFB-C02C-4502-BB1D-2CC45AD361B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{806BECFB-C02C-4502-BB1D-2CC45AD361B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{806BECFB-C02C-4502-BB1D-2CC45AD361B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{270D9590-C9A5-4E9A-99F4-523623DDD1BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{270D9590-C9A5-4E9A-99F4-523623DDD1BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{270D9590-C9A5-4E9A-99F4-523623DDD1BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{270D9590-C9A5-4E9A-99F4-523623DDD1BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4280E7D0-D9EC-4E2E-9FDF-FB248815E1C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4280E7D0-D9EC-4E2E-9FDF-FB248815E1C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4280E7D0-D9EC-4E2E-9FDF-FB248815E1C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4280E7D0-D9EC-4E2E-9FDF-FB248815E1C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F06268B-3C51-43B4-BC23-F57488FB7D54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F06268B-3C51-43B4-BC23-F57488FB7D54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F06268B-3C51-43B4-BC23-F57488FB7D54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F06268B-3C51-43B4-BC23-F57488FB7D54}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

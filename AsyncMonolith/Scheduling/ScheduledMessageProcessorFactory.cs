@@ -6,9 +6,9 @@ namespace AsyncMonolith.Scheduling;
 
 public class ScheduledMessageProcessorFactory<T> : IHostedService where T : DbContext
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly int _instances;
     private readonly List<IHostedService> _hostedServices;
+    private readonly int _instances;
+    private readonly IServiceProvider _serviceProvider;
 
     public ScheduledMessageProcessorFactory(IServiceProvider serviceProvider, int instances)
     {
@@ -29,9 +29,6 @@ public class ScheduledMessageProcessorFactory<T> : IHostedService where T : DbCo
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        foreach (var hostedService in _hostedServices)
-        {
-            await hostedService.StopAsync(cancellationToken);
-        }
+        foreach (var hostedService in _hostedServices) await hostedService.StopAsync(cancellationToken);
     }
 }
