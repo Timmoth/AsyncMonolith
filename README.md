@@ -154,7 +154,7 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
         MaxAttempts = 5, // Number of times a failed message is retried 
         ProcessorMinDelay = 10, // Minimum millisecond delay before the next batch is processed
         ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next batch is processed
-		ProcessorBatchSize = 5, // The number of messages to process in a single batch
+	ProcessorBatchSize = 5, // The number of messages to process in a single batch
         DbType = DbType.PostgreSql, // Type of database being used (use DbType.Ef if not supported),
         ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
         ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
@@ -183,7 +183,7 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
         public override Task Consume(ValueSubmitted message, CancellationToken cancellationToken)
         {
             ...
-			await _dbContext.SaveChangesAsync(cancellationToken);
+	    await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 
@@ -233,7 +233,7 @@ A background service that fetches available messages from the `scheduled_message
 Used to resolve all the consumers able to process a given payload, and resolve instances of the consumers when processing a message. The registry is populated on startup by calling `builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly());` which uses reflection to find all consumer & payload types.
 
 ## Notes
-- The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another message. For each consecutive message fetched, the delay is reduced until the processor only waits `AsyncMonolithSettings.ProcessorMinDelay` between cycles. If no new messages are fetched within a cycle, the processor returns to waiting `AsyncMonolithSettings.ProcessorMaxDelay` before fetching another message.
+- The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another batch of messages. If a full batch is fetched, the delay is reduced to `AsyncMonolithSettings.ProcessorMinDelay` seconds between cycles.
 - Configuring concurrent consumer / scheduled message processors will throw a startup exception when using `DbType.Ef` (due to no built in support for row level locking)
 
 ## Contributing
