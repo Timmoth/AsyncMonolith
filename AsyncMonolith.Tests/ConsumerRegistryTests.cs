@@ -48,7 +48,7 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = null
+            InsertId = string.Empty
         });
 
         // Then
