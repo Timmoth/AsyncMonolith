@@ -84,10 +84,10 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
                     .Take(_options.Value.ProcessorBatchSize)
                     .ToListAsync(cancellationToken),
                 DbType.PostgreSql => await set
-                    .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime), new NpgsqlParameter("@batchSize", _options.Value.ScheduledMessageBatchSize))
+                    .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime), new NpgsqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
                     .ToListAsync(cancellationToken),
                 DbType.MySql => await set
-                    .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime), new MySqlParameter("@batchSize", _options.Value.ScheduledMessageBatchSize))
+                    .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime), new MySqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
                     .ToListAsync(cancellationToken),
                 _ => throw new NotImplementedException("Scheduled Message Processor failed, invalid Db Type")
             };
