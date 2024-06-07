@@ -11,7 +11,7 @@ public abstract class DbTestsBase
     protected FakeTimeProvider FakeTime = default!;
     protected TestConsumerInvocations TestConsumerInvocations = default!;
 
-    protected async Task<ServiceProvider> Setup(TestDbContainerBase dbContainer)
+    protected async Task<ServiceProvider> Setup(TestDbContainerBase dbContainer, AsyncMonolithSettings? settings = null)
     {
         await dbContainer.InitializeAsync();
 
@@ -19,7 +19,7 @@ public abstract class DbTestsBase
 
         dbContainer.AddDb(services);
 
-        var (fakeTime, invocations) = services.AddTestServices(dbContainer.DbType, AsyncMonolithSettings.Default);
+        var (fakeTime, invocations) = services.AddTestServices(dbContainer.DbType, settings ?? AsyncMonolithSettings.Default);
         TestConsumerInvocations = invocations;
         FakeTime = fakeTime;
 
