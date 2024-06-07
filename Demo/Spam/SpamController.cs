@@ -7,22 +7,23 @@ namespace Demo.Spam;
 [Route("api/spam")]
 public class SpamController : ControllerBase
 {
-    private readonly ApplicationDbContext _dbContext;
     private readonly ProducerService<ApplicationDbContext> _producerService;
     private readonly TimeProvider _timeProvider;
 
-    public SpamController(ProducerService<ApplicationDbContext> producerService, ApplicationDbContext dbContext,
-        TimeProvider timeProvider)
+    public SpamController(ProducerService<ApplicationDbContext> producerService, TimeProvider timeProvider)
     {
         _producerService = producerService;
-        _dbContext = dbContext;
         _timeProvider = timeProvider;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Spam(CancellationToken cancellationToken)
+    public async Task<IActionResult> Spam([FromQuery(Name = "count")] int count, CancellationToken cancellationToken)
     {
-        var count = 1000;
+        if (count <= 0)
+        {
+            return BadRequest("'count' query parameter must be at least 1");
+
+        }
         if (SpamResultService.Start != null && SpamResultService.End == null)
         {
             var duration = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds() - SpamResultService.Start;
@@ -49,16 +50,12 @@ public class SpamController : ControllerBase
             });
 
         await _producerService.ProduceList(messages);
-        await _dbContext.SaveChangesAsync(cancellationToken);
         SpamResultService.Start = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
 
-        await Task.Delay(1000, cancellationToken);
         await _producerService.Produce(new SpamMessage
         {
             Last = true
-        });
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        }, availableAfter: 10);
 
         return Ok("Started.");
     }

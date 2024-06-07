@@ -40,11 +40,11 @@ public class Program
             {
                 AttemptDelay = 10,
                 MaxAttempts = 5,
-                ProcessorMinDelay = 20,
+                ProcessorMinDelay = 10,
                 ProcessorMaxDelay = 100,
                 ConsumerMessageProcessorCount = 1,
                 ScheduledMessageProcessorCount = 1,
-                ProcessorBatchSize = 20
+                ProcessorBatchSize = 10
             });
 
         builder.Services.AddControllers();
