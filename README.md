@@ -277,6 +277,13 @@ Used to resolve all the consumers able to process a given payload, and resolve i
 - The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another batch of messages. If a full batch is fetched, the delay is reduced to `AsyncMonolithSettings.ProcessorMinDelay` seconds between cycles.
 - Configuring concurrent consumer / scheduled message processors will throw a startup exception when using AsyncMonolith.Ef (due to no built in support for row level locking)
 
+## Tests
+- Some of the test rely on TestContainers to run against real databases, make sure you've got docker installed
+
+## Demo
+- Hit `https://localhost:60046/api/spam?count=1000` to see how performant AsyncMonolith is on your system. With 10 message batches and single processor instance I usually process (trivial) messages at <10ms each.
+- The demo is setup to run against a PostgreSql database, make sure you've got docker installed
+
 ## Contributing
 
 Contributions are welcome! Here’s how you can get involved:
