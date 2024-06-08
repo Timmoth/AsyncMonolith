@@ -1,6 +1,12 @@
 site_name: AsyncMonolith Docs
+site_url: https://timmoth.github.io/AsyncMonolith/
+site_description: Lightweight asynchronous processes and scheduling.
+site_author: Timmoth
+repo_url: https://github.com/Timmoth/AsyncMonolith/
+edit_uri: edit/main/docs
+
 theme:
-  name: mkdocs
+  name: readthedocs
   highlightjs: true
   logo: assets/logo.png
   hljs_languages:
@@ -9,11 +15,11 @@ nav:
   - Overview ✅: index.md
   - Quick start ▶️: quickstart.md
   - Guide 📨: guide.md
-  - Internals: internals.md
+  - Internals 🧠: internals.md
   - Releases 📒: releases.md
   - Warnings ⚠️: warnings.md
   - Support 🛟: support.md
-  - Demo App: demo.md
+  - Demo App ✨: demo.md
   - Contributing 🙏: contributing.md
   - Tests 🐞: tests.md
 

@@ -1,5 +1,3 @@
-# Message Handling Guide
-
 ## Producing Messages 📨
 
 - **Transactional Persistence**: Produce messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.

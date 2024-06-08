@@ -1,5 +1,3 @@
-# Internals
-
 ![Logo](assets/internals.svg)
 
 ## ProducerService

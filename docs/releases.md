@@ -1,5 +1,3 @@
-# Releases 📒
-
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an `dotnet ef migration`.
 
 | Version | Description                                            | Migration Required |

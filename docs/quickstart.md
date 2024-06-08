@@ -1,5 +1,3 @@
-# Quick start guide ▶️
-
 (for a more detailed example look at the Demo project)
 
 ```csharp
