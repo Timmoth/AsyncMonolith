@@ -3,7 +3,7 @@
 
 AsyncMonolith is a lightweight dotnet library that facillitates simple asynchronous processes in monolithic dotnet apps.
 
-# Overview
+# Overview ✅
 
 - Makes building event driven architectures simple
 - Produce messages transactionally along with changes to your domain
@@ -15,10 +15,10 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 - Keep your infrastructure simple, It only requires a dotnet API and database
 - Makes it very easy to write unit / integration tests
 
-# Support
+# Support 🛟
 Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd be more then happy to jump on a call to debug, help configure or answer any questions.
 
-## Warnings
+## Warnings ⚠️
 - Efcore does not natively support row level locking, this makes it possible for two instances of your app to compete over the next available message to be processed, potentially wasting cycles. For this reason it is reccomended that you only use `AsyncMonolith.Ef` when you are running a single instance of your app OR for development purposes. Using `AsyncMonlith.PostgreSql` or `AsyncMonolith.MySql` will allow the system to lock rows ensuring they are only retrieved and processed once.
 - Test your desired throughput
 
@@ -26,7 +26,7 @@ Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd b
 - Async Monolith is not a guaranteed replacement for a message broker, there are many reasons why you may require one.
 - I'd reccomend watching this [video](https://www.youtube.com/watch?v=DOaDpHh1FsQ) by Derik Comartin or [this one](https://www.youtube.com/watch?v=_r2DaswYPjM) by Chris Patterson before deciding to use Async Monolith.
 
-# Dev log
+# Dev log 📒
 
 Make sure to check this table before updating the nuget package in your solution, you may be required to add an `dotnet ef migration`.
 | Version      | Description | Migration Required |
@@ -44,7 +44,7 @@ Make sure to check this table before updating the nuget package in your solution
 
 # Message Handling Guide
 
-## Producing Messages
+## Producing Messages 📨
 
 - **Transactional Persistence**: Produce messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
 - **Deduplication**: By specifying a `insert_id` when producing messages the system ensures only one message with the same `insert_id` and `consumer_type` will be in the table at a given time. This is useful when you need a process to take place an amount of time after the first action in a sequence occured.
@@ -82,7 +82,7 @@ The produce method when using MySql or PostgreSQL makes use of `ExecuteSqlRawAsy
 
   ```
   
-## Scheduling Messages
+## Scheduling Messages ⌛
 
 - **Frequency**: Scheduled messages will be produced periodically by the `chron_expression` in the given `chron_timezone`
 - **Transactional Persistence**: Schedule messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
@@ -97,7 +97,7 @@ The produce method when using MySql or PostgreSQL makes use of `ExecuteSqlRawAsy
     }, "0 0 12 * * MON", "UTC", "id:{id}");
   await _dbContext.SaveChangesAsync(cancellationToken);
   ```
-## Consuming Messages
+## Consuming Messages 📫
 
 - **Independent Consumption**: Each message will be consumed independently by each consumer set up to handle it.
 - **Periodic Querying**: Each instance of your app will periodically query the `consumer_messages` table for a batch of available messages to process.
@@ -124,20 +124,20 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
     }
 }
 ```
-## Changing Consumer Payload Schema
+## Changing Consumer Payload Schema 🔀
 
 - **Backwards Compatibility**: When modifying consumer payload schemas, ensure changes are backwards compatible so that existing messages with the old schema can still be processed.
 - **Schema Migration**:
   - If changes are not backwards compatible, make the changes in a copy of the `ConsumerPayload` (with a different class name) and update all consumers to operate on the new payload.
   - Once all messages with the old payload schema have been processed, you can safely delete the old payload schema and its associated consumers.
 
-## Consumer Failures
+## Consumer Failures 💢
 
 - **Retry Logic**: Messages will be retried up to `MaxAttempts` times (with a `AttemptDelay` seconds between attempts) until they are moved to the `poisoned_messages` table.
 - **Manual Intervention**: If a message is moved to the `poisoned_messages` table, it will need to be manually removed from the database or moved back to the `consumer_messages` table to be retried. Note that the poisoned message will only be retried a single time unless you set `attempts` back to 0.
 - **Monitoring**: Periodically monitor the `poisoned_messages` table to ensure there are not too many failed messages.
 
-## OpenTelemetry Support
+## OpenTelemetry Support 📊
 
 Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to your OpenTelemetry configuration if you want to receive consumer / scheduled processor traces.
 ```csharp
@@ -152,7 +152,7 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
             .ConfigureResource(c => c.AddService("async_monolith.demo").Build());
 ```
 
-# Quick start guide 
+# Quick start guide ▶️
 (for a more detailed example look at the Demo project)
 
 ```csharp
@@ -273,18 +273,18 @@ A background service that fetches available messages from the `scheduled_message
 ## ConsumerRegistry
 Used to resolve all the consumers able to process a given payload, and resolve instances of the consumers when processing a message. The registry is populated on startup by calling `builder.Services.AddAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly());` which uses reflection to find all consumer & payload types.
 
-## Notes
+## Notes 📋
 - The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another batch of messages. If a full batch is fetched, the delay is reduced to `AsyncMonolithSettings.ProcessorMinDelay` seconds between cycles.
 - Configuring concurrent consumer / scheduled message processors will throw a startup exception when using AsyncMonolith.Ef (due to no built in support for row level locking)
 
-## Tests
+## Tests 🐞
 - Some of the test rely on TestContainers to run against real databases, make sure you've got docker installed
 
 ## Demo
 - Hit `https://localhost:60046/api/spam?count=1000` to see how performant AsyncMonolith is on your system. With 10 message batches and single processor instance I usually process (trivial) messages at <10ms each.
 - The demo is setup to run against a PostgreSql database, make sure you've got docker installed
 
-## Contributing
+## Contributing 🙏
 
 Contributions are welcome! Here’s how you can get involved:
 
