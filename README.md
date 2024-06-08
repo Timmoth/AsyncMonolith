@@ -15,10 +15,7 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 - Keep your infrastructure simple, It only requires a dotnet API and database
 - Makes it very easy to write unit / integration tests
 
-# Support 🛟
-Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd be more then happy to jump on a call to debug, help configure or answer any questions.
-
-# Want to find out more 🤔
+# Find out more 🤔
   - [Overview ✅](https://timmoth.github.io/AsyncMonolith/index)
   - [Quick start ▶️](https://timmoth.github.io/AsyncMonolith/quickstart)
   - [Guide 📨](https://timmoth.github.io/AsyncMonolith/guide)
@@ -29,3 +26,9 @@ Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd b
   - [Demo App ✨](https://timmoth.github.io/AsyncMonolith/demo)
   - [Contributing 🙏](https://timmoth.github.io/AsyncMonolith/contributing)
   - [Tests 🐞](https://timmoth.github.io/AsyncMonolith/tests)
+
+# Collaboration 🙏
+Like the idea and want to get involved? Check out the open issues or shoot me a message if you've got any ideas / feedback!
+
+# Support 🛟
+Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd be more then happy to jump on a call to debug, help configure or answer any questions.
