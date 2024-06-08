@@ -9,6 +9,10 @@ using Microsoft.Extensions.Options;
 
 namespace AsyncMonolith.Scheduling;
 
+/// <summary>
+/// Represents a background service for processing scheduled messages.
+/// </summary>
+/// <typeparam name="T">The type of the database context.</typeparam>
 public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
 {
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
@@ -17,6 +21,14 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScheduledMessageProcessor{T}"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="timeProvider">The time provider.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="scopeFactory">The service scope factory.</param>
+    /// <param name="messageFetcher">The scheduled message fetcher.</param>
     public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger,
         TimeProvider timeProvider, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory,
         ScheduledMessageFetcher messageFetcher)
@@ -28,6 +40,10 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
         _messageFetcher = messageFetcher;
     }
 
+    /// <summary>
+    /// Executes the background service asynchronously.
+    /// </summary>
+    /// <param name="stoppingToken">The cancellation token to stop the execution.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -49,6 +65,11 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
         }
     }
 
+    /// <summary>
+    /// Processes a batch of scheduled messages.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of processed scheduled messages.</returns>
     internal async Task<int> ProcessBatch(CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();

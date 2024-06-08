@@ -1,6 +1,4 @@
-﻿using AsyncMonolith.Consumers;
-using AsyncMonolith.Producers;
-using AsyncMonolith.Scheduling;
+﻿using AsyncMonolith.Scheduling;
 using AsyncMonolith.Tests.Infra;
 using AsyncMonolith.Utilities;
 using FluentAssertions;
@@ -25,7 +23,7 @@ public class ScheduledMessageFetcherTests : DbTestsBase
             var fetcher = serviceProvider.GetRequiredService<ScheduledMessageFetcher>();
             var idGenerator = serviceProvider.GetRequiredService<IAsyncMonolithIdGenerator>();
 
-            for (int i = 0; i < 2*settings.ProcessorBatchSize; i++)
+            for (var i = 0; i < 2*settings.ProcessorBatchSize; i++)
             {
                 dbContext.ScheduledMessages.Add(new ScheduledMessage()
                 {

@@ -6,12 +6,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AsyncMonolith.Scheduling;
 
+/// <summary>
+/// Service for scheduling messages.
+/// </summary>
+/// <typeparam name="T">The type of DbContext.</typeparam>
 public sealed class ScheduleService<T> where T : DbContext
 {
     private readonly T _dbContext;
     private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScheduleService{T}"/> class.
+    /// </summary>
+    /// <param name="timeProvider">The time provider.</param>
+    /// <param name="dbContext">The DbContext.</param>
+    /// <param name="idGenerator">The ID generator.</param>
     public ScheduleService(TimeProvider timeProvider, T dbContext, IAsyncMonolithIdGenerator idGenerator)
     {
         _timeProvider = timeProvider;
@@ -19,6 +29,15 @@ public sealed class ScheduleService<T> where T : DbContext
         _idGenerator = idGenerator;
     }
 
+    /// <summary>
+    /// Schedules a message.
+    /// </summary>
+    /// <typeparam name="TK">The type of the message.</typeparam>
+    /// <param name="message">The message to schedule.</param>
+    /// <param name="chronExpression">The cron expression.</param>
+    /// <param name="chronTimezone">The timezone for the cron expression.</param>
+    /// <param name="tag">The optional tag for the scheduled message.</param>
+    /// <returns>The ID of the scheduled message.</returns>
     public string Schedule<TK>(TK message, string chronExpression, string chronTimezone, string? tag = null)
         where TK : IConsumerPayload
     {
@@ -49,6 +68,12 @@ public sealed class ScheduleService<T> where T : DbContext
         return id;
     }
 
+    /// <summary>
+    /// Deletes scheduled messages by tag.
+    /// </summary>
+    /// <param name="tag">The tag of the scheduled messages to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DeleteByTag(string tag, CancellationToken cancellationToken)
     {
         var set = _dbContext.Set<ScheduledMessage>();
@@ -56,6 +81,12 @@ public sealed class ScheduleService<T> where T : DbContext
         set.RemoveRange(messages);
     }
 
+    /// <summary>
+    /// Deletes a scheduled message by ID.
+    /// </summary>
+    /// <param name="id">The ID of the scheduled message to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DeleteById(string id, CancellationToken cancellationToken)
     {
         var set = _dbContext.Set<ScheduledMessage>();

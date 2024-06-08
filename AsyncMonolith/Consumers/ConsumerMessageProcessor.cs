@@ -8,6 +8,10 @@ using Microsoft.Extensions.Options;
 
 namespace AsyncMonolith.Consumers;
 
+/// <summary>
+/// Background service which fetches and processes batches of consumer messages.
+/// </summary>
+/// <typeparam name="T">The type of the DbContext.</typeparam>
 public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
 {
     private readonly ConsumerMessageFetcher _consumerMessageFetcher;
@@ -17,6 +21,15 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConsumerMessageProcessor{T}"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="timeProvider">The time provider.</param>
+    /// <param name="consumerRegistry">The consumer registry.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="scopeFactory">The service scope factory.</param>
+    /// <param name="consumerMessageFetcher">The consumer message fetcher.</param>
     public ConsumerMessageProcessor(ILogger<ConsumerMessageProcessor<T>> logger,
         TimeProvider timeProvider,
         ConsumerRegistry consumerRegistry, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory,
@@ -30,6 +43,11 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         _consumerMessageFetcher = consumerMessageFetcher;
     }
 
+    /// <summary>
+    /// Asynchronously fetches batches of messages before processing them.
+    /// </summary>
+    /// <param name="stoppingToken">The cancellation token to stop the execution.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -50,6 +68,11 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         }
     }
 
+    /// <summary>
+    /// Fetch and Processes the next batch of consumer messages.
+    /// </summary>
+    /// <param name="stoppingToken">The cancellation token to stop the execution.</param>
+    /// <returns>The number of processed messages.</returns>
     internal async Task<int> ProcessBatch(CancellationToken stoppingToken)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -95,7 +118,8 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                         ConsumerType = message.ConsumerType,
                         CreatedAt = message.CreatedAt,
                         Payload = message.Payload,
-                        PayloadType = message.PayloadType
+                        PayloadType = message.PayloadType,
+                        InsertId = message.InsertId,
                     });
                 }
             }
@@ -109,6 +133,12 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         return processedMessageCount;
     }
 
+    /// <summary>
+    /// Processes a single consumer message.
+    /// </summary>
+    /// <param name="message">The consumer message to process.</param>
+    /// <param name="cancellationToken">The cancellation token to stop the execution.</param>
+    /// <returns>A tuple containing the processed consumer message and a flag indicating success.</returns>
     internal async Task<(ConsumerMessage, bool)> Process(ConsumerMessage message, CancellationToken cancellationToken)
     {
         using var activity =

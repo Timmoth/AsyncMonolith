@@ -2,11 +2,21 @@
 
 namespace AsyncMonolith.Utilities;
 
+/// <summary>
+/// Represents an asynchronous monolith ID generator.
+/// </summary>
 public interface IAsyncMonolithIdGenerator
 {
-    public string GenerateId();
+    /// <summary>
+    /// Generates a new ID.
+    /// </summary>
+    /// <returns>The generated ID.</returns>
+    string GenerateId();
 }
 
+/// <summary>
+/// Represents an implementation of the <see cref="IAsyncMonolithIdGenerator"/> interface.
+/// </summary>
 public sealed class AsyncMonolithIdGenerator : IAsyncMonolithIdGenerator
 {
     private const string ValidIdCharacters = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -16,6 +26,7 @@ public sealed class AsyncMonolithIdGenerator : IAsyncMonolithIdGenerator
     private static readonly int CharacterSetLength = Characters.Length;
     private static readonly RandomNumberGenerator Rng = RandomNumberGenerator.Create();
 
+    /// <inheritdoc/>
     public string GenerateId()
     {
         var result = new char[Length];
