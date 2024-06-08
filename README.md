@@ -3,7 +3,7 @@
 
 AsyncMonolith is a lightweight dotnet library that facillitates simple asynchronous processes in monolithic dotnet apps.
 
-# Overview
+# Overview ✅
 
 - Makes building event driven architectures simple
 - Produce messages transactionally along with changes to your domain
