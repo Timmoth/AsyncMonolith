@@ -1,0 +1,21 @@
+site_name: AsyncMonolith Docs
+theme:
+  name: mkdocs
+  highlightjs: true
+  logo: assets/logo.png
+  hljs_languages:
+    - csharp
+nav:
+  - Overview ✅: index.md
+  - Quick start ▶️: quickstart.md
+  - Guide 📨: guide.md
+  - Internals: internals.md
+  - Releases 📒: releases.md
+  - Warnings ⚠️: warnings.md
+  - Support 🛟: support.md
+  - Demo App: demo.md
+  - Contributing 🙏: contributing.md
+  - Tests 🐞: tests.md
+
+markdown_extensions:
+  - tables
