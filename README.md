@@ -11,7 +11,7 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 - Supports running multiple instances / versions of your application
 - Delay processing messages
 - Schedule messages to be processed using Chron expressions
-- Deduplicate messages ensuring certain messages are only processed once for time period
+- Deduplication ensures tagged messages are only processed once for time period
 - Automatic message retries
 - Automatically routes messages to multiple consumers
 - Keep your infrastructure simple, It only requires a dotnet API and database
