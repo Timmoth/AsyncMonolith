@@ -1,31 +1,44 @@
-(for a more detailed example look at the Demo project)
+[For a more detailed example look at the Demo project](https://github.com/Timmoth/AsyncMonolith/tree/main/Demo)
+
+Install the nuget packages
 
 ```csharp
-
-    // Install the core package
+    // Required
     dotnet add package AsyncMonolith
-	// Install the Db specific package
+
+    // Pick one
     dotnet add package AsyncMonolith.Ef
     dotnet add package AsyncMonolith.MySql
     dotnet add package AsyncMonolith.PostgreSql
+```
 
-    // Add Db Sets, and configure ModelBuilder
+Setup your DbContext
+
+```csharp
+
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
         }
 
+        // Add Db Sets
         public DbSet<ConsumerMessage> ConsumerMessages { get; set; } = default!;
         public DbSet<PoisonedMessage> PoisonedMessages { get; set; } = default!;
         public DbSet<ScheduledMessage> ScheduledMessages { get; set; } = default!;
 
+        // Configure the ModelBuilder
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			modelBuilder.ConfigureAsyncMonolith();
 			base.OnModelCreating(modelBuilder);
 		}
     }
+```
+
+Register your dependencies
+
+```csharp
 
     // Register required services
     builder.Services.AddLogging();
@@ -46,15 +59,20 @@
         ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
         ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
     });
+```
 
-    // Define Consumer Payloads
+Create messages and consumers
+
+```csharp
+
+    // Define Consumer Payload
     public class ValueSubmitted : IConsumerPayload
     {
         [JsonPropertyName("value")]
         public required double Value { get; set; }
     }
 
-    // Define Consumers
+    // Define Consumer
     public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
     {
         private readonly ApplicationDbContext _dbContext;
@@ -69,24 +87,44 @@
         public override Task Consume(ValueSubmitted message, CancellationToken cancellationToken)
         {
             ...
-	    await _dbContext.SaveChangesAsync(cancellationToken);
+	        await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
+```
 
-    // Produce / schedule messages
+Produce / schedule messages
+
+```csharp
+
+    // Inject services
     private readonly ProducerService<ApplicationDbContext> _producerService;
     private readonly ScheduledMessageService<ApplicationDbContext> _scheduledMessageService;
 
+    // Produce a message to be processed immediately
     await _producerService.Produce(new ValueSubmitted()
     {
       Value = newValue
     });
 
+    // Produce a message to be processed in 10 seconds
+    await _producerService.Produce(new ValueSubmitted()
+    {
+      Value = newValue
+    }, 10);
+
+    // Produce a message to be processed in 10 seconds, but only once for a given userId
+    await _producerService.Produce(new ValueSubmitted()
+    {
+      Value = newValue
+    }, 10, $"user:{userId}");
+
+    // Publish a message every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.
     _scheduledMessageService.Schedule(new ValueSubmitted
     {
-        Value = Random.Shared.NextDouble() * 100
-    }, "*/5 * * * * *", "UTC");
+      Value = newValue
+    }, "0 0 12 * * MON", "UTC", "id:{id}");
 
+    // Save changes
     await _dbContext.SaveChangesAsync(cancellationToken);
 
 ```

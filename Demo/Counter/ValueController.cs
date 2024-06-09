@@ -25,7 +25,7 @@ public class ValueController : ControllerBase
         var newValue = 1;
         var sum = _totalValueService.Get();
 
-        _producerService.Produce(new ValueSubmitted
+        await _producerService.Produce(new ValueSubmitted
         {
             Value = newValue
         });

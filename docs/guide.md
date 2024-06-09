@@ -31,8 +31,8 @@ The produce method when using MySql or PostgreSQL makes use of `ExecuteSqlRawAsy
     Id = id
   }, 60);
 
-await _dbContext.SaveChangesAsync(cancellationToken);
-await dbContextTransaction.CommitAsync(stoppingToken);
+  await _dbContext.SaveChangesAsync(cancellationToken);
+  await dbContextTransaction.CommitAsync(cancellationToken);
 
 ```
 
@@ -44,14 +44,14 @@ await dbContextTransaction.CommitAsync(stoppingToken);
 
   Example
 
-  ```csharp
-  // Publish 'CacheRefreshScheduled' every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.
-  _scheduledMessageService.Schedule(new CacheRefreshScheduled
-    {
-        Id = id
-    }, "0 0 12 * * MON", "UTC", "id:{id}");
-  await _dbContext.SaveChangesAsync(cancellationToken);
-  ```
+```csharp
+ // Publish 'CacheRefreshScheduled' every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.
+ _scheduledMessageService.Schedule(new CacheRefreshScheduled
+   {
+       Id = id
+   }, "0 0 12 * * MON", "UTC", "id:{id}");
+ await _dbContext.SaveChangesAsync(cancellationToken);
+```
 
 ## Consuming Messages 📫
 
