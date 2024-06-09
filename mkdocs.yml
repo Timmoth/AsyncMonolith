@@ -22,6 +22,8 @@ nav:
   - Demo App ✨: demo.md
   - Contributing 🙏: contributing.md
   - Tests 🐞: tests.md
+  - Posts:
+      - What is the Transactional Outbox?: posts/transactional-outbox.md
 
 markdown_extensions:
   - tables
