@@ -2,6 +2,7 @@ Make sure to check this table before updating the nuget package in your solution
 
 | Version | Description                                            | Migration Required |
 | ------- | ------------------------------------------------------ | ------------------ |
+| 1.0.9.1 | Added consumer timeout                                 | No                 |
 | 1.0.9   | Split out Ef, PostgreSql, MySql into seperate packages | Yes                |
 | 1.0.8   | Added scheduled message batching                       | No                 |
 | 1.0.7   | Added consumer message batching                        | No                 |
