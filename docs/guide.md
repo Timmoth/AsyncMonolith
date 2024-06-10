@@ -61,10 +61,12 @@ The produce method when using MySql or PostgreSQL makes use of `ExecuteSqlRawAsy
 - **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `AsyncMonolith.Ef`.
 - **Batching**: Consumer messages will be read from the `consumer_messages` table in batches defined by `ConsumerMessageBatchSize`.
 - **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure.
+- **Timeout**: Consumers timeout after the number of seconds defined by the `ConsumerTimeout` attribute or the `DefaultConsumerTimeout` if not set.
 
 Example
 
 ```csharp
+[ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
 public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 {
     private readonly ApplicationDbContext _dbContext;

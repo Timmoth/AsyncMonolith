@@ -1,6 +1,6 @@
 ﻿namespace AsyncMonolith.Consumers;
 
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
 internal sealed class ConsumerTimeoutAttribute : Attribute
 {
     public ConsumerTimeoutAttribute(int duration)

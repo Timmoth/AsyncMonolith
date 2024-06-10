@@ -55,9 +55,10 @@ Register your dependencies
         MaxAttempts = 5, // Number of times a failed message is retried
         ProcessorMinDelay = 10, // Minimum millisecond delay before the next batch is processed
         ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next batch is processed
-		ProcessorBatchSize = 5, // The number of messages to process in a single batch
+		    ProcessorBatchSize = 5, // The number of messages to process in a single batch
         ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
         ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
+        DefaultConsumerTimeout = 10 // The default number of seconds before a consumer will timeout
     });
 ```
 
@@ -73,6 +74,7 @@ Create messages and consumers
     }
 
     // Define Consumer
+    [ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
     public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
     {
         private readonly ApplicationDbContext _dbContext;
