@@ -3,8 +3,7 @@
 
 AsyncMonolith is a lightweight library that facillitates simple asynchronous processes in monolithic dotnet apps.
 
-# Overview
-
+## Overview
 ✅ Makes building event driven architectures simple  
 ✅ Produce messages transactionally along with changes to your domain  
 ✅ Messages are stored in your DB context so you have full control over them  
@@ -17,7 +16,7 @@ AsyncMonolith is a lightweight library that facillitates simple asynchronous pro
 ✅ Keep your infrastructure simple, It only requires a dotnet API and database  
 ✅ Makes it very easy to write unit / integration tests  
 
-# Find out more 🤔
+## Find out more 🤔
   - [Overview ✅](https://timmoth.github.io/AsyncMonolith/index)
   - [Quick start ▶️](https://timmoth.github.io/AsyncMonolith/quickstart)
   - [Guide 📨](https://timmoth.github.io/AsyncMonolith/guide)
@@ -29,17 +28,17 @@ AsyncMonolith is a lightweight library that facillitates simple asynchronous pro
   - [Contributing 🙏](https://timmoth.github.io/AsyncMonolith/contributing)
   - [Tests 🐞](https://timmoth.github.io/AsyncMonolith/tests)
 
-# Posts
+## Posts
   - [What is the Transactional Outbox?](https://timmoth.github.io/AsyncMonolith/posts/transactional-outbox/)
   - [What is the Mediator?](https://timmoth.github.io/AsyncMonolith/posts/mediator/)
 
-# Collaboration 🙏
+## Collaboration 🙏
 Like the idea and want to get involved? Check out the open issues or shoot me a message if you've got any ideas / feedback!
 
-# Support 🛟
+## Support 🛟
 Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd be more then happy to jump on a call to debug, help configure or answer any questions.
 
-## 🤝 Support the project
+## Support the project 🤝
 
 - **🌟 Star this repository**: It means a lot to me and helps with exposure.
 - **🪲 Report bugs**: Report any bugs you find by creating an issue.
