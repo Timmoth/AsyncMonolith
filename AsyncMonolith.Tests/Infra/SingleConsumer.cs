@@ -2,6 +2,7 @@ using AsyncMonolith.Consumers;
 
 namespace AsyncMonolith.Tests.Infra;
 
+[ConsumerTimeout(1)]
 public class SingleConsumer : BaseConsumer<SingleConsumerMessage>
 {
     private readonly TestConsumerInvocations _consumerInvocations;

@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace AsyncMonolith.Scheduling;
 
 /// <summary>
-/// Represents a background service for processing scheduled messages.
+///     Represents a background service for processing scheduled messages.
 /// </summary>
 /// <typeparam name="T">The type of the database context.</typeparam>
 public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
@@ -22,7 +22,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     private readonly TimeProvider _timeProvider;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ScheduledMessageProcessor{T}"/> class.
+    ///     Initializes a new instance of the <see cref="ScheduledMessageProcessor{T}" /> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="timeProvider">The time provider.</param>
@@ -41,7 +41,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     }
 
     /// <summary>
-    /// Executes the background service asynchronously.
+    ///     Executes the background service asynchronously.
     /// </summary>
     /// <param name="stoppingToken">The cancellation token to stop the execution.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -66,7 +66,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     }
 
     /// <summary>
-    /// Processes a batch of scheduled messages.
+    ///     Processes a batch of scheduled messages.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of processed scheduled messages.</returns>

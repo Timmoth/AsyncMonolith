@@ -19,7 +19,8 @@ public abstract class DbTestsBase
 
         dbContainer.AddDb(services);
 
-        var (fakeTime, invocations) = services.AddTestServices(dbContainer.DbType, settings ?? AsyncMonolithSettings.Default);
+        var (fakeTime, invocations) =
+            services.AddTestServices(dbContainer.DbType, settings ?? AsyncMonolithSettings.Default);
         TestConsumerInvocations = invocations;
         FakeTime = fakeTime;
 

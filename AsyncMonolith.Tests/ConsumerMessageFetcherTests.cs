@@ -5,6 +5,8 @@ using AsyncMonolith.Utilities;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
+namespace AsyncMonolith.Tests;
+
 public class ConsumerMessageFetcherTests : DbTestsBase
 {
     [Theory]
@@ -25,19 +27,18 @@ public class ConsumerMessageFetcherTests : DbTestsBase
             var fetcher = serviceProvider.GetRequiredService<ConsumerMessageFetcher>();
 
             var messages = new List<SingleConsumerMessage>();
-            for (int i = 0; i < 2*settings.ProcessorBatchSize; i++)
-            {
+            for (var i = 0; i < 2 * settings.ProcessorBatchSize; i++)
                 messages.Add(new SingleConsumerMessage
                 {
                     Name = "test-name"
                 });
-            }
 
             await producer.ProduceList(messages);
             await dbContext.SaveChangesAsync();
 
             // When
-            var dbMessages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), CancellationToken.None);
+            var dbMessages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(),
+                CancellationToken.None);
 
             // Then
             dbMessages.Count.Should().Be(settings.ProcessorBatchSize);
@@ -47,5 +48,4 @@ public class ConsumerMessageFetcherTests : DbTestsBase
             await dbContainer.DisposeAsync();
         }
     }
-
 }

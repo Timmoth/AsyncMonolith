@@ -3,13 +3,13 @@
 namespace AsyncMonolith.Consumers;
 
 /// <summary>
-/// Base class for consumers.
+///     Base class for consumers.
 /// </summary>
 /// <typeparam name="T">The type of the consumer payload.</typeparam>
 public abstract class BaseConsumer<T> : IConsumer where T : IConsumerPayload
 {
     /// <summary>
-    /// Internal method called by the processor to deserialize and process consumer payloads.
+    ///     Internal method called by the processor to deserialize and process consumer payloads.
     /// </summary>
     /// <param name="message">The consumer message.</param>
     /// <param name="token">The cancellation token.</param>
@@ -25,7 +25,7 @@ public abstract class BaseConsumer<T> : IConsumer where T : IConsumerPayload
     }
 
     /// <summary>
-    /// Consumes the payload.
+    ///     Consumes the payload.
     /// </summary>
     /// <param name="payload">The consumer payload.</param>
     /// <param name="token">The cancellation token.</param>

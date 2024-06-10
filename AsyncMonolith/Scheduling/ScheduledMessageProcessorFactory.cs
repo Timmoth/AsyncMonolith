@@ -5,9 +5,10 @@ using Microsoft.Extensions.Hosting;
 namespace AsyncMonolith.Scheduling;
 
 /// <summary>
-/// Represents a factory for creating and managing multiple instances of <see cref="ScheduledMessageProcessor{T}"/> as hosted services.
+///     Represents a factory for creating and managing multiple instances of <see cref="ScheduledMessageProcessor{T}" /> as
+///     hosted services.
 /// </summary>
-/// <typeparam name="T">The type of the <see cref="DbContext"/> used by the <see cref="ScheduledMessageProcessor{T}"/>.</typeparam>
+/// <typeparam name="T">The type of the <see cref="DbContext" /> used by the <see cref="ScheduledMessageProcessor{T}" />.</typeparam>
 public class ScheduledMessageProcessorFactory<T> : IHostedService where T : DbContext
 {
     private readonly List<IHostedService> _hostedServices;
@@ -15,10 +16,10 @@ public class ScheduledMessageProcessorFactory<T> : IHostedService where T : DbCo
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ScheduledMessageProcessorFactory{T}"/> class.
+    ///     Initializes a new instance of the <see cref="ScheduledMessageProcessorFactory{T}" /> class.
     /// </summary>
-    /// <param name="serviceProvider">The <see cref="IServiceProvider"/> used to resolve dependencies.</param>
-    /// <param name="instances">The number of instances of <see cref="ScheduledMessageProcessor{T}"/> to create and manage.</param>
+    /// <param name="serviceProvider">The <see cref="IServiceProvider" /> used to resolve dependencies.</param>
+    /// <param name="instances">The number of instances of <see cref="ScheduledMessageProcessor{T}" /> to create and manage.</param>
     public ScheduledMessageProcessorFactory(IServiceProvider serviceProvider, int instances)
     {
         _serviceProvider = serviceProvider;
@@ -27,7 +28,7 @@ public class ScheduledMessageProcessorFactory<T> : IHostedService where T : DbCo
     }
 
     /// <summary>
-    /// Starts all the instances of <see cref="ScheduledMessageProcessor{T}"/> as hosted services.
+    ///     Starts all the instances of <see cref="ScheduledMessageProcessor{T}" /> as hosted services.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to stop the operation.</param>
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -41,14 +42,11 @@ public class ScheduledMessageProcessorFactory<T> : IHostedService where T : DbCo
     }
 
     /// <summary>
-    /// Stops all the instances of <see cref="ScheduledMessageProcessor{T}"/> as hosted services.
+    ///     Stops all the instances of <see cref="ScheduledMessageProcessor{T}" /> as hosted services.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to stop the operation.</param>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        foreach (var hostedService in _hostedServices)
-        {
-            await hostedService.StopAsync(cancellationToken);
-        }
+        foreach (var hostedService in _hostedServices) await hostedService.StopAsync(cancellationToken);
     }
 }

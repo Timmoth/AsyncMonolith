@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace AsyncMonolith.Consumers;
 
 /// <summary>
-/// Background service which fetches and processes batches of consumer messages.
+///     Background service which fetches and processes batches of consumer messages.
 /// </summary>
 /// <typeparam name="T">The type of the DbContext.</typeparam>
 public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
@@ -22,7 +22,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     private readonly TimeProvider _timeProvider;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ConsumerMessageProcessor{T}"/> class.
+    ///     Initializes a new instance of the <see cref="ConsumerMessageProcessor{T}" /> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="timeProvider">The time provider.</param>
@@ -44,7 +44,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     }
 
     /// <summary>
-    /// Asynchronously fetches batches of messages before processing them.
+    ///     Asynchronously fetches batches of messages before processing them.
     /// </summary>
     /// <param name="stoppingToken">The cancellation token to stop the execution.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -69,7 +69,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     }
 
     /// <summary>
-    /// Fetch and Processes the next batch of consumer messages.
+    ///     Fetch and Processes the next batch of consumer messages.
     /// </summary>
     /// <param name="stoppingToken">The cancellation token to stop the execution.</param>
     /// <returns>The number of processed messages.</returns>
@@ -119,7 +119,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                         CreatedAt = message.CreatedAt,
                         Payload = message.Payload,
                         PayloadType = message.PayloadType,
-                        InsertId = message.InsertId,
+                        InsertId = message.InsertId
                     });
                 }
             }
@@ -134,7 +134,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     }
 
     /// <summary>
-    /// Processes a single consumer message.
+    ///     Processes a single consumer message.
     /// </summary>
     /// <param name="message">The consumer message to process.</param>
     /// <param name="cancellationToken">The cancellation token to stop the execution.</param>
@@ -151,15 +151,21 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
 
         try
         {
+            var consumerType = _consumerRegistry.ResolveConsumerType(message);
+            var consumerTimeout = _consumerRegistry.ResolveConsumerTimeout(message);
+
+            var timeoutCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCancellationToken.CancelAfter(TimeSpan.FromSeconds(consumerTimeout));
+
             using var scope = _scopeFactory.CreateScope();
 
             // Resolve the consumer
-            if (scope.ServiceProvider.GetRequiredService(_consumerRegistry.ResolveConsumerType(message))
+            if (scope.ServiceProvider.GetRequiredService(consumerType)
                 is not IConsumer consumer)
                 throw new Exception($"Couldn't resolve consumer service of type: '{message.ConsumerType}'");
 
             // Execute the consumer
-            await consumer.Consume(message, cancellationToken);
+            await consumer.Consume(message, timeoutCancellationToken.Token);
 
             activity?.SetStatus(ActivityStatusCode.Ok);
             _logger.LogInformation("Successfully processed message for consumer: '{id}'", message.ConsumerType);

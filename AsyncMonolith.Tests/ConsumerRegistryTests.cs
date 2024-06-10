@@ -32,6 +32,59 @@ public class ConsumerRegistryTests
     }
 
     [Fact]
+    public void ConsumerRegistry_Resolves_ConsumerTimeout_By_Name()
+    {
+        // Given
+        var serviceProvider = Setup();
+        var registry = serviceProvider.GetRequiredService<ConsumerRegistry>();
+
+        // When
+        var timeout = registry.ResolveConsumerTimeout(nameof(SingleConsumer));
+
+        // Then
+        timeout.Should().Be(1);
+    }
+
+
+    [Fact]
+    public void ConsumerRegistry_Resolves_Default_ConsumerTimeout_When_Not_Set()
+    {
+        // Given
+        var serviceProvider = Setup();
+        var registry = serviceProvider.GetRequiredService<ConsumerRegistry>();
+
+        // When
+        var timeout = registry.ResolveConsumerTimeout(nameof(ExceptionConsumer));
+
+        // Then
+        timeout.Should().Be(10);
+    }
+
+    [Fact]
+    public void ConsumerRegistry_Resolves_ConsumerTimeout_By_ConsumerMessage()
+    {
+        // Given
+        var serviceProvider = Setup();
+        var registry = serviceProvider.GetRequiredService<ConsumerRegistry>();
+
+        // When
+        var timeout = registry.ResolveConsumerTimeout(new ConsumerMessage
+        {
+            ConsumerType = nameof(SingleConsumer),
+            Id = default!,
+            CreatedAt = default!,
+            AvailableAfter = default!,
+            PayloadType = default!,
+            Payload = default!,
+            Attempts = default,
+            InsertId = string.Empty
+        });
+
+        // Then
+        timeout.Should().Be(1);
+    }
+
+    [Fact]
     public void ConsumerRegistry_Resolves_ConsumerType()
     {
         // Given

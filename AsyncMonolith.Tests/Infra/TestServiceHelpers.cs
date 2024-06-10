@@ -36,7 +36,7 @@ public static class TestServiceHelpers
             options.ProcessorMinDelay = settings.ProcessorMinDelay;
         });
 
-        services.Register(Assembly.GetExecutingAssembly());
+        services.Register(Assembly.GetExecutingAssembly(), settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<ScheduleService<TestDbContext>>();
 

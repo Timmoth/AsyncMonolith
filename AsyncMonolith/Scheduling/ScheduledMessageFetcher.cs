@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 namespace AsyncMonolith.Scheduling;
 
 /// <summary>
-/// Base class for fetching scheduled messages.
+///     Base class for fetching scheduled messages.
 /// </summary>
 public abstract class ScheduledMessageFetcher
 {
@@ -17,7 +17,7 @@ public abstract class ScheduledMessageFetcher
     }
 
     /// <summary>
-    /// Fetches scheduled messages.
+    ///     Fetches scheduled messages.
     /// </summary>
     /// <param name="set">The DbSet of scheduled messages.</param>
     /// <param name="currentTime">The current time.</param>

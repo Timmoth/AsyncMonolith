@@ -255,10 +255,7 @@ public class ProducerServiceDbTests : DbTestsBase
                 Name = "test-name-2"
             }, delay, insertId);
 
-            await Assert.ThrowsAsync<DbUpdateException>(async () =>
-            {
-                await dbContext.SaveChangesAsync();
-            });
+            await Assert.ThrowsAsync<DbUpdateException>(async () => { await dbContext.SaveChangesAsync(); });
         }
         finally
         {

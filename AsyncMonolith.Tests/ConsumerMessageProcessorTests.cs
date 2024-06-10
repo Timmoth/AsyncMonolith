@@ -126,6 +126,47 @@ public class ConsumerMessageProcessorTests : DbTestsBase
 
     [Theory]
     [MemberData(nameof(GetTestDbContainers))]
+    public async Task ConsumerMessageProcessor_Increments_Message_Attempts_OnTimeout(TestDbContainerBase dbContainer)
+    {
+        try
+        {
+            // Given
+            var serviceProvider = await Setup(dbContainer);
+
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+
+                await producer.Produce(new TimeoutConsumerMessage
+                {
+                    Delay = 2
+                });
+
+                await dbContext.SaveChangesAsync();
+            }
+
+            // When
+            var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
+
+            await processor.ProcessBatch(CancellationToken.None);
+
+            // Then
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
+                message?.Attempts.Should().Be(1);
+            }
+        }
+        finally
+        {
+            await dbContainer.DisposeAsync();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GetTestDbContainers))]
     public async Task ConsumerMessageProcessor_Increments_Message_AvailableAfter(TestDbContainerBase dbContainer)
     {
         try

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AsyncMonolith.Scheduling;
 
 /// <summary>
-/// Service for scheduling messages.
+///     Service for scheduling messages.
 /// </summary>
 /// <typeparam name="T">The type of DbContext.</typeparam>
 public sealed class ScheduleService<T> where T : DbContext
@@ -17,7 +17,7 @@ public sealed class ScheduleService<T> where T : DbContext
     private readonly TimeProvider _timeProvider;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ScheduleService{T}"/> class.
+    ///     Initializes a new instance of the <see cref="ScheduleService{T}" /> class.
     /// </summary>
     /// <param name="timeProvider">The time provider.</param>
     /// <param name="dbContext">The DbContext.</param>
@@ -30,7 +30,7 @@ public sealed class ScheduleService<T> where T : DbContext
     }
 
     /// <summary>
-    /// Schedules a message.
+    ///     Schedules a message.
     /// </summary>
     /// <typeparam name="TK">The type of the message.</typeparam>
     /// <param name="message">The message to schedule.</param>
@@ -69,7 +69,7 @@ public sealed class ScheduleService<T> where T : DbContext
     }
 
     /// <summary>
-    /// Deletes scheduled messages by tag.
+    ///     Deletes scheduled messages by tag.
     /// </summary>
     /// <param name="tag">The tag of the scheduled messages to delete.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -82,7 +82,7 @@ public sealed class ScheduleService<T> where T : DbContext
     }
 
     /// <summary>
-    /// Deletes a scheduled message by ID.
+    ///     Deletes a scheduled message by ID.
     /// </summary>
     /// <param name="id">The ID of the scheduled message to delete.</param>
     /// <param name="cancellationToken">The cancellation token.</param>

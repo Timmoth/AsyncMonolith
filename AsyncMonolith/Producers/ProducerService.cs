@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AsyncMonolith.Producers;
 
 /// <summary>
-/// Base class for producer services.
+///     Base class for producer services.
 /// </summary>
 /// <typeparam name="T">The type of the DbContext.</typeparam>
 public abstract class ProducerService<T> where T : DbContext
@@ -26,7 +26,7 @@ public abstract class ProducerService<T> where T : DbContext
     }
 
     /// <summary>
-    /// Produces a single message
+    ///     Produces a single message
     /// </summary>
     /// <typeparam name="TK">The type of the message.</typeparam>
     /// <param name="message">The message to produce.</param>
@@ -37,7 +37,7 @@ public abstract class ProducerService<T> where T : DbContext
         where TK : IConsumerPayload;
 
     /// <summary>
-    /// Produces a list of messages of type TK.
+    ///     Produces a list of messages of type TK.
     /// </summary>
     /// <typeparam name="TK">The type of the messages.</typeparam>
     /// <param name="messages">The list of messages to produce.</param>
@@ -46,7 +46,7 @@ public abstract class ProducerService<T> where T : DbContext
     public abstract Task ProduceList<TK>(List<TK> messages, long? availableAfter = null) where TK : IConsumerPayload;
 
     /// <summary>
-    /// Produces a scheduled message.
+    ///     Produces a scheduled message.
     /// </summary>
     /// <param name="message">The scheduled message to produce.</param>
     public void Produce(ScheduledMessage message)

@@ -5,14 +5,14 @@ using Microsoft.Extensions.Options;
 namespace AsyncMonolith.Consumers;
 
 /// <summary>
-/// Represents a base class for fetching consumer messages.
+///     Represents a base class for fetching consumer messages.
 /// </summary>
 public abstract class ConsumerMessageFetcher
 {
     protected readonly IOptions<AsyncMonolithSettings> Options;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ConsumerMessageFetcher"/> class.
+    ///     Initializes a new instance of the <see cref="ConsumerMessageFetcher" /> class.
     /// </summary>
     /// <param name="options">The options for the AsyncMonolithSettings.</param>
     protected ConsumerMessageFetcher(IOptions<AsyncMonolithSettings> options)
@@ -21,7 +21,7 @@ public abstract class ConsumerMessageFetcher
     }
 
     /// <summary>
-    /// Fetches consumer messages.
+    ///     Fetches consumer messages.
     /// </summary>
     /// <param name="consumerSet">The DbSet of consumer messages.</param>
     /// <param name="currentTime">The current time as unix timestamp seconds.</param>

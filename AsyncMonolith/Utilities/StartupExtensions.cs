@@ -42,6 +42,10 @@ public static class StartupExtensions
         if (settings.ProcessorBatchSize < 1)
             throw new ArgumentException("AsyncMonolithSettings.ProcessorBatchSize must be at least 1.");
 
+
+        if (settings.DefaultConsumerTimeout < 1)
+            throw new ArgumentException("AsyncMonolithSettings.DefaultConsumerTimeout must be at least 1.");
+
         services.Configure<AsyncMonolithSettings>(options =>
         {
             options.AttemptDelay = settings.AttemptDelay;
@@ -51,9 +55,10 @@ public static class StartupExtensions
             options.ProcessorBatchSize = settings.ProcessorBatchSize;
             options.ConsumerMessageProcessorCount = settings.ConsumerMessageProcessorCount;
             options.ScheduledMessageProcessorCount = settings.ScheduledMessageProcessorCount;
+            options.DefaultConsumerTimeout = settings.DefaultConsumerTimeout;
         });
 
-        services.Register(assembly);
+        services.Register(assembly, settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<ScheduleService<T>>();
 
@@ -70,10 +75,11 @@ public static class StartupExtensions
             services.AddHostedService<ScheduledMessageProcessor<T>>();
     }
 
-    public static void Register(this IServiceCollection services, Assembly assembly)
+    public static void Register(this IServiceCollection services, Assembly assembly, AsyncMonolithSettings settings)
     {
         var consumerServiceDictionary = new Dictionary<string, Type>();
         var payloadConsumerDictionary = new Dictionary<string, List<string>>();
+        var consumerTimeoutDictionary = new Dictionary<string, int>();
 
         var type = typeof(BaseConsumer<>);
 
@@ -85,6 +91,14 @@ public static class StartupExtensions
 
             // Register each consumer service
             services.AddScoped(consumerType);
+
+            var timeoutDuration = settings.DefaultConsumerTimeout;
+            var attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerTimeoutAttribute));
+            if (attribute is ConsumerTimeoutAttribute timeoutAttribute) timeoutDuration = timeoutAttribute.Duration;
+
+            if (timeoutDuration <= 0) timeoutDuration = settings.DefaultConsumerTimeout;
+
+            consumerTimeoutDictionary[consumerType.Name] = timeoutDuration;
 
             // Get the generic argument (T) of the consumer type
             var payloadType = consumerType.BaseType.GetGenericArguments()[0];
@@ -106,6 +120,7 @@ public static class StartupExtensions
             if (!payloadConsumerDictionary.ContainsKey(consumerPayload))
                 throw new Exception($"No consumers exist for payload: '{consumerPayload}'");
 
-        services.AddSingleton(new ConsumerRegistry(consumerServiceDictionary, payloadConsumerDictionary));
+        services.AddSingleton(new ConsumerRegistry(consumerServiceDictionary, payloadConsumerDictionary,
+            consumerTimeoutDictionary, settings));
     }
 }

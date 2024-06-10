@@ -4,6 +4,8 @@ using AsyncMonolith.Utilities;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
+namespace AsyncMonolith.Tests;
+
 public class ScheduledMessageFetcherTests : DbTestsBase
 {
     [Theory]
@@ -23,9 +25,8 @@ public class ScheduledMessageFetcherTests : DbTestsBase
             var fetcher = serviceProvider.GetRequiredService<ScheduledMessageFetcher>();
             var idGenerator = serviceProvider.GetRequiredService<IAsyncMonolithIdGenerator>();
 
-            for (var i = 0; i < 2*settings.ProcessorBatchSize; i++)
-            {
-                dbContext.ScheduledMessages.Add(new ScheduledMessage()
+            for (var i = 0; i < 2 * settings.ProcessorBatchSize; i++)
+                dbContext.ScheduledMessages.Add(new ScheduledMessage
                 {
                     AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
                     ChronExpression = "",
@@ -35,12 +36,12 @@ public class ScheduledMessageFetcherTests : DbTestsBase
                     PayloadType = "",
                     Tag = ""
                 });
-            }
 
             await dbContext.SaveChangesAsync();
 
             // When
-            var dbMessages = await fetcher.Fetch(dbContext.ScheduledMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), CancellationToken.None);
+            var dbMessages = await fetcher.Fetch(dbContext.ScheduledMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(),
+                CancellationToken.None);
 
             // Then
             dbMessages.Count.Should().Be(settings.ProcessorBatchSize);
@@ -50,5 +51,4 @@ public class ScheduledMessageFetcherTests : DbTestsBase
             await dbContainer.DisposeAsync();
         }
     }
-
 }

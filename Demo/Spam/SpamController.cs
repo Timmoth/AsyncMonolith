@@ -19,11 +19,7 @@ public class SpamController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Spam([FromQuery(Name = "count")] int count, CancellationToken cancellationToken)
     {
-        if (count <= 0)
-        {
-            return BadRequest("'count' query parameter must be at least 1");
-
-        }
+        if (count <= 0) return BadRequest("'count' query parameter must be at least 1");
         if (SpamResultService.Start != null && SpamResultService.End == null)
         {
             var duration = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds() - SpamResultService.Start;
@@ -55,7 +51,7 @@ public class SpamController : ControllerBase
         await _producerService.Produce(new SpamMessage
         {
             Last = true
-        }, availableAfter: 10);
+        }, 10);
 
         return Ok("Started.");
     }
