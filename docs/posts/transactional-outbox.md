@@ -42,6 +42,6 @@ _dbContext.Outbox.Add(orderCreated)
 await _dbContext.SaveChangesAsync();
 ```
 
-For simple use cases, you may realize that the outbox message can act as the event, and you don't actually need the additional step of publishing to a message broker. Instead, you write your events to your database along with the changes to your domain and have a process that periodically fetches, processes, and then removes messages from the outbox table. This is one of the core principles behind AsyncMonolith.
+For simple use cases, you may realize that the outbox message can act as the event, and you don't actually need the additional step of publishing to a message broker. Instead, you write your events to your database along with the changes to your domain and have a process that periodically fetches, processes, and then removes messages from the outbox table. This is one of the core principles behind [AsyncMonolith](https://github.com/Timmoth/AsyncMonolith).
 
 In summary, the transactional outbox pattern ensures that events are reliably published, maintaining consistency between operations. While it introduces the need for an additional process to handle the outbox and increases the load on your application database, the benefits of decoupling and reliability often outweigh these overheads.

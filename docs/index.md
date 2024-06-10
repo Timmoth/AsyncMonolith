@@ -1,4 +1,4 @@
-# AsyncMonolith ![Logo](assets/logo.png)
+# [AsyncMonolith](https://github.com/Timmoth/AsyncMonolith) ![Logo](assets/logo.png)
 
 [![NuGet](https://img.shields.io/nuget/v/AsyncMonolith)](https://www.nuget.org/packages/AsyncMonolith)
 
