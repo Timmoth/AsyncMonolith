@@ -46,3 +46,5 @@ public class SendOrderCancelledEmail : BaseConsumer<OrderCancelled>
     }
 }
 ```
+
+By ensuring that your handlers are idempotent, you can safely reprocess events wilst making sure your system remains consistent and reliable.
