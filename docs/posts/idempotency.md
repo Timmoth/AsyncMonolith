@@ -1,4 +1,4 @@
-Idempotency refers to the ability of your code to be executed multiple times whilst still yielding the same outcome. It is a critical property of handlers in an event driven system, since events can be reprocessed due to retries, network issues, or other failures. Without idempotency, reprocessing the same event could lead to inconsistent states, duplicate entries, or other unintended side effects.
+Idempotency refers to the ability of an operation to be performed multiple times whilst still yielding the same outcome. It is a critical property of handlers in an event driven system, since events can be reprocessed due to retries, network issues, or other failures. Without idempotency, reprocessing the same event could lead to inconsistent states, duplicate entries, or other unintended side effects.
 
 Let's consider a simple scenario where an event handler updates the status of an order.
 
