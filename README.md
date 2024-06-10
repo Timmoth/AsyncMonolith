@@ -30,7 +30,8 @@ AsyncMonolith is a lightweight library that facillitates simple asynchronous pro
 
 ## Posts
   - [What is the Transactional Outbox?](https://timmoth.github.io/AsyncMonolith/posts/transactional-outbox/)
-  - [What is the Mediator?](https://timmoth.github.io/AsyncMonolith/posts/mediator/)
+  - [What is the Mediator pattern?](https://timmoth.github.io/AsyncMonolith/posts/mediator/)
+  - [What is Idempotency?](https://timmoth.github.io/AsyncMonolith/posts/idempotency/)
 
 ## Collaboration 🙏
 Like the idea and want to get involved? Check out the open issues or shoot me a message if you've got any ideas / feedback!
