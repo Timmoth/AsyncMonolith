@@ -39,6 +39,9 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
   - [Contributing 🙏](https://timmoth.github.io/AsyncMonolith/contributing)
   - [Tests 🐞](https://timmoth.github.io/AsyncMonolith/tests)
 
+# Posts
+  - [What is the Transactional Outbox?](https://timmoth.github.io/AsyncMonolith/posts/transactional-outbox/)
+
 # Collaboration 🙏
 Like the idea and want to get involved? Check out the open issues or shoot me a message if you've got any ideas / feedback!
 
