@@ -42,7 +42,7 @@ public class CancellationEmailHandler
         public async Task Handle(OrderCancelled orderCancelled)
         {
             ...
-            _emailService.SendCancellationEmail(order.Id);
+            // Send order cancelled email
         }
     }
 ```
@@ -98,7 +98,7 @@ public class SendOrderCancelledEmail : BaseConsumer<OrderCancelled>
     public override Task Consume(OrderCancelled message, CancellationToken cancellationToken)
     {
         ...
-        _emailService.SendCancellationEmail(order.Id);
+        // Send order cancelled email
     }
 }
 ```

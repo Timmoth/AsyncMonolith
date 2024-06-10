@@ -43,8 +43,9 @@ public class SendOrderCancelledEmail : BaseConsumer<OrderCancelled>
     public override Task Consume(OrderCancelled message, CancellationToken cancellationToken)
     {
         ...
+        // Send order cancelled email
     }
 }
 ```
 
-By ensuring that your handlers are idempotent, you can safely reprocess events wilst making sure your system remains consistent and reliable.
+By ensuring that your handlers are idempotent, you can safely reprocess events whilst making sure your system remains consistent and reliable.
