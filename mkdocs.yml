@@ -24,7 +24,7 @@ nav:
   - Tests 🐞: tests.md
   - Posts:
       - What is the Transactional Outbox?: posts/transactional-outbox.md
-      - What is the Mediator?: posts/mediator.md
+      - What is the Mediator pattern?: posts/mediator.md
       - What is Idempotency?: posts/idempotency.md
 
 markdown_extensions:

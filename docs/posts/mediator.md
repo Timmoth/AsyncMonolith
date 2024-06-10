@@ -49,16 +49,20 @@ public class CancellationEmailHandler
 
 This pattern promotes:
 
-Code reuse
+### Code reuse
+
 You may have multiple places where an order can be canceled. Now, you don't have to duplicate the logic to cancel the shipment, send an email, or coordinate those actions.
 
-Single responsibility principle
+### Single responsibility principle
+
 Each handler is responsible for handling the OrderCancelled event within its own context.
 
-Open/closed principle
+### Open/closed principle
+
 Additional handlers can be easily added to extend the behavior of your system without modifying existing code.
 
-Testability
+### Testability
+
 Handlers can be unit tested in isolation.
 
 One issue with the mediator pattern is that a part of your system could fail without recourse. For instance, if the CancelShipmentHandler fails, your system could be left in an inconsistent state since the order is canceled but the shipment is not.
