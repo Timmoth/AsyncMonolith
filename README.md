@@ -1,7 +1,7 @@
 # AsyncMonolith ![Logo](AsyncMonolith/logo.png)
 [![NuGet](https://img.shields.io/nuget/v/AsyncMonolith)](https://www.nuget.org/packages/AsyncMonolith)
 
-AsyncMonolith is a lightweight library that facillitates simple asynchronous processes in monolithic dotnet apps.
+AsyncMonolith is a lightweight library that facilitates simple asynchronous messaging in dotnet apps.
 
 ## Overview
 ✅ Makes building event driven architectures simple  
