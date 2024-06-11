@@ -33,6 +33,41 @@ AsyncMonolith is a lightweight library that facillitates simple asynchronous pro
   - [What is the Mediator pattern?](https://timmoth.github.io/AsyncMonolith/posts/mediator/)
   - [What is Idempotency?](https://timmoth.github.io/AsyncMonolith/posts/idempotency/)
 
+## Quick Demo
+Producing and scheduling messages
+```csharp
+  // Publish 'UserDeleted' to be processed in 60 seconds
+  await _producerService.Produce(new UserDeleted()
+  {
+    Id = id
+  }, 60);
+  
+ // Publish 'CacheRefreshScheduled' every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.
+ _scheduleService.Schedule(new CacheRefreshScheduled
+   {
+       Id = id
+   }, "0 0 12 * * MON", "UTC", "id:{id}");
+ await _dbContext.SaveChangesAsync(cancellationToken);
+```
+Consuming messages
+```csharp
+[ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
+public class DeleteUsersPosts : BaseConsumer<UserDeleted>
+{
+    private readonly ApplicationDbContext _dbContext;
+
+    public ValueSubmittedConsumer(ApplicationDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public override Task Consume(UserDeleted message, CancellationToken cancellationToken)
+    {
+        ...
+		await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+}
+```
 ## Collaboration 🙏
 Like the idea and want to get involved? Check out the open issues or shoot me a message if you've got any ideas / feedback!
 
