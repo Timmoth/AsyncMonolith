@@ -81,6 +81,9 @@ Like the idea and want to get involved? Check out the open issues or shoot me a 
 ## Support 🛟
 Need help? Ping me on [linkedin](https://www.linkedin.com/in/timmoth/) and I'd be more then happy to jump on a call to debug, help configure or answer any questions.
 
+## Discord
+Come say hello on the [Discord server](https://discord.gg/ZPqVWptK5B)
+
 ## Support the project 🤝
 
 - **🌟 Star this repository**: It means a lot to me and helps with exposure.
