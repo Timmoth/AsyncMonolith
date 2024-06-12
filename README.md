@@ -19,7 +19,6 @@ AsyncMonolith is a lightweight library that facilitates simple asynchronous mess
 ## Find out more 🤔
   - [Overview ✅](https://timmoth.github.io/AsyncMonolith/index)
   - [Quick start ▶️](https://timmoth.github.io/AsyncMonolith/quickstart)
-  - [Guide 📨](https://timmoth.github.io/AsyncMonolith/guide)
   - [Internals 🧠](https://timmoth.github.io/AsyncMonolith/internals)
   - [Releases 📒](https://timmoth.github.io/AsyncMonolith/releases)
   - [Warnings ⚠️](https://timmoth.github.io/AsyncMonolith/warnings)
@@ -28,6 +27,14 @@ AsyncMonolith is a lightweight library that facilitates simple asynchronous mess
   - [Contributing 🙏](https://timmoth.github.io/AsyncMonolith/contributing)
   - [Tests 🐞](https://timmoth.github.io/AsyncMonolith/tests)
 
+## Guides
+  - [Producing messages](https://timmoth.github.io/AsyncMonolith/guides/producing-messages/)
+  - [Scheduling messages](https://timmoth.github.io/AsyncMonolith/guides/scheduling-messages/)
+  - [Consuming messages](https://timmoth.github.io/AsyncMonolith/guides/consuming-messages/)
+  - [Changing messages](https://timmoth.github.io/AsyncMonolith/guides/changing-messages/)
+  - [Open Telemetry](https://timmoth.github.io/AsyncMonolith/guides/opentelemetry/)
+
+    
 ## Posts
   - [What is the Transactional Outbox?](https://timmoth.github.io/AsyncMonolith/posts/transactional-outbox/)
   - [What is the Mediator pattern?](https://timmoth.github.io/AsyncMonolith/posts/mediator/)
