@@ -14,7 +14,6 @@ theme:
 nav:
   - Overview ✅: index.md
   - Quick start ▶️: quickstart.md
-  - Guide 📨: guide.md
   - Internals 🧠: internals.md
   - Releases 📒: releases.md
   - Warnings ⚠️: warnings.md
@@ -22,6 +21,13 @@ nav:
   - Demo App ✨: demo.md
   - Contributing 🙏: contributing.md
   - Tests 🐞: tests.md
+  - Guides:
+      - Producing messages: guides/producing-messages.md
+      - Scheduling messages: guides/scheduling-messages.md
+      - Consuming messages: guides/consuming-messages.md
+      - Changing messages: guides/changing-messages.md
+      - Opentelemetry: guides/opentelemetry.md
+
   - Posts:
       - What is the Transactional Outbox?: posts/transactional-outbox.md
       - What is the Mediator pattern?: posts/mediator.md

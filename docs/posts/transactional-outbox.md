@@ -49,23 +49,23 @@ In summary, the transactional outbox pattern ensures that events are reliably pu
 Here is how the above example may look if you’re using [AsyncMonolith](https://github.com/Timmoth/AsyncMonolith)
 
 ```csharp
-    // Create order
-    _dbContext.Orders.Add(newOrder);
-    // Insert event into outbox
-    await _producerService.Produce(new OrderCreated()
-    {
-        OrderId = order.Id
-    });
-    await _dbContext.SaveChangesAsync();
+// Create order
+_dbContext.Orders.Add(newOrder);
+// Insert event into outbox
+await _producerService.Produce(new OrderCreated()
+{
+    OrderId = order.Id
+});
+await _dbContext.SaveChangesAsync();
 ```
 
 ```csharp
-    public class CreateShipment : BaseConsumer<OrderCreated>
+public class CreateShipment : BaseConsumer<OrderCreated>
+{
+    public override Task Consume(OrderCreated message, CancellationToken cancellationToken)
     {
-        public override Task Consume(OrderCreated message, CancellationToken cancellationToken)
-        {
-            ...
-            // Create Order
-        }
+        ...
+        // Create Order
     }
+}
 ```
