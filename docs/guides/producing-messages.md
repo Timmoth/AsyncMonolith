@@ -19,8 +19,8 @@ As the consumer payload will be stored in the database in a serialized string, i
 
 To produce your message you'll need to inject a `ProducerService<ApplicationDbContext>`
 
-## Immidiate messages
-You can produce messages to be consumed immidiately like this:
+## Immediate messages
+You can produce messages to be consumed immediately like this:
 ```csharp
 
     order.Cancel();
@@ -56,7 +56,7 @@ You can produce messages to be consumed after a delay by specifying the number o
 ```
 
 ## Deduplicated messages
-Deduplicated messages are useful when you may emit the same message multiple times but only require it to be processed once for a given time period. For instance you may want to aggregate page views no more frequently then once every 10 seconds, you could schedule a reccuring message for this, but it may be wasteful if you anticipate pages go without views for extened periods of time.
+Deduplicated messages are useful when you may emit the same message multiple times but only require it to be processed once for a given time period. For instance you may want to aggregate page views no more frequently then once every 10 seconds, you could schedule a reccuring message for this, but it may be wasteful if you anticipate pages go without views for extended periods of time.
 
 ```csharp
 
