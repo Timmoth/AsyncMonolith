@@ -12,6 +12,7 @@ public class ConsumerMessageFetcherTests : DbTestsBase
     [Theory]
     [InlineData(DbType.Ef)]
     [InlineData(DbType.MySql)]
+    [InlineData(DbType.MsSql)]
     [InlineData(DbType.PostgreSql)]
     public async Task Fetch_Returns_Batch_Of_Messages(DbType dbType)
     {

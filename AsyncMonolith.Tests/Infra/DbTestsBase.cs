@@ -42,6 +42,7 @@ public abstract class DbTestsBase
     public static IEnumerable<object[]> GetTestDbContainers()
     {
         yield return new object[] { new MySqlTestDbContainer() };
+        yield return new object[] { new MsSqlTestDbContainer() };
         yield return new object[] { new PostgreSqlTestDbContainer() };
         yield return new object[] { new EfTestDbContainer() };
     }
@@ -52,6 +53,7 @@ public abstract class DbTestsBase
         {
             DbType.Ef => new EfTestDbContainer(),
             DbType.MySql => new MySqlTestDbContainer(),
+            DbType.MsSql => new MsSqlTestDbContainer(),
             DbType.PostgreSql => new PostgreSqlTestDbContainer(),
             _ => throw new ArgumentOutOfRangeException(nameof(dbType), dbType, null)
         };

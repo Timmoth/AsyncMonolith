@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<LangVersion>preview</LangVersion>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>AsyncMonolith.MsSql</PackageId>
+		<PackageVersion>1.0.9</PackageVersion>
+		<Authors>Tim Jones</Authors>
+		<Company>Aptacode</Company>
+		<Description>MsSql interface for AsyncMonolith</Description>
+		<PackageProjectUrl>https://github.com/Timmoth/AsyncMonolith</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
+		<Title>AsyncMonolith.MsSql</Title>
+		<PackageIcon>logo.png</PackageIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\AsyncMonolith\logo.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.6" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
+	</ItemGroup>
+
+</Project>

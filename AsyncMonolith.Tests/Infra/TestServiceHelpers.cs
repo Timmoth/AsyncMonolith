@@ -1,6 +1,7 @@
 using System.Reflection;
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Ef;
+using AsyncMonolith.MsSql;
 using AsyncMonolith.MySql;
 using AsyncMonolith.PostgreSql;
 using AsyncMonolith.Producers;
@@ -51,6 +52,11 @@ public static class TestServiceHelpers
                 services.AddScoped<ProducerService<TestDbContext>, MySqlProducerService<TestDbContext>>();
                 services.AddSingleton<ConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
                 services.AddSingleton<ScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
+                break;
+            case DbType.MsSql:
+                services.AddScoped<ProducerService<TestDbContext>, MsSqlProducerService<TestDbContext>>();
+                services.AddSingleton<ConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
+                services.AddSingleton<ScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
                 break;
             case DbType.PostgreSql:
                 services.AddScoped<ProducerService<TestDbContext>, PostgreSqlProducerService<TestDbContext>>();

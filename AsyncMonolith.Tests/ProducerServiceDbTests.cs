@@ -11,6 +11,7 @@ public class ProducerServiceDbTests : DbTestsBase
 {
     [Theory]
     [InlineData(DbType.MySql)]
+    [InlineData(DbType.MsSql)]
     [InlineData(DbType.PostgreSql)]
     public async Task Producer_Inserts_ConsumerMessage(DbType dbType)
     {
@@ -54,6 +55,7 @@ public class ProducerServiceDbTests : DbTestsBase
 
     [Theory]
     [InlineData(DbType.MySql)]
+    [InlineData(DbType.MsSql)]
     [InlineData(DbType.PostgreSql)]
     public async Task Producer_Inserts_List_Of_ConsumerMessages(DbType dbType)
     {
@@ -181,6 +183,7 @@ public class ProducerServiceDbTests : DbTestsBase
 
     [Theory]
     [InlineData(DbType.MySql)]
+    [InlineData(DbType.MsSql)]
     [InlineData(DbType.PostgreSql)]
     public async Task Producer_Does_Not_Insert_Duplicate_ConsumerMessage(DbType dbType)
     {
