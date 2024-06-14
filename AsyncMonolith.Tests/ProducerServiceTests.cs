@@ -35,7 +35,7 @@ public class ProducerServiceTests
 
         var delay = 100;
         var insertId = "test-insert_id";
-        var producer = serviceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+        var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
 
         // When
@@ -70,7 +70,7 @@ public class ProducerServiceTests
 
         var delay = 100;
         var insertId = "test-insert_id";
-        var producer = serviceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+        var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
 
         // When
@@ -114,7 +114,7 @@ public class ProducerServiceTests
             Name = "test-name"
         };
 
-        var producer = serviceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+        var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
 
         // When
@@ -159,7 +159,7 @@ public class ProducerServiceTests
             Payload = expectedPayload
         };
 
-        var producer = serviceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+        var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
 
         // When
@@ -204,7 +204,7 @@ public class ProducerServiceTests
             Payload = payload
         };
 
-        var producer = serviceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+        var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
 
         // When

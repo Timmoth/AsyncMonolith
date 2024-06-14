@@ -14,8 +14,8 @@ public static class StartupExtensions
         AsyncMonolithSettings? settings = null) where T : DbContext
     {
         services.InternalAddAsyncMonolith<T>(assembly, settings);
-        services.AddScoped<ProducerService<T>, PostgreSqlProducerService<T>>();
-        services.AddSingleton<ConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
-        services.AddSingleton<ScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
+        services.AddScoped<IProducerService, PostgreSqlProducerService<T>>();
+        services.AddSingleton<IConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
+        services.AddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
     }
 }

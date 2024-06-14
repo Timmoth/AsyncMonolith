@@ -8,7 +8,7 @@
 		<LangVersion>preview</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith.MySql</PackageId>
-		<PackageVersion>1.0.9</PackageVersion>
+		<PackageVersion>8.0.0</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>MySql interface for AsyncMonolith</Description>

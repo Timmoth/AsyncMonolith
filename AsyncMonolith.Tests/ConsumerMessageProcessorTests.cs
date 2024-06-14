@@ -21,7 +21,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+                var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
                 await producer.Produce(new SingleConsumerMessage
                 {
@@ -58,7 +58,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+                var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
                 await producer.Produce(new SingleConsumerMessage
                 {
@@ -95,7 +95,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+                var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
                 await producer.Produce(new ExceptionConsumerMessage
                 {
@@ -136,7 +136,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+                var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
                 await producer.Produce(new TimeoutConsumerMessage
                 {
@@ -177,7 +177,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+                var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
                 await producer.Produce(new ExceptionConsumerMessage
                 {
@@ -219,7 +219,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+                var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
                 await producer.Produce(new ExceptionConsumerMessage
                 {
@@ -271,7 +271,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+                var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
                 await producer.Produce(new SingleConsumerMessage
                 {

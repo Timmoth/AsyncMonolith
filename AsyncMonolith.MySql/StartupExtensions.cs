@@ -14,8 +14,8 @@ public static class StartupExtensions
         AsyncMonolithSettings? settings = null) where T : DbContext
     {
         services.InternalAddAsyncMonolith<T>(assembly, settings);
-        services.AddScoped<ProducerService<T>, MySqlProducerService<T>>();
-        services.AddSingleton<ConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
-        services.AddSingleton<ScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
+        services.AddScoped<IProducerService, MySqlProducerService<T>>();
+        services.AddSingleton<IConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
+        services.AddSingleton<IScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
     }
 }

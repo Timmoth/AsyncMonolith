@@ -80,9 +80,9 @@ Create messages and consumers
     public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
     {
         private readonly ApplicationDbContext _dbContext;
-        private readonly ProducerService<ApplicationDbContext> _producerService;
+        private readonly IProducerService _producerService;
 
-        public ValueSubmittedConsumer(ApplicationDbContext dbContext, ProducerService<ApplicationDbContext> producerService)
+        public ValueSubmittedConsumer(ApplicationDbContext dbContext, IProducerService producerService)
         {
             _dbContext = dbContext;
             _producerService = producerService;
@@ -101,8 +101,8 @@ Produce / schedule messages
 ```csharp
 
     // Inject services
-    private readonly ProducerService<ApplicationDbContext> _producerService;
-    private readonly ScheduledMessageService<ApplicationDbContext> _scheduledMessageService;
+    private readonly IProducerService _producerService;
+    private readonly IScheduleService _scheduleService;
 
     // Produce a message to be processed immediately
     await _producerService.Produce(new ValueSubmitted()
@@ -123,7 +123,7 @@ Produce / schedule messages
     }, 10, $"user:{userId}");
 
     // Publish a message every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.
-    _scheduledMessageService.Schedule(new ValueSubmitted
+    _scheduleService.Schedule(new ValueSubmitted
     {
       Value = newValue
     }, "0 0 12 * * MON", "UTC", "id:{id}");

@@ -8,10 +8,10 @@ namespace Demo.Counter;
 public class ValueController : ControllerBase
 {
     private readonly ApplicationDbContext _dbContext;
-    private readonly ProducerService<ApplicationDbContext> _producerService;
+    private readonly IProducerService _producerService;
     private readonly TotalValueService _totalValueService;
 
-    public ValueController(ProducerService<ApplicationDbContext> producerService, ApplicationDbContext dbContext,
+    public ValueController(IProducerService producerService, ApplicationDbContext dbContext,
         TotalValueService totalValueService)
     {
         _producerService = producerService;

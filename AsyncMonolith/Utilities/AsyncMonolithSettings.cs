@@ -53,7 +53,7 @@ public class AsyncMonolithSettings
         MaxAttempts = 5,
         AttemptDelay = 10,
         ProcessorMaxDelay = 1000,
-        ProcessorMinDelay = 20,
+        ProcessorMinDelay = 10,
         ConsumerMessageProcessorCount = 1,
         ScheduledMessageProcessorCount = 1,
         ProcessorBatchSize = 5

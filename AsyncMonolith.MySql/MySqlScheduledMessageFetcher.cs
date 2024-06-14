@@ -6,7 +6,7 @@ using MySqlConnector;
 
 namespace AsyncMonolith.MySql;
 
-public class MySqlScheduledMessageFetcher : ScheduledMessageFetcher
+public sealed class MySqlScheduledMessageFetcher : IScheduledMessageFetcher
 {
     private const string MySql = @"
                     SELECT * 
@@ -15,16 +15,19 @@ public class MySqlScheduledMessageFetcher : ScheduledMessageFetcher
                     LIMIT @batchSize 
                     FOR UPDATE SKIP LOCKED";
 
-    public MySqlScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options) : base(options)
+    private readonly IOptions<AsyncMonolithSettings> _options;
+
+    public MySqlScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options)
     {
+        _options = options;
     }
 
-    public override Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> set, long currentTime,
-        CancellationToken cancellationToken)
+    public Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> set, long currentTime,
+        CancellationToken cancellationToken = default)
     {
         return set
             .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime),
-                new MySqlParameter("@batchSize", Options.Value.ProcessorBatchSize))
+                new MySqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
             .ToListAsync(cancellationToken);
     }
 }

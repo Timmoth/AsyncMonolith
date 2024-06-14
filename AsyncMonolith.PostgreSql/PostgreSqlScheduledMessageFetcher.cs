@@ -6,7 +6,7 @@ using Npgsql;
 
 namespace AsyncMonolith.PostgreSql;
 
-public class PostgreSqlScheduledMessageFetcher : ScheduledMessageFetcher
+public sealed class PostgreSqlScheduledMessageFetcher : IScheduledMessageFetcher
 {
     private const string PgSql = @"
                     SELECT * 
@@ -15,16 +15,19 @@ public class PostgreSqlScheduledMessageFetcher : ScheduledMessageFetcher
                     FOR UPDATE SKIP LOCKED 
                     LIMIT @batchSize";
 
-    public PostgreSqlScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options) : base(options)
+    private readonly IOptions<AsyncMonolithSettings> _options;
+
+    public PostgreSqlScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options)
     {
+        _options = options;
     }
 
-    public override Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> set, long currentTime,
-        CancellationToken cancellationToken)
+    public Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> set, long currentTime,
+        CancellationToken cancellationToken = default)
     {
         return set
             .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime),
-                new NpgsqlParameter("@batchSize", Options.Value.ProcessorBatchSize))
+                new NpgsqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
             .ToListAsync(cancellationToken);
     }
 }

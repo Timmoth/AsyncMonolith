@@ -7,9 +7,9 @@ namespace Demo.Counter;
 public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
 {
     private readonly ApplicationDbContext _dbContext;
-    private readonly ProducerService<ApplicationDbContext> _producerService;
+    private readonly IProducerService _producerService;
 
-    public ValueSubmittedConsumer(ApplicationDbContext dbContext, ProducerService<ApplicationDbContext> producerService)
+    public ValueSubmittedConsumer(ApplicationDbContext dbContext, IProducerService producerService)
     {
         _dbContext = dbContext;
         _producerService = producerService;

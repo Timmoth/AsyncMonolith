@@ -36,6 +36,7 @@ public sealed class ConsumerRegistry
     ///     handle them.
     /// </param>
     /// <param name="consumerTimeoutDictionary">The dictionary that maps consumer names to their associated time out.</param>
+    /// <param name="settings">Async Monolith settings.</param>
     public ConsumerRegistry(IReadOnlyDictionary<string, Type> consumerTypeDictionary,
         IReadOnlyDictionary<string, List<string>> payloadConsumerDictionary,
         IReadOnlyDictionary<string, int> consumerTimeoutDictionary, AsyncMonolithSettings settings)
@@ -55,7 +56,9 @@ public sealed class ConsumerRegistry
     public IReadOnlyList<string> ResolvePayloadConsumerTypes(string payloadType)
     {
         if (!PayloadConsumerDictionary.TryGetValue(payloadType, out var names))
+        {
             throw new Exception($"Failed to resolve consumers for payload: {payloadType}");
+        }
 
         return names;
     }
@@ -69,7 +72,9 @@ public sealed class ConsumerRegistry
     public Type ResolveConsumerType(ConsumerMessage consumer)
     {
         if (!ConsumerTypeDictionary.TryGetValue(consumer.ConsumerType, out var type))
+        {
             throw new Exception($"Couldn't resolve consumer type: '{consumer.ConsumerType}'");
+        }
 
         return type;
     }
@@ -83,7 +88,9 @@ public sealed class ConsumerRegistry
     public int ResolveConsumerTimeout(ConsumerMessage consumer)
     {
         if (ConsumerTimeoutDictionary.TryGetValue(consumer.ConsumerType, out var timeout))
+        {
             return timeout;
+        }
 
         return _settings.DefaultConsumerTimeout;
     }
@@ -97,7 +104,9 @@ public sealed class ConsumerRegistry
     public int ResolveConsumerTimeout(string consumerType)
     {
         if (ConsumerTimeoutDictionary.TryGetValue(consumerType, out var timeout))
+        {
             return timeout;
+        }
 
         return _settings.DefaultConsumerTimeout;
     }

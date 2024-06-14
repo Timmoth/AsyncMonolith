@@ -35,7 +35,9 @@ public sealed class AsyncMonolithIdGenerator : IAsyncMonolithIdGenerator
         Rng.GetBytes(buffer); // Fill buffer with cryptographically secure random bytes
 
         for (var i = 0; i < Length; i++)
+        {
             result[i] = Characters[BitConverter.ToUInt32(buffer, i * 4) % CharacterSetLength];
+        }
 
         return new string(result);
     }

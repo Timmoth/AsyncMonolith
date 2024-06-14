@@ -39,29 +39,29 @@ public static class TestServiceHelpers
 
         services.Register(Assembly.GetExecutingAssembly(), settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
-        services.AddScoped<ScheduleService<TestDbContext>>();
+        services.AddScoped<IScheduleService, ScheduleService<TestDbContext>>();
 
         switch (dbType)
         {
             case DbType.Ef:
-                services.AddScoped<ProducerService<TestDbContext>, EfProducerService<TestDbContext>>();
-                services.AddSingleton<ConsumerMessageFetcher, EfConsumerMessageFetcher>();
-                services.AddSingleton<ScheduledMessageFetcher, EfScheduledMessageFetcher>();
+                services.AddScoped<IProducerService, EfProducerService<TestDbContext>>();
+                services.AddSingleton<IConsumerMessageFetcher, EfConsumerMessageFetcher>();
+                services.AddSingleton<IScheduledMessageFetcher, EfScheduledMessageFetcher>();
                 break;
             case DbType.MySql:
-                services.AddScoped<ProducerService<TestDbContext>, MySqlProducerService<TestDbContext>>();
-                services.AddSingleton<ConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
-                services.AddSingleton<ScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
+                services.AddScoped<IProducerService, MySqlProducerService<TestDbContext>>();
+                services.AddSingleton<IConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
+                services.AddSingleton<IScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
                 break;
             case DbType.MsSql:
-                services.AddScoped<ProducerService<TestDbContext>, MsSqlProducerService<TestDbContext>>();
-                services.AddSingleton<ConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
-                services.AddSingleton<ScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
+                services.AddScoped<IProducerService, MsSqlProducerService<TestDbContext>>();
+                services.AddSingleton<IConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
+                services.AddSingleton<IScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
                 break;
             case DbType.PostgreSql:
-                services.AddScoped<ProducerService<TestDbContext>, PostgreSqlProducerService<TestDbContext>>();
-                services.AddSingleton<ConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
-                services.AddSingleton<ScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
+                services.AddScoped<IProducerService, PostgreSqlProducerService<TestDbContext>>();
+                services.AddSingleton<IConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
+                services.AddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
                 break;
         }
 

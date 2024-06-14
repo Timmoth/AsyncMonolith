@@ -5,18 +5,21 @@ using Microsoft.Extensions.Options;
 
 namespace AsyncMonolith.Ef;
 
-public class EfScheduledMessageFetcher : ScheduledMessageFetcher
+public sealed class EfScheduledMessageFetcher : IScheduledMessageFetcher
 {
-    public EfScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options) : base(options)
+    private readonly IOptions<AsyncMonolithSettings> _options;
+
+    public EfScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options)
     {
+        _options = options;
     }
 
-    public override Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> set, long currentTime,
-        CancellationToken cancellationToken)
+    public Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> set, long currentTime,
+        CancellationToken cancellationToken = default)
     {
         return set.Where(m => m.AvailableAfter <= currentTime)
             .OrderBy(m => m.AvailableAfter)
-            .Take(Options.Value.ProcessorBatchSize)
+            .Take(_options.Value.ProcessorBatchSize)
             .ToListAsync(cancellationToken);
     }
 }

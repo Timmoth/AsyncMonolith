@@ -24,15 +24,17 @@ public class ConsumerMessageFetcherTests : DbTestsBase
             var settings = AsyncMonolithSettings.Default;
             var serviceProvider = await Setup(dbContainer, settings);
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
-            var producer = serviceProvider.GetRequiredService<ProducerService<TestDbContext>>();
-            var fetcher = serviceProvider.GetRequiredService<ConsumerMessageFetcher>();
+            var producer = serviceProvider.GetRequiredService<IProducerService>();
+            var fetcher = serviceProvider.GetRequiredService<IConsumerMessageFetcher>();
 
             var messages = new List<SingleConsumerMessage>();
             for (var i = 0; i < 2 * settings.ProcessorBatchSize; i++)
+            {
                 messages.Add(new SingleConsumerMessage
                 {
                     Name = "test-name"
                 });
+            }
 
             await producer.ProduceList(messages);
             await dbContext.SaveChangesAsync();

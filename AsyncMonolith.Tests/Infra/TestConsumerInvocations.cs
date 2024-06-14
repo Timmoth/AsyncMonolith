@@ -7,9 +7,13 @@ public class TestConsumerInvocations
     public void Increment(string consumerName)
     {
         if (InvocationCounts.TryGetValue(consumerName, out var count))
+        {
             InvocationCounts[consumerName] = count + 1;
+        }
         else
+        {
             InvocationCounts[consumerName] = 1;
+        }
     }
 
     public int GetInvocationCount(string consumerName)

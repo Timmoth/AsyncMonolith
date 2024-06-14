@@ -21,7 +21,7 @@ public class ProducerServiceDbTests : DbTestsBase
         {
             // Given
             var serviceProvider = await Setup(dbContainer);
-            var producer = serviceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+            var producer = serviceProvider.GetRequiredService<IProducerService>();
 
             var delay = 10;
             var consumerMessage = new SingleConsumerMessage
@@ -65,7 +65,7 @@ public class ProducerServiceDbTests : DbTestsBase
         {
             // Given
             var serviceProvider = await Setup(dbContainer);
-            var producer = serviceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+            var producer = serviceProvider.GetRequiredService<IProducerService>();
 
             var delay = 10;
             var consumerMessage1 = new SingleConsumerMessage
@@ -127,7 +127,7 @@ public class ProducerServiceDbTests : DbTestsBase
             // Given
             var serviceProvider = await Setup(dbContainer);
             var scope = serviceProvider.CreateScope();
-            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+            var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
             var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
 
             var delay = 10;
@@ -193,7 +193,7 @@ public class ProducerServiceDbTests : DbTestsBase
         {
             // Given
             var serviceProvider = await Setup(dbContainer);
-            var producer = serviceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+            var producer = serviceProvider.GetRequiredService<IProducerService>();
 
             var delay = 10;
             var insertId = "test-insert_id";
@@ -241,7 +241,7 @@ public class ProducerServiceDbTests : DbTestsBase
             // Given
             var serviceProvider = await Setup(dbContainer);
             var scope = serviceProvider.CreateScope();
-            var producer = scope.ServiceProvider.GetRequiredService<ProducerService<TestDbContext>>();
+            var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
             var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
 
             var delay = 10;

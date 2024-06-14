@@ -14,7 +14,7 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 {
     private readonly ApplicationDbContext _dbContext;
 
-    public ValueSubmittedConsumer(ApplicationDbContext dbContext)
+    public DeleteUsersPosts(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
     }

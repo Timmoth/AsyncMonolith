@@ -10,7 +10,7 @@ namespace AsyncMonolith.Scheduling;
 ///     Service for scheduling messages.
 /// </summary>
 /// <typeparam name="T">The type of DbContext.</typeparam>
-public sealed class ScheduleService<T> where T : DbContext
+public sealed class ScheduleService<T> : IScheduleService where T : DbContext
 {
     private readonly T _dbContext;
     private readonly IAsyncMonolithIdGenerator _idGenerator;
@@ -29,15 +29,6 @@ public sealed class ScheduleService<T> where T : DbContext
         _idGenerator = idGenerator;
     }
 
-    /// <summary>
-    ///     Schedules a message.
-    /// </summary>
-    /// <typeparam name="TK">The type of the message.</typeparam>
-    /// <param name="message">The message to schedule.</param>
-    /// <param name="chronExpression">The cron expression.</param>
-    /// <param name="chronTimezone">The timezone for the cron expression.</param>
-    /// <param name="tag">The optional tag for the scheduled message.</param>
-    /// <returns>The ID of the scheduled message.</returns>
     public string Schedule<TK>(TK message, string chronExpression, string chronTimezone, string? tag = null)
         where TK : IConsumerPayload
     {
@@ -46,13 +37,22 @@ public sealed class ScheduleService<T> where T : DbContext
 
         var expression = CronExpression.Parse(chronExpression, CronFormat.IncludeSeconds);
         if (expression == null)
+        {
             throw new InvalidOperationException(
                 $"Couldn't determine scheduled message chron expression: '{chronExpression}'");
+        }
+
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(chronTimezone);
         if (timezone == null)
+        {
             throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{chronTimezone}'");
+        }
+
         var next = expression.GetNextOccurrence(_timeProvider.GetUtcNow(), timezone);
-        if (next == null) throw new InvalidOperationException("Couldn't determine next scheduled message occurrence");
+        if (next == null)
+        {
+            throw new InvalidOperationException($"Couldn't determine next scheduled message occurrence for chron expression: '{chronExpression}', timezone: '{chronTimezone}'");
+        }
 
         _dbContext.Set<ScheduledMessage>().Add(new ScheduledMessage
         {
@@ -68,30 +68,20 @@ public sealed class ScheduleService<T> where T : DbContext
         return id;
     }
 
-    /// <summary>
-    ///     Deletes scheduled messages by tag.
-    /// </summary>
-    /// <param name="tag">The tag of the scheduled messages to delete.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task DeleteByTag(string tag, CancellationToken cancellationToken)
+    public async Task DeleteByTag(string tag, CancellationToken cancellationToken = default)
     {
         var set = _dbContext.Set<ScheduledMessage>();
         var messages = await set.Where(t => t.Tag == tag).ToListAsync(cancellationToken);
         set.RemoveRange(messages);
     }
 
-    /// <summary>
-    ///     Deletes a scheduled message by ID.
-    /// </summary>
-    /// <param name="id">The ID of the scheduled message to delete.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task DeleteById(string id, CancellationToken cancellationToken)
+    public async Task DeleteById(string id, CancellationToken cancellationToken = default)
     {
         var set = _dbContext.Set<ScheduledMessage>();
         var message = await set.Where(t => t.Id == id).FirstOrDefaultAsync(cancellationToken);
         if (message != null)
+        {
             set.Remove(message);
+        }
     }
 }

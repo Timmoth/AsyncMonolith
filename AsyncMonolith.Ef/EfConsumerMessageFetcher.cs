@@ -5,19 +5,22 @@ using Microsoft.Extensions.Options;
 
 namespace AsyncMonolith.Ef;
 
-public class EfConsumerMessageFetcher : ConsumerMessageFetcher
+public sealed class EfConsumerMessageFetcher : IConsumerMessageFetcher
 {
-    public EfConsumerMessageFetcher(IOptions<AsyncMonolithSettings> options) : base(options)
+    private readonly IOptions<AsyncMonolithSettings> _options;
+
+    public EfConsumerMessageFetcher(IOptions<AsyncMonolithSettings> options)
     {
+        _options = options;
     }
 
-    public override Task<List<ConsumerMessage>> Fetch(DbSet<ConsumerMessage> consumerSet, long currentTime,
-        CancellationToken cancellationToken)
+    public Task<List<ConsumerMessage>> Fetch(DbSet<ConsumerMessage> consumerSet, long currentTime,
+        CancellationToken cancellationToken = default)
     {
         return consumerSet
             .Where(m => m.AvailableAfter <= currentTime)
             .OrderBy(m => m.CreatedAt)
-            .Take(Options.Value.ProcessorBatchSize)
+            .Take(_options.Value.ProcessorBatchSize)
             .ToListAsync(cancellationToken);
     }
 }

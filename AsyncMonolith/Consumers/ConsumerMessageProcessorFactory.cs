@@ -46,6 +46,9 @@ public class ConsumerMessageProcessorFactory<T> : IHostedService where T : DbCon
     /// <param name="cancellationToken">The cancellation token to stop the operation.</param>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        foreach (var hostedService in _hostedServices) await hostedService.StopAsync(cancellationToken);
+        foreach (var hostedService in _hostedServices)
+        {
+            await hostedService.StopAsync(cancellationToken);
+        }
     }
 }

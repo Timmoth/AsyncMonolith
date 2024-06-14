@@ -16,10 +16,7 @@ public class MsSqlTestDbContainer : TestDbContainerBase
 
     public override void AddDb(ServiceCollection services)
     {
-        services.AddDbContext<TestDbContext>((sp, options) =>
-            {
-                options.UseSqlServer(ConnectionString);
-            }
+        services.AddDbContext<TestDbContext>((sp, options) => { options.UseSqlServer(ConnectionString); }
         );
     }
 

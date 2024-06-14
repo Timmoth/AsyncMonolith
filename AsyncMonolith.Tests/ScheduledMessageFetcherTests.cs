@@ -23,10 +23,11 @@ public class ScheduledMessageFetcherTests : DbTestsBase
             var settings = AsyncMonolithSettings.Default;
             var serviceProvider = await Setup(dbContainer, settings);
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
-            var fetcher = serviceProvider.GetRequiredService<ScheduledMessageFetcher>();
+            var fetcher = serviceProvider.GetRequiredService<IScheduledMessageFetcher>();
             var idGenerator = serviceProvider.GetRequiredService<IAsyncMonolithIdGenerator>();
 
             for (var i = 0; i < 2 * settings.ProcessorBatchSize; i++)
+            {
                 dbContext.ScheduledMessages.Add(new ScheduledMessage
                 {
                     AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
@@ -37,6 +38,7 @@ public class ScheduledMessageFetcherTests : DbTestsBase
                     PayloadType = "",
                     Tag = ""
                 });
+            }
 
             await dbContext.SaveChangesAsync();
 

@@ -2,27 +2,38 @@
 using System.Text.Json;
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
+using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace AsyncMonolith.PostgreSql;
 
-public class PostgreSqlProducerService<T> : ProducerService<T> where T : DbContext
+public sealed class PostgreSqlProducerService<T> : IProducerService where T : DbContext
 {
+    private readonly ConsumerRegistry _consumerRegistry;
+    private readonly T _dbContext;
+    private readonly IAsyncMonolithIdGenerator _idGenerator;
+    private readonly TimeProvider _timeProvider;
+
     public PostgreSqlProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry, T dbContext,
-        IAsyncMonolithIdGenerator idGenerator) : base(timeProvider, consumerRegistry, dbContext, idGenerator)
+        IAsyncMonolithIdGenerator idGenerator)
     {
+        _timeProvider = timeProvider;
+        _consumerRegistry = consumerRegistry;
+        _dbContext = dbContext;
+        _idGenerator = idGenerator;
     }
 
-    public override async Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null)
+    public async Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null, CancellationToken cancellationToken = default)
+        where TK : IConsumerPayload
     {
-        var currentTime = TimeProvider.GetUtcNow().ToUnixTimeSeconds();
+        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         availableAfter ??= currentTime;
         var payload = JsonSerializer.Serialize(message);
 
         var payloadType = typeof(TK).Name;
-        insertId ??= IdGenerator.GenerateId();
+        insertId ??= _idGenerator.GenerateId();
 
         var sqlBuilder = new StringBuilder();
         var parameters = new List<NpgsqlParameter>
@@ -34,15 +45,18 @@ public class PostgreSqlProducerService<T> : ProducerService<T> where T : DbConte
             new("@insert_id", insertId)
         };
 
-        var consumerTypes = ConsumerRegistry.ResolvePayloadConsumerTypes(payloadType);
+        var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
         for (var index = 0; index < consumerTypes.Count; index++)
         {
-            if (sqlBuilder.Length > 0) sqlBuilder.Append(", ");
+            if (sqlBuilder.Length > 0)
+            {
+                sqlBuilder.Append(", ");
+            }
 
             sqlBuilder.Append(
                 $@"(@id_{index}, @created_at, @available_after, 0, @consumer_type_{index}, @payload_type, @payload, @insert_id)");
 
-            parameters.Add(new NpgsqlParameter($"@id_{index}", IdGenerator.GenerateId()));
+            parameters.Add(new NpgsqlParameter($"@id_{index}", _idGenerator.GenerateId()));
             parameters.Add(new NpgsqlParameter($"@consumer_type_{index}", consumerTypes[index]));
         }
 
@@ -51,12 +65,12 @@ public class PostgreSqlProducerService<T> : ProducerService<T> where T : DbConte
         VALUES {sqlBuilder} 
         ON CONFLICT (insert_id, consumer_type) DO NOTHING;";
 
-        await DbContext.Database.ExecuteSqlRawAsync(sql, parameters);
+        await _dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
     }
 
-    public override async Task ProduceList<TK>(List<TK> messages, long? availableAfter = null)
+    public async Task ProduceList<TK>(List<TK> messages, long? availableAfter = null, CancellationToken cancellationToken = default) where TK : IConsumerPayload
     {
-        var currentTime = TimeProvider.GetUtcNow().ToUnixTimeSeconds();
+        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         availableAfter ??= currentTime;
 
         var sqlBuilder = new StringBuilder();
@@ -66,25 +80,29 @@ public class PostgreSqlProducerService<T> : ProducerService<T> where T : DbConte
             new("@available_after", availableAfter)
         };
 
+        var payloadType = typeof(TK).Name;
+        var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
+
         for (var i = 0; i < messages.Count; i++)
         {
             var message = messages[i];
-            var insertId = IdGenerator.GenerateId();
+            var insertId = _idGenerator.GenerateId();
             var payload = JsonSerializer.Serialize(message);
-            var payloadType = typeof(TK).Name;
             parameters.Add(new NpgsqlParameter($"@insert_id_{i}", insertId));
             parameters.Add(new NpgsqlParameter($"@payload_type_{i}", payloadType));
             parameters.Add(new NpgsqlParameter($"@payload_{i}", payload));
 
-            var consumerTypes = ConsumerRegistry.ResolvePayloadConsumerTypes(payloadType);
             for (var index = 0; index < consumerTypes.Count; index++)
             {
-                if (sqlBuilder.Length > 0) sqlBuilder.Append(", ");
+                if (sqlBuilder.Length > 0)
+                {
+                    sqlBuilder.Append(", ");
+                }
 
                 sqlBuilder.Append(
                     $@"(@id_{i}_{index}, @created_at, @available_after, 0, @consumer_type_{i}_{index}, @payload_type_{i}, @payload_{i}, @insert_id_{i})");
 
-                parameters.Add(new NpgsqlParameter($"@id_{i}_{index}", IdGenerator.GenerateId()));
+                parameters.Add(new NpgsqlParameter($"@id_{i}_{index}", _idGenerator.GenerateId()));
                 parameters.Add(new NpgsqlParameter($"@consumer_type_{i}_{index}", consumerTypes[index]));
             }
         }
@@ -94,6 +112,27 @@ public class PostgreSqlProducerService<T> : ProducerService<T> where T : DbConte
         VALUES {sqlBuilder} 
         ON CONFLICT (insert_id, consumer_type) DO NOTHING;";
 
-        await DbContext.Database.ExecuteSqlRawAsync(sql, parameters);
+        await _dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
+    }
+
+    public void Produce(ScheduledMessage message)
+    {
+        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
+        var set = _dbContext.Set<ConsumerMessage>();
+        var insertId = _idGenerator.GenerateId();
+        foreach (var consumerId in _consumerRegistry.ResolvePayloadConsumerTypes(message.PayloadType))
+        {
+            set.Add(new ConsumerMessage
+            {
+                Id = _idGenerator.GenerateId(),
+                CreatedAt = currentTime,
+                AvailableAfter = currentTime,
+                ConsumerType = consumerId,
+                PayloadType = message.PayloadType,
+                Payload = message.Payload,
+                Attempts = 0,
+                InsertId = insertId
+            });
+        }
     }
 }

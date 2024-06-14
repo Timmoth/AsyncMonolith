@@ -26,7 +26,10 @@ public class Program
         builder.Services.AddOpenTelemetry()
             .WithTracing(x =>
             {
-                if (builder.Environment.IsDevelopment()) x.SetSampler<AlwaysOnSampler>();
+                if (builder.Environment.IsDevelopment())
+                {
+                    x.SetSampler<AlwaysOnSampler>();
+                }
 
                 x.AddSource(AsyncMonolithInstrumentation.ActivitySourceName);
                 x.AddConsoleExporter();
@@ -65,7 +68,7 @@ public class Program
             dbContext.Database.EnsureCreated();
 
             var scheduledMessageService =
-                scope.ServiceProvider.GetRequiredService<ScheduleService<ApplicationDbContext>>();
+                scope.ServiceProvider.GetRequiredService<IScheduleService>();
 
             scheduledMessageService.Schedule(new ValueSubmitted
             {

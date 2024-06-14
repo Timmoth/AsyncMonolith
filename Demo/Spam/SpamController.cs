@@ -7,10 +7,10 @@ namespace Demo.Spam;
 [Route("api/spam")]
 public class SpamController : ControllerBase
 {
-    private readonly ProducerService<ApplicationDbContext> _producerService;
+    private readonly IProducerService _producerService;
     private readonly TimeProvider _timeProvider;
 
-    public SpamController(ProducerService<ApplicationDbContext> producerService, TimeProvider timeProvider)
+    public SpamController(IProducerService producerService, TimeProvider timeProvider)
     {
         _producerService = producerService;
         _timeProvider = timeProvider;
@@ -19,7 +19,11 @@ public class SpamController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Spam([FromQuery(Name = "count")] int count, CancellationToken cancellationToken)
     {
-        if (count <= 0) return BadRequest("'count' query parameter must be at least 1");
+        if (count <= 0)
+        {
+            return BadRequest("'count' query parameter must be at least 1");
+        }
+
         if (SpamResultService.Start != null && SpamResultService.End == null)
         {
             var duration = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds() - SpamResultService.Start;
@@ -40,10 +44,12 @@ public class SpamController : ControllerBase
 
         var messages = new List<SpamMessage>();
         for (var i = 0; i < count - 1; i++)
+        {
             messages.Add(new SpamMessage
             {
                 Last = false
             });
+        }
 
         await _producerService.ProduceList(messages);
         SpamResultService.Start = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();

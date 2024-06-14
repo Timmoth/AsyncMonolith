@@ -14,7 +14,7 @@ namespace AsyncMonolith.Consumers;
 /// <typeparam name="T">The type of the DbContext.</typeparam>
 public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
 {
-    private readonly ConsumerMessageFetcher _consumerMessageFetcher;
+    private readonly IConsumerMessageFetcher _consumerMessageFetcher;
     private readonly ConsumerRegistry _consumerRegistry;
     private readonly ILogger<ConsumerMessageProcessor<T>> _logger;
     private readonly IOptions<AsyncMonolithSettings> _options;
@@ -33,7 +33,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     public ConsumerMessageProcessor(ILogger<ConsumerMessageProcessor<T>> logger,
         TimeProvider timeProvider,
         ConsumerRegistry consumerRegistry, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory,
-        ConsumerMessageFetcher consumerMessageFetcher)
+        IConsumerMessageFetcher consumerMessageFetcher)
     {
         _logger = logger;
         _timeProvider = timeProvider;
@@ -57,38 +57,50 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             {
                 var processedMessageCount = await ProcessBatch(stoppingToken);
                 if (processedMessageCount == _options.Value.ProcessorBatchSize)
+                {
                     delay = _options.Value.ProcessorMinDelay;
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing consumer message batch.");
             }
 
-            if (delay >= 10) await Task.Delay(delay, stoppingToken);
+            if (delay >= 10)
+            {
+                await Task.Delay(delay, stoppingToken);
+            }
         }
     }
 
     /// <summary>
     ///     Fetch and Processes the next batch of consumer messages.
     /// </summary>
-    /// <param name="stoppingToken">The cancellation token to stop the execution.</param>
+    /// <param name="cancellationToken">The cancellation token to stop the execution.</param>
     /// <returns>The number of processed messages.</returns>
-    internal async Task<int> ProcessBatch(CancellationToken stoppingToken)
+    internal async Task<int> ProcessBatch(CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
-        await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(stoppingToken);
+        await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var consumerSet = dbContext.Set<ConsumerMessage>();
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-        var messages = await _consumerMessageFetcher.Fetch(consumerSet, currentTime, stoppingToken);
+        var messages = await _consumerMessageFetcher.Fetch(consumerSet, currentTime, cancellationToken);
 
-        if (messages.Count == 0) return 0;
+        if (messages.Count == 0)
+        {
+            return 0;
+        }
 
-        var tasks = new List<Task<(ConsumerMessage, bool)>>();
-        foreach (var message in messages) tasks.Add(Process(message, stoppingToken));
+        var tasks = new List<Task<(ConsumerMessage message, bool success)>>();
+        foreach (var message in messages)
+        {
+            tasks.Add(Process(message, cancellationToken));
+        }
 
         var processedMessageCount = 0;
         foreach (var (message, success) in await Task.WhenAll(tasks))
+        {
             if (success)
             {
                 processedMessageCount++;
@@ -123,12 +135,13 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                     });
                 }
             }
+        }
 
         // Save changes to the message tables
-        await dbContext.SaveChangesAsync(stoppingToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         // Commit transaction
-        await dbContextTransaction.CommitAsync(stoppingToken);
+        await dbContextTransaction.CommitAsync(cancellationToken);
 
         return processedMessageCount;
     }
@@ -139,7 +152,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     /// <param name="message">The consumer message to process.</param>
     /// <param name="cancellationToken">The cancellation token to stop the execution.</param>
     /// <returns>A tuple containing the processed consumer message and a flag indicating success.</returns>
-    internal async Task<(ConsumerMessage, bool)> Process(ConsumerMessage message, CancellationToken cancellationToken)
+    internal async Task<(ConsumerMessage message, bool success)> Process(ConsumerMessage message, CancellationToken cancellationToken = default)
     {
         using var activity =
             AsyncMonolithInstrumentation.ActivitySource.StartActivity(AsyncMonolithInstrumentation
@@ -162,7 +175,9 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             // Resolve the consumer
             if (scope.ServiceProvider.GetRequiredService(consumerType)
                 is not IConsumer consumer)
+            {
                 throw new Exception($"Couldn't resolve consumer service of type: '{message.ConsumerType}'");
+            }
 
             // Execute the consumer
             await consumer.Consume(message, timeoutCancellationToken.Token);
@@ -178,7 +193,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             activity?.AddTag("exception.message", ex.Message);
 
             _logger.LogError(ex,
-                message.Attempts + 1 >= _options.Value.MaxAttempts
+                message.Attempts > _options.Value.MaxAttempts
                     ? "Failed to consume message on attempt {attempt}, moving to poisoned messages."
                     : "Failed to consume message on attempt {attempt}, will retry.", message.Attempts);
         }

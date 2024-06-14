@@ -29,7 +29,7 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.6" />
-		<PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.5.0" />
+		<PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.6.0" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
 		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
 

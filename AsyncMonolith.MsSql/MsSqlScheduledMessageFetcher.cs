@@ -4,26 +4,28 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace AsyncMonolith.MsSql
+namespace AsyncMonolith.MsSql;
+
+public sealed class MsSqlScheduledMessageFetcher : IScheduledMessageFetcher
 {
-    public class MsSqlScheduledMessageFetcher : ScheduledMessageFetcher
-    {
-        private const string MsSql = @"
+    private const string MsSql = @"
                         SELECT TOP (@batchSize) * 
                         FROM scheduled_messages WITH (ROWLOCK, READPAST)
                         WHERE available_after <= @currentTime";
 
-        public MsSqlScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options) : base(options)
-        {
-        }
+    private readonly IOptions<AsyncMonolithSettings> _options;
 
-        public override Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> set, long currentTime,
-            CancellationToken cancellationToken)
-        {
-            return set
-                .FromSqlRaw(MsSql, new SqlParameter("@currentTime", currentTime),
-                    new SqlParameter("@batchSize", Options.Value.ProcessorBatchSize))
-                .ToListAsync(cancellationToken);
-        }
+    public MsSqlScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    {
+        _options = options;
+    }
+
+    public Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> set, long currentTime,
+        CancellationToken cancellationToken = default)
+    {
+        return set
+            .FromSqlRaw(MsSql, new SqlParameter("@currentTime", currentTime),
+                new SqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+            .ToListAsync(cancellationToken);
     }
 }

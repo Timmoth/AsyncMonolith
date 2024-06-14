@@ -16,9 +16,7 @@ public abstract class BaseConsumer<T> : IConsumer where T : IConsumerPayload
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Consume(ConsumerMessage message, CancellationToken token)
     {
-        var payload = JsonSerializer.Deserialize<T>(message.Payload);
-        if (payload == null)
-            throw new Exception(
+        var payload = JsonSerializer.Deserialize<T>(message.Payload) ?? throw new Exception(
                 $"Consumer: '{message.ConsumerType}' failed to deserialize payload: '{message.PayloadType}'");
 
         await Consume(payload!, token);

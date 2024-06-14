@@ -17,7 +17,7 @@ When defining a consumer payload it must derive from the `IConsumerPayload` inte
 
 As the consumer payload will be stored in the database in a serialized string, it is a good practice to keep it as small as possible.
 
-To produce your message you'll need to inject a `ProducerService<ApplicationDbContext>`
+To produce your message you'll need to inject a `IProducerService`
 
 ## Immediate messages
 You can produce messages to be consumed immediately like this:

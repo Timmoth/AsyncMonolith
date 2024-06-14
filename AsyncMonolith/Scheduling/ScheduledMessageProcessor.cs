@@ -16,7 +16,7 @@ namespace AsyncMonolith.Scheduling;
 public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
 {
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
-    private readonly ScheduledMessageFetcher _messageFetcher;
+    private readonly IScheduledMessageFetcher _messageFetcher;
     private readonly IOptions<AsyncMonolithSettings> _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
@@ -31,7 +31,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     /// <param name="messageFetcher">The scheduled message fetcher.</param>
     public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger,
         TimeProvider timeProvider, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory,
-        ScheduledMessageFetcher messageFetcher)
+        IScheduledMessageFetcher messageFetcher)
     {
         _logger = logger;
         _timeProvider = timeProvider;
@@ -54,14 +54,19 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
                 var processedScheduledMessages = await ProcessBatch(stoppingToken);
 
                 if (processedScheduledMessages >= _options.Value.ProcessorBatchSize)
+                {
                     delay = _options.Value.ProcessorMinDelay;
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error scheduling next message");
             }
 
-            if (delay >= 10) await Task.Delay(delay, stoppingToken);
+            if (delay >= 10)
+            {
+                await Task.Delay(delay, stoppingToken);
+            }
         }
     }
 
@@ -70,11 +75,11 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of processed scheduled messages.</returns>
-    internal async Task<int> ProcessBatch(CancellationToken cancellationToken)
+    internal async Task<int> ProcessBatch(CancellationToken cancellationToken = default)
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
-        var producer = scope.ServiceProvider.GetRequiredService<ProducerService<T>>();
+        var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         var processedScheduledMessageCount = 0;
         await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -86,7 +91,9 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
 
             if (messages.Count == 0)
                 // No messages waiting.
+            {
                 return 0;
+            }
 
             using var activity =
                 AsyncMonolithInstrumentation.ActivitySource.StartActivity(AsyncMonolithInstrumentation

@@ -72,13 +72,22 @@ public class ScheduledMessage
     {
         var expression = CronExpression.Parse(ChronExpression, CronFormat.IncludeSeconds);
         if (expression == null)
+        {
             throw new InvalidOperationException(
                 $"Couldn't determine scheduled message chron expression: '{ChronExpression}'");
+        }
+
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(ChronTimezone);
         if (timezone == null)
+        {
             throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{ChronTimezone}'");
+        }
+
         var next = expression.GetNextOccurrence(timeProvider.GetUtcNow(), timezone);
-        if (next == null) throw new InvalidOperationException("Couldn't determine next scheduled message occurrence");
+        if (next == null)
+        {
+            throw new InvalidOperationException("Couldn't determine next scheduled message occurrence");
+        }
 
         return next.Value.ToUnixTimeSeconds();
     }
