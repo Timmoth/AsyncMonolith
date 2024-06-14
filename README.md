@@ -27,6 +27,8 @@ AsyncMonolith is a lightweight library that facilitates simple asynchronous mess
   - [Contributing 🙏](https://timmoth.github.io/AsyncMonolith/contributing)
   - [Tests 🐞](https://timmoth.github.io/AsyncMonolith/tests)
 
+Check out [this video](https://www.youtube.com/watch?v=DOaDpHh1FsQ) from Derek Comartin, for some thoughts on using a database as a queue
+
 ## Guides
   - [Producing messages](https://timmoth.github.io/AsyncMonolith/guides/producing-messages/)
   - [Scheduling messages](https://timmoth.github.io/AsyncMonolith/guides/scheduling-messages/)
