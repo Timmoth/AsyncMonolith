@@ -14,3 +14,5 @@ Make sure to check this table before updating the nuget package in your solution
 | 1.0.2   | Scheduled messages use Chron expressions               | Yes                |
 | 1.0.1   | Added Configurable settings                            | No                 |
 | 1.0.0   | Initial                                                | Yes                |
+
+***If you're not using ef migrations check out the sql to configure your database [here](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas)***

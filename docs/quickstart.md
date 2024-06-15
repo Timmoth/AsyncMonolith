@@ -37,6 +37,8 @@ Setup your DbContext
     }
 ```
 
+***If you're not using ef migrations check out the sql to configure your database [here](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas)***
+
 Register your dependencies
 
 ```csharp
