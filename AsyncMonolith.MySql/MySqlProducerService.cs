@@ -46,8 +46,8 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
             new("@payload_type", payloadType),
             new("@payload", payload),
             new("@insert_id", insertId),
-            new("@trace_id", traceId),
-            new("@span_id", spanId)
+            new("@trace_id", string.IsNullOrEmpty(traceId) ? DBNull.Value : traceId),
+            new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : traceId)
         };
 
 
@@ -87,8 +87,8 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
         {
             new("@created_at", currentTime),
             new("@available_after", availableAfter),
-            new("@trace_id", traceId),
-            new("@span_id", spanId)
+            new("@trace_id", string.IsNullOrEmpty(traceId) ? DBNull.Value : traceId),
+            new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : traceId)
         };
 
         var payloadType = typeof(TK).Name;
