@@ -77,7 +77,9 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty
+            InsertId = string.Empty,
+            TraceId = null,
+            SpanId = null
         });
 
         // Then
@@ -101,7 +103,9 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty
+            InsertId = string.Empty,
+            TraceId = null,
+            SpanId = null
         });
 
         // Then

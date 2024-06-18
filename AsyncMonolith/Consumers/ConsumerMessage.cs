@@ -64,4 +64,18 @@ public sealed class ConsumerMessage
     [JsonPropertyName("insert_id")]
     [Column("insert_id")]
     public required string InsertId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the trace Id of the activity that produced the consumer message.
+    /// </summary>
+    [JsonPropertyName("trace_id")]
+    [Column("trace_id")]
+    public required string? TraceId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the span Id of the activity that produced the consumer message.
+    /// </summary>
+    [JsonPropertyName("span_id")]
+    [Column("span_id")]
+    public required string? SpanId { get; set; }
 }

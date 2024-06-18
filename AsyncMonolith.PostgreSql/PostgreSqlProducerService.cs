@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
@@ -32,6 +33,8 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         availableAfter ??= currentTime;
         var payload = JsonSerializer.Serialize(message);
+        var traceId = Activity.Current?.TraceId.ToString();
+        var spanId = Activity.Current?.SpanId.ToString();
 
         var payloadType = typeof(TK).Name;
         insertId ??= _idGenerator.GenerateId();
@@ -43,7 +46,9 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
             new("@available_after", availableAfter),
             new("@payload_type", payloadType),
             new("@payload", payload),
-            new("@insert_id", insertId)
+            new("@insert_id", insertId),
+            new("@trace_id", traceId),
+            new("@span_id", spanId)
         };
 
         var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
@@ -55,14 +60,14 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
             }
 
             sqlBuilder.Append(
-                $@"(@id_{index}, @created_at, @available_after, 0, @consumer_type_{index}, @payload_type, @payload, @insert_id)");
+                $@"(@id_{index}, @created_at, @available_after, 0, @consumer_type_{index}, @payload_type, @payload, @insert_id, @trace_id, @span_id)");
 
             parameters.Add(new NpgsqlParameter($"@id_{index}", _idGenerator.GenerateId()));
             parameters.Add(new NpgsqlParameter($"@consumer_type_{index}", consumerTypes[index]));
         }
 
         var sql = $@"
-        INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id) 
+        INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id, trace_id, span_id) 
         VALUES {sqlBuilder} 
         ON CONFLICT (insert_id, consumer_type) DO NOTHING;";
 
@@ -74,12 +79,16 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
     {
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         availableAfter ??= currentTime;
+        var traceId = Activity.Current?.TraceId.ToString();
+        var spanId = Activity.Current?.SpanId.ToString();
 
         var sqlBuilder = new StringBuilder();
         var parameters = new List<NpgsqlParameter>
         {
             new("@created_at", currentTime),
-            new("@available_after", availableAfter)
+            new("@available_after", availableAfter),
+            new("@trace_id", traceId),
+            new("@span_id", spanId)
         };
 
         var payloadType = typeof(TK).Name;
@@ -102,7 +111,7 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
                 }
 
                 sqlBuilder.Append(
-                    $@"(@id_{i}_{index}, @created_at, @available_after, 0, @consumer_type_{i}_{index}, @payload_type_{i}, @payload_{i}, @insert_id_{i})");
+                    $@"(@id_{i}_{index}, @created_at, @available_after, 0, @consumer_type_{i}_{index}, @payload_type_{i}, @payload_{i}, @insert_id_{i}, @trace_id, @span_id)");
 
                 parameters.Add(new NpgsqlParameter($"@id_{i}_{index}", _idGenerator.GenerateId()));
                 parameters.Add(new NpgsqlParameter($"@consumer_type_{i}_{index}", consumerTypes[index]));
@@ -110,7 +119,7 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
         }
 
         var sql = $@"
-        INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id) 
+        INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id, trace_id, span_id) 
         VALUES {sqlBuilder} 
         ON CONFLICT (insert_id, consumer_type) DO NOTHING;";
 
@@ -133,7 +142,9 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
                 PayloadType = message.PayloadType,
                 Payload = message.Payload,
                 Attempts = 0,
-                InsertId = insertId
+                InsertId = insertId,
+                TraceId = null,
+                SpanId = null
             });
         }
     }

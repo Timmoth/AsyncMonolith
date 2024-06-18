@@ -130,7 +130,9 @@ public static class TestConsumerMessageProcessor
             Id = string.Empty,
             InsertId = string.Empty,
             Payload = JsonSerializer.Serialize(payload),
-            PayloadType = typeof(V).Name
+            PayloadType = typeof(V).Name,
+            TraceId = null,
+            SpanId = null
         }, cancellationToken);
     }
 }

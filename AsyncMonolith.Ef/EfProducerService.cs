@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
@@ -33,6 +34,8 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
         insertId ??= _idGenerator.GenerateId();
         var payloadType = typeof(TK).Name;
         var set = _dbContext.Set<ConsumerMessage>();
+        var traceId = Activity.Current?.TraceId.ToString();
+        var spanId = Activity.Current?.SpanId.ToString();
 
         foreach (var consumerId in _consumerRegistry.ResolvePayloadConsumerTypes(payloadType))
         {
@@ -45,7 +48,9 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
                 PayloadType = payloadType,
                 Payload = payload,
                 Attempts = 0,
-                InsertId = insertId
+                InsertId = insertId,
+                TraceId = traceId,
+                SpanId = spanId
             });
         }
 
@@ -61,6 +66,9 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
         var set = _dbContext.Set<ConsumerMessage>();
         var payloadType = typeof(TK).Name;
         var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
+        var traceId = Activity.Current?.TraceId.ToString();
+        var spanId = Activity.Current?.SpanId.ToString();
+
         foreach (var message in messages)
         {
             var insertId = _idGenerator.GenerateId();
@@ -77,7 +85,9 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
                     PayloadType = payloadType,
                     Payload = payload,
                     Attempts = 0,
-                    InsertId = insertId
+                    InsertId = insertId,
+                    TraceId = traceId,
+                    SpanId = spanId
                 });
             }
         }
@@ -101,7 +111,9 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
                 PayloadType = message.PayloadType,
                 Payload = message.Payload,
                 Attempts = 0,
-                InsertId = insertId
+                InsertId = insertId,
+                TraceId = null,
+                SpanId = null
             });
         }
     }

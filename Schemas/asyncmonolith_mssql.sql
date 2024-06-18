@@ -9,6 +9,9 @@ CREATE TABLE consumer_messages (
     payload_type NVARCHAR(255) NOT NULL,
     payload NVARCHAR(MAX) NOT NULL,
     insert_id NVARCHAR(255) NOT NULL,
+    trace_id NVARCHAR(255) NOT NULL,
+    span_id NVARCHAR(255) NOT NULL,
+
     CONSTRAINT PK_consumer_messages PRIMARY KEY (id)
 );
 
@@ -21,6 +24,9 @@ CREATE TABLE poisoned_messages (
     payload_type NVARCHAR(255) NOT NULL,
     payload NVARCHAR(MAX) NOT NULL,
     insert_id NVARCHAR(255) NOT NULL,
+    trace_id NVARCHAR(255) NOT NULL,
+    span_id NVARCHAR(255) NOT NULL,
+
     CONSTRAINT PK_poisoned_messages PRIMARY KEY (id)
 );
 

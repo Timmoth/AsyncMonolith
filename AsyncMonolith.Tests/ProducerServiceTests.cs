@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
@@ -24,6 +25,23 @@ public class ProducerServiceTests
         return services.BuildServiceProvider();
     }
 
+    public Activity? GetActivity()
+    {
+        var activitySource = new ActivitySource("AsyncMonolith.Tests");
+        var listener = new ActivityListener
+        {
+            ShouldListenTo = (a) => a.Name == activitySource.Name,
+            Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStarted = activity => Console.WriteLine($"Activity started: {activity.DisplayName}"),
+            ActivityStopped = activity => Console.WriteLine($"Activity stopped: {activity.DisplayName}")
+        };
+        ActivitySource.AddActivityListener(listener);
+        return activitySource.StartActivity(
+            "TestActivity",
+            ActivityKind.Internal
+        );
+    }
+
     [Fact]
     public async Task Producer_Writes_Single_Consumer_Message()
     {
@@ -38,6 +56,8 @@ public class ProducerServiceTests
         var insertId = "test-insert_id";
         var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
+        using var activity = GetActivity();
+        Activity.Current = activity;
 
         // When
         await producer.Produce(consumerMessage, delay, insertId);
@@ -56,6 +76,8 @@ public class ProducerServiceTests
             message.PayloadType = nameof(SingleConsumerMessage);
             message.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
             message.InsertId.Should().Be(insertId);
+            message.TraceId.Should().Be(activity?.TraceId.ToString());
+            message.SpanId.Should().Be(activity?.SpanId.ToString());
         }
     }
 
@@ -73,6 +95,8 @@ public class ProducerServiceTests
         var insertId = "test-insert_id";
         var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
+        using var activity = GetActivity();
+        Activity.Current = activity;
 
         // When
         await producer.Produce(consumerMessage, delay, insertId);
@@ -91,6 +115,8 @@ public class ProducerServiceTests
             message1.PayloadType = nameof(MultiConsumerMessage);
             message1.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
             message1.InsertId.Should().Be(insertId);
+            message1.TraceId.Should().Be(activity?.TraceId.ToString());
+            message1.SpanId.Should().Be(activity?.SpanId.ToString());
 
             var message2 =
                 await postDbContext.AssertSingleConsumerMessage<MultiConsumer2, MultiConsumerMessage>(consumerMessage);
@@ -101,6 +127,8 @@ public class ProducerServiceTests
             message2.PayloadType = nameof(MultiConsumerMessage);
             message2.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
             message2.InsertId.Should().Be(insertId);
+            message2.TraceId.Should().Be(activity?.TraceId.ToString());
+            message2.SpanId.Should().Be(activity?.SpanId.ToString());
         }
     }
 
@@ -116,6 +144,8 @@ public class ProducerServiceTests
 
         var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
+        using var activity = GetActivity();
+        Activity.Current = activity;
 
         // When
         await producer.Produce(consumerMessage);
@@ -134,6 +164,8 @@ public class ProducerServiceTests
             message.PayloadType = nameof(SingleConsumerMessage);
             message.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
             message.InsertId.Should().Be("fake-id-0");
+            message.TraceId.Should().Be(activity?.TraceId.ToString());
+            message.SpanId.Should().Be(activity?.SpanId.ToString());
         }
     }
 
@@ -161,6 +193,8 @@ public class ProducerServiceTests
 
         var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
+        using var activity = GetActivity();
+        Activity.Current = activity;
 
         // When
         producer.Produce(scheduledMessage);
@@ -179,6 +213,8 @@ public class ProducerServiceTests
             message.ConsumerType = nameof(SingleConsumer);
             message.PayloadType = nameof(SingleConsumerMessage);
             message.Payload.Should().Be(expectedPayload);
+            message.TraceId.Should().BeNull();
+            message.SpanId.Should().BeNull();
         }
     }
 
@@ -227,7 +263,8 @@ public class ProducerServiceTests
             message1.ConsumerType = nameof(MultiConsumer1);
             message1.PayloadType = nameof(MultiConsumerMessage);
             message1.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
-
+            message1.TraceId.Should().BeNull();
+            message1.SpanId.Should().BeNull();
             var message2 =
                 await postDbContext.AssertSingleConsumerMessage<MultiConsumer2, MultiConsumerMessage>(consumerMessage);
             message2.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds());
@@ -237,6 +274,8 @@ public class ProducerServiceTests
             message2.ConsumerType = nameof(MultiConsumer2);
             message2.PayloadType = nameof(MultiConsumerMessage);
             message2.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
+            message2.TraceId.Should().BeNull();
+            message2.SpanId.Should().BeNull();
         }
     }
 }

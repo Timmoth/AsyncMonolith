@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
@@ -34,6 +35,8 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
         var payload = JsonSerializer.Serialize(message);
         var payloadType = typeof(TK).Name;
         insertId ??= _idGenerator.GenerateId();
+        var traceId = Activity.Current?.TraceId.ToString();
+        var spanId = Activity.Current?.SpanId.ToString();
 
         var sqlBuilder = new StringBuilder();
         var parameters = new List<MySqlParameter>
@@ -42,7 +45,9 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
             new("@available_after", availableAfter),
             new("@payload_type", payloadType),
             new("@payload", payload),
-            new("@insert_id", insertId)
+            new("@insert_id", insertId),
+            new("@trace_id", traceId),
+            new("@span_id", spanId)
         };
 
 
@@ -55,14 +60,14 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
             }
 
             sqlBuilder.Append(
-                $@"(@id_{index}, @created_at, @available_after, 0, @consumer_type_{index}, @payload_type, @payload, @insert_id)");
+                $@"(@id_{index}, @created_at, @available_after, 0, @consumer_type_{index}, @payload_type, @payload, @insert_id, @trace_id, @span_id)");
 
             parameters.Add(new MySqlParameter($"@id_{index}", _idGenerator.GenerateId()));
             parameters.Add(new MySqlParameter($"@consumer_type_{index}", consumerTypes[index]));
         }
 
         var sql = $@"
-    INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id) 
+    INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id, trace_id, span_id) 
     VALUES {sqlBuilder} 
     ON DUPLICATE KEY UPDATE id = id;";
 
@@ -74,12 +79,16 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
     {
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         availableAfter ??= currentTime;
+        var traceId = Activity.Current?.TraceId.ToString();
+        var spanId = Activity.Current?.SpanId.ToString();
 
         var sqlBuilder = new StringBuilder();
         var parameters = new List<MySqlParameter>
         {
             new("@created_at", currentTime),
-            new("@available_after", availableAfter)
+            new("@available_after", availableAfter),
+            new("@trace_id", traceId),
+            new("@span_id", spanId)
         };
 
         var payloadType = typeof(TK).Name;
@@ -102,7 +111,7 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
                 }
 
                 sqlBuilder.Append(
-                    $@"(@id_{i}_{index}, @created_at, @available_after, 0, @consumer_type_{i}_{index}, @payload_type_{i}, @payload_{i}, @insert_id_{i})");
+                    $@"(@id_{i}_{index}, @created_at, @available_after, 0, @consumer_type_{i}_{index}, @payload_type_{i}, @payload_{i}, @insert_id_{i}, @trace_id, @span_id)");
 
                 parameters.Add(new MySqlParameter($"@id_{i}_{index}", _idGenerator.GenerateId()));
                 parameters.Add(new MySqlParameter($"@consumer_type_{i}_{index}", consumerTypes[index]));
@@ -110,7 +119,7 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
         }
 
         var sql = $@"
-            INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id) 
+            INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id, trace_id, span_id) 
             VALUES {sqlBuilder} 
             ON DUPLICATE KEY UPDATE id = id;";
 
@@ -133,7 +142,9 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
                 PayloadType = message.PayloadType,
                 Payload = message.Payload,
                 Attempts = 0,
-                InsertId = insertId
+                InsertId = insertId,
+                TraceId = null,
+                SpanId = null
             });
         }
     }

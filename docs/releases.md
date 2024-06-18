@@ -2,6 +2,7 @@ Make sure to check this table before updating the nuget package in your solution
 
 | Version | Description                                            | Migration Required |
 |---------|--------------------------------------------------------|--------------------|
+| 8.0.1   | Added distributed trace_id and span_id                 | Yes                |
 | 8.0.0   | Use Producer & Schedule service interfaces             | No                 |
 | 1.0.9.1 | Added consumer timeout                                 | No                 |
 | 1.0.9   | Split out Ef, PostgreSql, MySql into seperate packages | Yes                |

@@ -3,6 +3,7 @@ using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
+using System.Diagnostics;
 
 namespace AsyncMonolith.Tests.Infra;
 
@@ -38,7 +39,22 @@ public abstract class DbTestsBase
         return serviceProvider;
     }
 
-
+    public Activity? GetActivity()
+    {
+        var activitySource = new ActivitySource("AsyncMonolith.Tests");
+        var listener = new ActivityListener
+        {
+            ShouldListenTo = (a) => a.Name == activitySource.Name,
+            Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStarted = activity => Console.WriteLine($"Activity started: {activity.DisplayName}"),
+            ActivityStopped = activity => Console.WriteLine($"Activity stopped: {activity.DisplayName}")
+        };
+        ActivitySource.AddActivityListener(listener);
+        return activitySource.StartActivity(
+            "TestActivity",
+            ActivityKind.Internal
+        );
+    }
     public static IEnumerable<object[]> GetTestDbContainers()
     {
         yield return new object[] { new MySqlTestDbContainer() };
@@ -57,5 +73,7 @@ public abstract class DbTestsBase
             DbType.PostgreSql => new PostgreSqlTestDbContainer(),
             _ => throw new ArgumentOutOfRangeException(nameof(dbType), dbType, null)
         };
+
+
     }
 }

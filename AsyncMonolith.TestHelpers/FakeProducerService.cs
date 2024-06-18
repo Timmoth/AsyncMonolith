@@ -64,7 +64,9 @@ public class FakeProducerService : IProducerService
                 PayloadType = payloadType,
                 Payload = payload,
                 Attempts = 0,
-                InsertId = insertId
+                InsertId = insertId,
+                TraceId = null,
+                SpanId = null
             });
         }
 
@@ -103,7 +105,9 @@ public class FakeProducerService : IProducerService
                     PayloadType = payloadType,
                     Payload = payload,
                     Attempts = 0,
-                    InsertId = insertId
+                    InsertId = insertId,
+                    TraceId = null,
+                    SpanId = null
                 });
             }
         }
@@ -130,7 +134,9 @@ public class FakeProducerService : IProducerService
                 PayloadType = message.PayloadType,
                 Payload = message.Payload,
                 Attempts = 0,
-                InsertId = insertId
+                InsertId = insertId,
+                TraceId = null,
+                SpanId = null
             });
         }
     }

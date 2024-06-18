@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using AsyncMonolith.Producers;
 using AsyncMonolith.TestHelpers;
@@ -29,6 +30,8 @@ public class ProducerServiceDbTests : DbTestsBase
             {
                 Name = "test-name"
             };
+            using var activity = GetActivity();
+            Activity.Current = activity;
 
             // When
             await producer.Produce(consumerMessage, delay);
@@ -47,6 +50,8 @@ public class ProducerServiceDbTests : DbTestsBase
                 message.ConsumerType = nameof(SingleConsumer);
                 message.PayloadType = nameof(SingleConsumerMessage);
                 message.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
+                message.TraceId.Should().Be(activity?.TraceId.ToString());
+                message.SpanId.Should().Be(activity?.SpanId.ToString());
             }
         }
         finally
@@ -83,6 +88,8 @@ public class ProducerServiceDbTests : DbTestsBase
                 consumerMessage1,
                 consumerMessage2
             };
+            using var activity = GetActivity();
+            Activity.Current = activity;
 
             // When
             await producer.ProduceList(insertMessages, delay);
@@ -104,6 +111,8 @@ public class ProducerServiceDbTests : DbTestsBase
                 message1.ConsumerType = nameof(SingleConsumer);
                 message1.PayloadType = nameof(SingleConsumerMessage);
                 message1.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage1));
+                message1.TraceId.Should().Be(activity?.TraceId.ToString());
+                message1.SpanId.Should().Be(activity?.SpanId.ToString());
 
                 var message2 =
                     await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
@@ -115,6 +124,8 @@ public class ProducerServiceDbTests : DbTestsBase
                 message2.ConsumerType = nameof(SingleConsumer);
                 message2.PayloadType = nameof(SingleConsumerMessage);
                 message2.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage2));
+                message2.TraceId.Should().Be(activity?.TraceId.ToString());
+                message2.SpanId.Should().Be(activity?.SpanId.ToString());
             }
         }
         finally
@@ -150,6 +161,8 @@ public class ProducerServiceDbTests : DbTestsBase
                 consumerMessage1,
                 consumerMessage2
             };
+            using var activity = GetActivity();
+            Activity.Current = activity;
 
             // When
             await producer.ProduceList(insertMessages, delay);
@@ -172,7 +185,8 @@ public class ProducerServiceDbTests : DbTestsBase
                 message1.ConsumerType = nameof(SingleConsumer);
                 message1.PayloadType = nameof(SingleConsumerMessage);
                 message1.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage1));
-
+                message1.TraceId.Should().Be(activity?.TraceId.ToString());
+                message1.SpanId.Should().Be(activity?.SpanId.ToString());
                 var message2 =
                     await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
                         consumerMessage2, "fake-id-3");
@@ -183,6 +197,8 @@ public class ProducerServiceDbTests : DbTestsBase
                 message2.ConsumerType = nameof(SingleConsumer);
                 message2.PayloadType = nameof(SingleConsumerMessage);
                 message2.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage2));
+                message2.TraceId.Should().Be(activity?.TraceId.ToString());
+                message2.SpanId.Should().Be(activity?.SpanId.ToString());
             }
         }
         finally
@@ -211,6 +227,9 @@ public class ProducerServiceDbTests : DbTestsBase
             {
                 Name = "test-name"
             };
+            using var activity = GetActivity();
+            Activity.Current = activity;
+
             await producer.Produce(consumerMessage, delay, insertId);
 
             // When
@@ -233,6 +252,8 @@ public class ProducerServiceDbTests : DbTestsBase
                 message.PayloadType = nameof(SingleConsumerMessage);
                 message.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
                 message.InsertId.Should().Be(insertId);
+                message.TraceId.Should().Be(activity?.TraceId.ToString());
+                message.SpanId.Should().Be(activity?.SpanId.ToString());
             }
         }
         finally

@@ -11,3 +11,12 @@ Ensure you add `AsyncMonolithInstrumentation.ActivitySourceName` as a source to 
             })
             .ConfigureResource(c => c.AddService("async_monolith.demo").Build());
 ```
+
+| Tag                           | Description           |
+|-------------------------------|-----------------------|
+| consumer_message.id           | Consumer message Id   |
+| consumer_message.attempt      | Attempt number        |
+| consumer_message.payload.type | Message payload type  |
+| consumer_message.type         | Message consumer type |
+| exception.type                | Exception type        |
+| exception.message             | Exception message     |

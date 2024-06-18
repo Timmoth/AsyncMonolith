@@ -131,7 +131,9 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                         CreatedAt = message.CreatedAt,
                         Payload = message.Payload,
                         PayloadType = message.PayloadType,
-                        InsertId = message.InsertId
+                        InsertId = message.InsertId,
+                        TraceId = message.TraceId,
+                        SpanId = message.SpanId
                     });
                 }
             }
@@ -146,6 +148,26 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         return processedMessageCount;
     }
 
+    private Activity? StartActivity(ConsumerMessage message)
+    {
+        if (string.IsNullOrEmpty(message.TraceId) || string.IsNullOrEmpty(message.SpanId))
+        {
+            return AsyncMonolithInstrumentation.ActivitySource.StartActivity(
+                AsyncMonolithInstrumentation.ProcessConsumerMessageActivity,
+                kind: ActivityKind.Internal);
+        }
+
+        var activityContext = new ActivityContext(
+            ActivityTraceId.CreateFromString(message.TraceId),
+            ActivitySpanId.CreateFromString(message.SpanId),
+            ActivityTraceFlags.Recorded);
+
+        return AsyncMonolithInstrumentation.ActivitySource.StartActivity(
+                AsyncMonolithInstrumentation.ProcessConsumerMessageActivity,
+                parentContext: activityContext,
+                kind: ActivityKind.Internal);
+    }
+
     /// <summary>
     ///     Processes a single consumer message.
     /// </summary>
@@ -155,9 +177,8 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     internal async Task<(ConsumerMessage message, bool success)> Process(ConsumerMessage message,
         CancellationToken cancellationToken = default)
     {
-        using var activity =
-            AsyncMonolithInstrumentation.ActivitySource.StartActivity(AsyncMonolithInstrumentation
-                .ProcessConsumerMessageActivity);
+        using var activity = StartActivity(message);
+
         activity?.AddTag("consumer_message.id", message.Id);
         activity?.AddTag("consumer_message.attempt", message.Attempts + 1);
         activity?.AddTag("consumer_message.payload.type", message.PayloadType);
