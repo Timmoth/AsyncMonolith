@@ -1,4 +1,4 @@
-name: Publish nuget package
+name: Publish AsyncMonolith.MySql nuget package
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: AsyncMonolith
+        working-directory: AsyncMonolith.MySql
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

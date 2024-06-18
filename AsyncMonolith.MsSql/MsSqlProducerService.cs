@@ -47,7 +47,7 @@ public sealed class MsSqlProducerService<T> : IProducerService where T : DbConte
             new("@payload", payload),
             new("@insert_id", insertId),
             new("@trace_id", string.IsNullOrEmpty(traceId) ? DBNull.Value : traceId),
-            new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : traceId)
+            new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : spanId)
         };
 
         var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
@@ -90,7 +90,7 @@ public sealed class MsSqlProducerService<T> : IProducerService where T : DbConte
             new("@created_at", currentTime),
             new("@available_after", availableAfter),
             new("@trace_id", string.IsNullOrEmpty(traceId) ? DBNull.Value : traceId),
-            new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : traceId)
+            new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : spanId)
         };
 
         var payloadType = typeof(TK).Name;
