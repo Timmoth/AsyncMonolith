@@ -1,5 +1,6 @@
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
+using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -92,15 +93,17 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             // Given
             var serviceProvider = await Setup(dbContainer);
 
+            var consumerMessage = new ExceptionConsumerMessage
+            {
+                Name = "test-name"
+            };
+
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
-                await producer.Produce(new ExceptionConsumerMessage
-                {
-                    Name = "test-name"
-                });
+                await producer.Produce(consumerMessage);
 
                 await dbContext.SaveChangesAsync();
             }
@@ -114,7 +117,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
+                var message =
+                    await dbContext.AssertSingleConsumerMessage<ExceptionConsumer, ExceptionConsumerMessage>(
+                        consumerMessage);
                 message?.Attempts.Should().Be(1);
             }
         }
@@ -132,16 +137,17 @@ public class ConsumerMessageProcessorTests : DbTestsBase
         {
             // Given
             var serviceProvider = await Setup(dbContainer);
+            var consumerMessage = new TimeoutConsumerMessage
+            {
+                Delay = 2
+            };
 
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
-                await producer.Produce(new TimeoutConsumerMessage
-                {
-                    Delay = 2
-                });
+                await producer.Produce(consumerMessage);
 
                 await dbContext.SaveChangesAsync();
             }
@@ -155,7 +161,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
+                var message =
+                    await dbContext.AssertSingleConsumerMessage<TimeoutConsumer, TimeoutConsumerMessage>(
+                        consumerMessage);
                 message?.Attempts.Should().Be(1);
             }
         }
@@ -173,16 +181,17 @@ public class ConsumerMessageProcessorTests : DbTestsBase
         {
             // Given
             var serviceProvider = await Setup(dbContainer);
+            var consumerMessage = new ExceptionConsumerMessage
+            {
+                Name = "test-name"
+            };
 
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
-                await producer.Produce(new ExceptionConsumerMessage
-                {
-                    Name = "test-name"
-                });
+                await producer.Produce(consumerMessage);
 
                 await dbContext.SaveChangesAsync();
             }
@@ -196,7 +205,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var message = await dbContext.ConsumerMessages.FirstOrDefaultAsync();
+                var message =
+                    await dbContext.AssertSingleConsumerMessage<ExceptionConsumer, ExceptionConsumerMessage>(
+                        consumerMessage);
                 message?.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 10);
             }
         }

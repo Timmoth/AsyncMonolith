@@ -152,7 +152,8 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     /// <param name="message">The consumer message to process.</param>
     /// <param name="cancellationToken">The cancellation token to stop the execution.</param>
     /// <returns>A tuple containing the processed consumer message and a flag indicating success.</returns>
-    internal async Task<(ConsumerMessage message, bool success)> Process(ConsumerMessage message, CancellationToken cancellationToken = default)
+    internal async Task<(ConsumerMessage message, bool success)> Process(ConsumerMessage message,
+        CancellationToken cancellationToken = default)
     {
         using var activity =
             AsyncMonolithInstrumentation.ActivitySource.StartActivity(AsyncMonolithInstrumentation

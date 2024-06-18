@@ -1,5 +1,6 @@
 using System.Text.Json;
 using AsyncMonolith.Scheduling;
+using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -34,8 +35,7 @@ public class ScheduledMessageServiceTests : DbTestsBase
             using var scope = serviceProvider.CreateScope();
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-                var messages = await postDbContext.ScheduledMessages.ToListAsync();
-                var message = Assert.Single(messages);
+                var message = await postDbContext.AssertSingleScheduledMessage(consumerMessage);
                 message.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 1);
                 message.Id.Should().Be("fake-id-0");
                 message.Tag.Should().BeEquivalentTo(tag);

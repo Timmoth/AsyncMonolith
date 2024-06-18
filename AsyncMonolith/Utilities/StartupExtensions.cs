@@ -15,8 +15,8 @@ public static class StartupExtensions
             .IsUnique();
     }
 
-    public static void InternalAddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly,
-        AsyncMonolithSettings? settings = null) where T : DbContext
+    public static AsyncMonolithSettings InternalConfigureAsyncMonolithSettings(this IServiceCollection services,
+        AsyncMonolithSettings? settings = null)
     {
         settings ??= AsyncMonolithSettings.Default;
         if (settings.AttemptDelay < 0)
@@ -78,7 +78,14 @@ public static class StartupExtensions
             options.DefaultConsumerTimeout = settings.DefaultConsumerTimeout;
         });
 
-        services.Register(assembly, settings);
+        return settings;
+    }
+
+    public static void InternalAddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly,
+        AsyncMonolithSettings? settings = null) where T : DbContext
+    {
+        settings = services.InternalConfigureAsyncMonolithSettings(settings);
+        services.InternalRegisterAsyncMonolithConsumers(assembly, settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<T>>();
 
@@ -103,7 +110,8 @@ public static class StartupExtensions
         }
     }
 
-    public static void Register(this IServiceCollection services, Assembly assembly, AsyncMonolithSettings settings)
+    public static void InternalRegisterAsyncMonolithConsumers(this IServiceCollection services, Assembly assembly,
+        AsyncMonolithSettings settings)
     {
         var consumerServiceDictionary = new Dictionary<string, Type>();
         var payloadConsumerDictionary = new Dictionary<string, List<string>>();

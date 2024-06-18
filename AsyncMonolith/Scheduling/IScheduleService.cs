@@ -26,6 +26,7 @@ public interface IScheduleService
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public Task DeleteByTag(string tag, CancellationToken cancellationToken = default);
+
     /// <summary>
     ///     Deletes a scheduled message by ID.
     /// </summary>

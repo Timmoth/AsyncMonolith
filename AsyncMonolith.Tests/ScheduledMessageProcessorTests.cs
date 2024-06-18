@@ -1,5 +1,6 @@
 using System.Text.Json;
 using AsyncMonolith.Scheduling;
+using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -49,7 +50,9 @@ public class ScheduledMessageProcessorTests : DbTestsBase
                 var messages = await postDbContext.ConsumerMessages.ToListAsync();
                 messages.Count.Should().Be(2);
 
-                var message1 = Assert.Single(messages.Where(m => m.ConsumerType == nameof(MultiConsumer1)));
+                var message1 =
+                    await postDbContext.AssertSingleConsumerMessageById<MultiConsumer1, MultiConsumerMessage>(
+                        consumerMessage, "fake-id-2");
                 message1.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds());
                 message1.Attempts.Should().Be(0);
                 message1.InsertId.Should().Be("fake-id-1");
@@ -58,7 +61,9 @@ public class ScheduledMessageProcessorTests : DbTestsBase
                 message1.PayloadType = nameof(MultiConsumerMessage);
                 message1.Payload.Should().Be(serializedMessage);
 
-                var message2 = Assert.Single(messages.Where(m => m.ConsumerType == nameof(MultiConsumer2)));
+                var message2 =
+                    await postDbContext.AssertSingleConsumerMessageById<MultiConsumer2, MultiConsumerMessage>(
+                        consumerMessage, "fake-id-3");
                 message2.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds());
                 message2.Attempts.Should().Be(0);
                 message2.InsertId.Should().Be("fake-id-1");
@@ -110,8 +115,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var postDbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var message = await postDbContext.ScheduledMessages.FirstOrDefaultAsync();
-                message.Should().NotBeNull();
+                var message = await postDbContext.AssertSingleScheduledMessage(consumerMessage);
                 message!.AvailableAfter.Should().Be(FakeTime.GetUtcNow().AddSeconds(1).ToUnixTimeSeconds());
             }
         }

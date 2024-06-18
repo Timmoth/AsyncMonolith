@@ -2,5 +2,5 @@
 
 public interface IConsumer
 {
-    public Task Consume(ConsumerMessage message, CancellationToken token);
+    public Task Consume(ConsumerMessage message, CancellationToken cancellationToken);
 }

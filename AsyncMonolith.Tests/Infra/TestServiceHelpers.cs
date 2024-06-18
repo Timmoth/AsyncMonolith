@@ -6,6 +6,7 @@ using AsyncMonolith.MySql;
 using AsyncMonolith.PostgreSql;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
+using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,18 +30,10 @@ public static class TestServiceHelpers
         services.AddSingleton<TimeProvider>(fakeTime);
         services.AddLogging();
 
-        services.Configure<AsyncMonolithSettings>(options =>
-        {
-            options.AttemptDelay = settings.AttemptDelay;
-            options.MaxAttempts = settings.MaxAttempts;
-            options.ProcessorMaxDelay = settings.ProcessorMaxDelay;
-            options.ProcessorMinDelay = settings.ProcessorMinDelay;
-        });
-
-        services.Register(Assembly.GetExecutingAssembly(), settings);
-        services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
+        settings = services.InternalConfigureAsyncMonolithSettings(settings);
+        services.InternalRegisterAsyncMonolithConsumers(Assembly.GetExecutingAssembly(), settings);
+        services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<TestDbContext>>();
-
         switch (dbType)
         {
             case DbType.Ef:
@@ -64,9 +57,6 @@ public static class TestServiceHelpers
                 services.AddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
                 break;
         }
-
-
-        services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
 
         var invocations = new TestConsumerInvocations();
         services.AddSingleton(invocations);

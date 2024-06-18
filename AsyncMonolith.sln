@@ -17,7 +17,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncMonolith.Ef", "AsyncMo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncMonolith.MySql", "AsyncMonolith.MySql\AsyncMonolith.MySql.csproj", "{2F06268B-3C51-43B4-BC23-F57488FB7D54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncMonolith.MsSql", "AsyncMonolith.MsSql\AsyncMonolith.MsSql.csproj", "{4D8CF8E7-4708-49C3-B705-DF0D6BED7D70}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AsyncMonolith.MsSql", "AsyncMonolith.MsSql\AsyncMonolith.MsSql.csproj", "{4D8CF8E7-4708-49C3-B705-DF0D6BED7D70}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncMonolith.TestHelpers", "AsyncMonolith.TestHelpers\AsyncMonolith.TestHelpers.csproj", "{5324854E-EC36-4C19-9B2E-67E360A9720F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +59,10 @@ Global
 		{4D8CF8E7-4708-49C3-B705-DF0D6BED7D70}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D8CF8E7-4708-49C3-B705-DF0D6BED7D70}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D8CF8E7-4708-49C3-B705-DF0D6BED7D70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5324854E-EC36-4C19-9B2E-67E360A9720F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5324854E-EC36-4C19-9B2E-67E360A9720F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5324854E-EC36-4C19-9B2E-67E360A9720F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5324854E-EC36-4C19-9B2E-67E360A9720F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

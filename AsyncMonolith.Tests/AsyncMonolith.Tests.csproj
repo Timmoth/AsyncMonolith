@@ -40,6 +40,7 @@
 		<ProjectReference Include="..\AsyncMonolith.MsSql\AsyncMonolith.MsSql.csproj" />
 		<ProjectReference Include="..\AsyncMonolith.MySql\AsyncMonolith.MySql.csproj" />
 		<ProjectReference Include="..\AsyncMonolith.PostgreSql\AsyncMonolith.PostgreSql.csproj" />
+		<ProjectReference Include="..\AsyncMonolith.TestHelpers\AsyncMonolith.TestHelpers.csproj" />
 		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
 	</ItemGroup>
 

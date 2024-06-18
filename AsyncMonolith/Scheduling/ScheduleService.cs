@@ -51,7 +51,8 @@ public sealed class ScheduleService<T> : IScheduleService where T : DbContext
         var next = expression.GetNextOccurrence(_timeProvider.GetUtcNow(), timezone);
         if (next == null)
         {
-            throw new InvalidOperationException($"Couldn't determine next scheduled message occurrence for chron expression: '{chronExpression}', timezone: '{chronTimezone}'");
+            throw new InvalidOperationException(
+                $"Couldn't determine next scheduled message occurrence for chron expression: '{chronExpression}', timezone: '{chronTimezone}'");
         }
 
         _dbContext.Set<ScheduledMessage>().Add(new ScheduledMessage

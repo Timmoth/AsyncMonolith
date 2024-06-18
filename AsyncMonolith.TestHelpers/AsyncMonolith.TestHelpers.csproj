@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<LangVersion>preview</LangVersion>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>AsyncMonolith.TestHelpers</PackageId>
+		<PackageVersion>8.0.1</PackageVersion>
+		<Authors>Tim Jones</Authors>
+		<Company>Aptacode</Company>
+		<Description>Test helpers for AsyncMonolith</Description>
+		<PackageProjectUrl>https://github.com/Timmoth/AsyncMonolith</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
+		<Title>AsyncMonolith.TestHelpers</Title>
+		<PackageIcon>logo.png</PackageIcon>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.6.0" />
+    <PackageReference Include="xunit.abstractions" Version="2.0.3" />
+    <PackageReference Include="xunit.assert" Version="2.8.1" />
+    <PackageReference Include="MartinCostello.Logging.XUnit" Version="0.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\AsyncMonolith\logo.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+</Project>

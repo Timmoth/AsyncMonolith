@@ -1,5 +1,6 @@
 using System.Text.Json;
 using AsyncMonolith.Producers;
+using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -36,8 +37,9 @@ public class ProducerServiceDbTests : DbTestsBase
             using var scope = serviceProvider.CreateScope();
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-                var messages = await postDbContext.ConsumerMessages.ToListAsync();
-                var message = Assert.Single(messages);
+                var message =
+                    await postDbContext.AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(
+                        consumerMessage);
                 message.AvailableAfter.Should().Be(delay);
                 message.Attempts.Should().Be(0);
                 message.InsertId.Should().Be("fake-id-0");
@@ -92,7 +94,9 @@ public class ProducerServiceDbTests : DbTestsBase
                 var messages = await postDbContext.ConsumerMessages.ToListAsync();
                 messages.Count.Should().Be(2);
 
-                var message1 = Assert.Single(messages.Where(m => m.Id == "fake-id-1"));
+                var message1 =
+                    await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
+                        consumerMessage1, "fake-id-1");
                 message1.AvailableAfter.Should().Be(delay);
                 message1.Attempts.Should().Be(0);
                 message1.InsertId.Should().Be("fake-id-0");
@@ -101,7 +105,9 @@ public class ProducerServiceDbTests : DbTestsBase
                 message1.PayloadType = nameof(SingleConsumerMessage);
                 message1.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage1));
 
-                var message2 = Assert.Single(messages.Where(m => m.Id == "fake-id-3"));
+                var message2 =
+                    await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
+                        consumerMessage2, "fake-id-3");
                 message2.AvailableAfter.Should().Be(delay);
                 message2.Attempts.Should().Be(0);
                 message2.InsertId.Should().Be("fake-id-2");
@@ -156,7 +162,9 @@ public class ProducerServiceDbTests : DbTestsBase
                 var messages = await postDbContext.ConsumerMessages.ToListAsync();
                 messages.Count.Should().Be(2);
 
-                var message1 = Assert.Single(messages.Where(m => m.Id == "fake-id-1"));
+                var message1 =
+                    await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
+                        consumerMessage1, "fake-id-1");
                 message1.AvailableAfter.Should().Be(delay);
                 message1.Attempts.Should().Be(0);
                 message1.InsertId.Should().Be("fake-id-0");
@@ -165,7 +173,9 @@ public class ProducerServiceDbTests : DbTestsBase
                 message1.PayloadType = nameof(SingleConsumerMessage);
                 message1.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage1));
 
-                var message2 = Assert.Single(messages.Where(m => m.Id == "fake-id-3"));
+                var message2 =
+                    await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
+                        consumerMessage2, "fake-id-3");
                 message2.AvailableAfter.Should().Be(delay);
                 message2.Attempts.Should().Be(0);
                 message2.InsertId.Should().Be("fake-id-2");
@@ -213,8 +223,9 @@ public class ProducerServiceDbTests : DbTestsBase
             using var scope = serviceProvider.CreateScope();
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-                var messages = await postDbContext.ConsumerMessages.ToListAsync();
-                var message = Assert.Single(messages);
+                var message =
+                    await postDbContext.AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(
+                        consumerMessage);
                 message.AvailableAfter.Should().Be(delay);
                 message.Attempts.Should().Be(0);
                 message.Id.Should().Be("fake-id-0");

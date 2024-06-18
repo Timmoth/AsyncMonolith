@@ -4,7 +4,7 @@ using AsyncMonolith.Scheduling;
 namespace AsyncMonolith.Producers;
 
 /// <summary>
-///    Interface for producing messages.
+///     Interface for producing messages.
 /// </summary>
 public interface IProducerService
 {
@@ -17,7 +17,8 @@ public interface IProducerService
     /// <param name="insertId">The insert ID for the message.</param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null, CancellationToken cancellationToken = default)
+    public Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null,
+        CancellationToken cancellationToken = default)
         where TK : IConsumerPayload;
 
     /// <summary>
@@ -28,7 +29,8 @@ public interface IProducerService
     /// <param name="availableAfter">The time in seconds after which the messages should be available for consumption.</param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task ProduceList<TK>(List<TK> messages, long? availableAfter = null, CancellationToken cancellationToken = default) where TK : IConsumerPayload;
+    public Task ProduceList<TK>(List<TK> messages, long? availableAfter = null,
+        CancellationToken cancellationToken = default) where TK : IConsumerPayload;
 
     /// <summary>
     ///     Produces a scheduled message.

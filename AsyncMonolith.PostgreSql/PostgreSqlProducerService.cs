@@ -25,7 +25,8 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
         _idGenerator = idGenerator;
     }
 
-    public async Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null, CancellationToken cancellationToken = default)
+    public async Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null,
+        CancellationToken cancellationToken = default)
         where TK : IConsumerPayload
     {
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
@@ -68,7 +69,8 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
         await _dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
     }
 
-    public async Task ProduceList<TK>(List<TK> messages, long? availableAfter = null, CancellationToken cancellationToken = default) where TK : IConsumerPayload
+    public async Task ProduceList<TK>(List<TK> messages, long? availableAfter = null,
+        CancellationToken cancellationToken = default) where TK : IConsumerPayload
     {
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         availableAfter ??= currentTime;
