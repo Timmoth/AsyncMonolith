@@ -18,6 +18,8 @@
 		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
 		<Title>Async Monolith</Title>
 		<PackageIcon>logo.png</PackageIcon>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<IncludeSymbols>true</IncludeSymbols>
 	</PropertyGroup>
 
 	<ItemGroup>

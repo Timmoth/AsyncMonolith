@@ -8,7 +8,7 @@
 		<LangVersion>preview</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith.TestHelpers</PackageId>
-		<PackageVersion>8.0.1</PackageVersion>
+		<PackageVersion>8.0.5</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>Test helpers for AsyncMonolith</Description>
@@ -18,6 +18,9 @@
 		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
 		<Title>AsyncMonolith.TestHelpers</Title>
 		<PackageIcon>logo.png</PackageIcon>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<IncludeSymbols>true</IncludeSymbols>
+		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
 	</PropertyGroup>
 
   <ItemGroup>
@@ -26,17 +29,26 @@
     <PackageReference Include="xunit.abstractions" Version="2.0.3" />
     <PackageReference Include="xunit.assert" Version="2.8.1" />
     <PackageReference Include="MartinCostello.Logging.XUnit" Version="0.4.0" />
+    <PackageReference Include="Cronos" Version="0.8.4" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
-  </ItemGroup>
-
 	<ItemGroup>
 		<None Include="..\AsyncMonolith\logo.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj">
+			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+			<IncludeAssets>AsyncMonolith.dll</IncludeAssets>
+		</ProjectReference>
+	</ItemGroup>
+	<Target DependsOnTargets="BuildOnlySettings;ResolveReferences" Name="CopyProjectReferencesToPackage">
+		<ItemGroup>
+			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+		</ItemGroup>
+	</Target>
+
 
 </Project>

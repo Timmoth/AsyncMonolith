@@ -2,6 +2,8 @@ Make sure to check this table before updating the nuget package in your solution
 
 | Version | Description                                | Migration Required |
 |---------|--------------------------------------------|--------------------|
+| 8.0.5   | Bundle debug symbols with nuget package    | No                 |
+| 8.0.4   | Bundle XML docs with nuget package         | No                 |
 | 8.0.3   | Optimised Sql                              | No                 |
 | 8.0.2   | Added distributed trace_id and span_id     | No                 |
 | 8.0.1   | Added OpenTelemetry support                | Yes                |

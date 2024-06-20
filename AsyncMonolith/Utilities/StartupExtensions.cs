@@ -6,8 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Utilities;
 
+/// <summary>
+/// Extension methods for configuring and registering AsyncMonolith in the application startup.
+/// </summary>
 public static class StartupExtensions
 {
+    /// <summary>
+    /// Configures the AsyncMonolith model.
+    /// </summary>
+    /// <param name="modelBuilder">The model builder.</param>
     public static void ConfigureAsyncMonolith(this ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ConsumerMessage>()
@@ -15,6 +22,12 @@ public static class StartupExtensions
             .IsUnique();
     }
 
+    /// <summary>
+    /// Internal method for configuring AsyncMonolith settings.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="settings">The AsyncMonolith settings.</param>
+    /// <returns>The configured AsyncMonolith settings.</returns>
     public static AsyncMonolithSettings InternalConfigureAsyncMonolithSettings(this IServiceCollection services,
         AsyncMonolithSettings? settings = null)
     {
@@ -42,7 +55,7 @@ public static class StartupExtensions
         if (settings.ProcessorMinDelay > settings.ProcessorMaxDelay)
         {
             throw new ArgumentException(
-                "AsyncMonolithSettings.ProcessorMaxDelay must be greater then AsyncMonolithSettings.ProcessorMinDelay.");
+                "AsyncMonolithSettings.ProcessorMaxDelay must be greater than AsyncMonolithSettings.ProcessorMinDelay.");
         }
 
         if (settings.ConsumerMessageProcessorCount < 1)
@@ -60,10 +73,14 @@ public static class StartupExtensions
             throw new ArgumentException("AsyncMonolithSettings.ProcessorBatchSize must be at least 1.");
         }
 
-
         if (settings.DefaultConsumerTimeout < 1)
         {
             throw new ArgumentException("AsyncMonolithSettings.DefaultConsumerTimeout must be at least 1.");
+        }
+
+        if (settings.DefaultConsumerTimeout > 3600)
+        {
+            throw new ArgumentException("AsyncMonolithSettings.DefaultConsumerTimeout must be less then 3600.");
         }
 
         services.Configure<AsyncMonolithSettings>(options =>
@@ -81,6 +98,13 @@ public static class StartupExtensions
         return settings;
     }
 
+    /// <summary>
+    /// Internal method for adding AsyncMonolith to the service collection.
+    /// </summary>
+    /// <typeparam name="T">The DbContext type.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="assembly">The assembly containing the consumer types.</param>
+    /// <param name="settings">The AsyncMonolith settings.</param>
     public static void InternalAddAsyncMonolith<T>(this IServiceCollection services, Assembly assembly,
         AsyncMonolithSettings? settings = null) where T : DbContext
     {
@@ -110,6 +134,12 @@ public static class StartupExtensions
         }
     }
 
+    /// <summary>
+    /// Internal method for registering AsyncMonolith consumers.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="assembly">The assembly containing the consumer types.</param>
+    /// <param name="settings">The AsyncMonolith settings.</param>
     public static void InternalRegisterAsyncMonolithConsumers(this IServiceCollection services, Assembly assembly,
         AsyncMonolithSettings settings)
     {
@@ -120,8 +150,8 @@ public static class StartupExtensions
         var type = typeof(BaseConsumer<>);
 
         foreach (var consumerType in assembly.GetTypes()
-                     .Where(t => !t.IsAbstract && t.BaseType is { IsGenericType: true } &&
-                                 t.BaseType.GetGenericTypeDefinition() == type))
+            .Where(t => !t.IsAbstract && t.BaseType is { IsGenericType: true } &&
+                        t.BaseType.GetGenericTypeDefinition() == type))
         {
             if (consumerType.BaseType == null || string.IsNullOrEmpty(consumerType.Name))
             {
@@ -164,8 +194,8 @@ public static class StartupExtensions
         }
 
         foreach (var consumerPayload in assembly.GetTypes()
-                     .Where(t => t.IsClass && !t.IsAbstract && t.IsAssignableTo(typeof(IConsumerPayload)))
-                     .Select(t => t.Name))
+            .Where(t => t.IsClass && !t.IsAbstract && t.IsAssignableTo(typeof(IConsumerPayload)))
+            .Select(t => t.Name))
         {
             if (!payloadConsumerDictionary.ContainsKey(consumerPayload))
             {

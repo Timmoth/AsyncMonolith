@@ -10,6 +10,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AsyncMonolith.MsSql;
 
+/// <summary>
+/// Represents a service for producing messages to the MS SQL database.
+/// </summary>
+/// <typeparam name="T">The type of the DbContext.</typeparam>
 public sealed class MsSqlProducerService<T> : IProducerService where T : DbContext
 {
     private readonly ConsumerRegistry _consumerRegistry;
@@ -17,6 +21,13 @@ public sealed class MsSqlProducerService<T> : IProducerService where T : DbConte
     private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MsSqlProducerService{T}"/> class.
+    /// </summary>
+    /// <param name="timeProvider">The time provider.</param>
+    /// <param name="consumerRegistry">The consumer registry.</param>
+    /// <param name="dbContext">The DbContext.</param>
+    /// <param name="idGenerator">The ID generator.</param>
     public MsSqlProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry, T dbContext,
         IAsyncMonolithIdGenerator idGenerator)
     {
@@ -26,6 +37,15 @@ public sealed class MsSqlProducerService<T> : IProducerService where T : DbConte
         _idGenerator = idGenerator;
     }
 
+    /// <summary>
+    /// Produces a single message to the database.
+    /// </summary>
+    /// <typeparam name="TK">The type of the message.</typeparam>
+    /// <param name="message">The message to produce.</param>
+    /// <param name="availableAfter">The time when the message should be available for consumption.</param>
+    /// <param name="insertId">The ID to use for inserting the message.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null,
         CancellationToken cancellationToken = default)
         where TK : IConsumerPayload
@@ -76,6 +96,14 @@ public sealed class MsSqlProducerService<T> : IProducerService where T : DbConte
         await _dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
     }
 
+    /// <summary>
+    /// Produces a list of messages to the database.
+    /// </summary>
+    /// <typeparam name="TK">The type of the messages.</typeparam>
+    /// <param name="messages">The messages to produce.</param>
+    /// <param name="availableAfter">The time when the messages should be available for consumption.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task ProduceList<TK>(List<TK> messages, long? availableAfter = null,
         CancellationToken cancellationToken = default) where TK : IConsumerPayload
     {
@@ -131,6 +159,10 @@ public sealed class MsSqlProducerService<T> : IProducerService where T : DbConte
         await _dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
     }
 
+    /// <summary>
+    /// Produces a scheduled message to the database.
+    /// </summary>
+    /// <param name="message">The scheduled message to produce.</param>
     public void Produce(ScheduledMessage message)
     {
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();

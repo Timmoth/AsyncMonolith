@@ -8,8 +8,19 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Ef;
 
+/// <summary>
+/// Extension methods for configuring EF AsyncMonolith in the IServiceCollection.
+/// </summary>
 public static class StartupExtensions
 {
+    /// <summary>
+    /// Adds EF AsyncMonolith to the IServiceCollection.
+    /// </summary>
+    /// <typeparam name="T">The DbContext type.</typeparam>
+    /// <param name="services">The IServiceCollection to add the services to.</param>
+    /// <param name="assembly">The assembly containing the DbContext.</param>
+    /// <param name="settings">The optional AsyncMonolithSettings.</param>
+    /// <exception cref="ArgumentException">Thrown when the ConsumerMessageProcessorCount or ScheduledMessageProcessorCount is greater than 1.</exception>
     public static void AddEfAsyncMonolith<T>(this IServiceCollection services, Assembly assembly,
         AsyncMonolithSettings? settings = null) where T : DbContext
     {

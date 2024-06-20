@@ -14,7 +14,10 @@ namespace AsyncMonolith.TestHelpers
     public abstract class ConsumerTestBase : IAsyncLifetime
     {
         private DateTime _startTime;
-        private LogLevel _logLevel;
+        private readonly LogLevel _logLevel;
+        /// <summary>
+        /// Fake time provider
+        /// </summary>
         protected FakeTimeProvider FakeTime { get; private set; } = default!;
 
         /// <summary>

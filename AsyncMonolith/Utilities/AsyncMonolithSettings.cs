@@ -7,41 +7,49 @@ public class AsyncMonolithSettings
 {
     /// <summary>
     ///     Gets or sets the maximum number of attempts for processing a message.
+    ///     Default: 5, Min: 1, Max N/A
     /// </summary>
     public int MaxAttempts { get; set; } = 5;
 
     /// <summary>
     ///     Gets or sets the delay in seconds between attempts for processing a failed message.
+    ///     Default: 10 seconds, Min: 0 second, Max N/A
     /// </summary>
     public int AttemptDelay { get; set; } = 10;
 
     /// <summary>
     ///     Gets or sets the maximum delay in milliseconds between processor cycles.
+    ///     Default: 1000ms, Min: 1ms, Max N/A
     /// </summary>
     public int ProcessorMaxDelay { get; set; } = 1000;
 
     /// <summary>
     ///     Gets or sets the minimum delay in milliseconds between processor cycles.
+    ///     Default: 10ms, Min: 0ms, Max N/A
     /// </summary>
     public int ProcessorMinDelay { get; set; } = 10;
 
     /// <summary>
-    ///     Gets or sets the number of messages to process in a batch.
+    ///     Gets or sets the number of messages to process in a batch.#
+    ///     Default: 5, Min: 1, Max N/A
     /// </summary>
     public int ProcessorBatchSize { get; set; } = 5;
 
     /// <summary>
     ///     Gets or sets the number of consumer message processors to be ran for each app instance.
+    ///     Default: 1, Min: 1, Max N/A
     /// </summary>
     public int ConsumerMessageProcessorCount { get; set; } = 1;
 
     /// <summary>
     ///     Gets or sets the number of scheduled message processors to be ran for each app instance.
+    ///     Default: 1, Min: 1, Max N/A
     /// </summary>
     public int ScheduledMessageProcessorCount { get; set; } = 1;
 
     /// <summary>
     ///     Gets or sets the default number of seconds a consumer waits before timing out.
+    ///     Default: 10 seconds, Min: 1 second, Max 3600 seconds
     /// </summary>
     public int DefaultConsumerTimeout { get; set; } = 10;
 

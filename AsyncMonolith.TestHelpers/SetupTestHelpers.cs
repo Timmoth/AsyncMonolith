@@ -7,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.TestHelpers;
 
+/// <summary>
+/// 
+/// </summary>
 public static class SetupTestHelpers
 {
     /// <summary>

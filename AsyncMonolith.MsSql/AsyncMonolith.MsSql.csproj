@@ -8,7 +8,7 @@
 		<LangVersion>preview</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith.MsSql</PackageId>
-		<PackageVersion>8.0.3</PackageVersion>
+		<PackageVersion>8.0.5</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>MsSql interface for AsyncMonolith</Description>
@@ -18,6 +18,9 @@
 		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
 		<Title>AsyncMonolith.MsSql</Title>
 		<PackageIcon>logo.png</PackageIcon>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<IncludeSymbols>true</IncludeSymbols>
+		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -31,7 +34,14 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.6" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
+		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj">
+			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+			<IncludeAssets>AsyncMonolith.dll</IncludeAssets>
+		</ProjectReference>
 	</ItemGroup>
-
+	<Target DependsOnTargets="BuildOnlySettings;ResolveReferences" Name="CopyProjectReferencesToPackage">
+		<ItemGroup>
+			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+		</ItemGroup>
+	</Target>
 </Project>

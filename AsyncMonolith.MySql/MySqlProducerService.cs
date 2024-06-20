@@ -10,6 +10,10 @@ using MySqlConnector;
 
 namespace AsyncMonolith.MySql;
 
+/// <summary>
+/// Represents a service for producing messages to a MySQL database.
+/// </summary>
+/// <typeparam name="T">The type of the DbContext.</typeparam>
 public sealed class MySqlProducerService<T> : IProducerService where T : DbContext
 {
     private readonly ConsumerRegistry _consumerRegistry;
@@ -17,6 +21,13 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
     private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MySqlProducerService{T}"/> class.
+    /// </summary>
+    /// <param name="timeProvider">The time provider.</param>
+    /// <param name="consumerRegistry">The consumer registry.</param>
+    /// <param name="dbContext">The DbContext.</param>
+    /// <param name="idGenerator">The ID generator.</param>
     public MySqlProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry, T dbContext,
         IAsyncMonolithIdGenerator idGenerator)
     {
@@ -26,6 +37,15 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
         _idGenerator = idGenerator;
     }
 
+    /// <summary>
+    /// Produces a single message to the database.
+    /// </summary>
+    /// <typeparam name="TK">The type of the message.</typeparam>
+    /// <param name="message">The message to produce.</param>
+    /// <param name="availableAfter">The time when the message should be available for consumption.</param>
+    /// <param name="insertId">The ID to insert into the database.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null,
         CancellationToken cancellationToken = default)
         where TK : IConsumerPayload
@@ -40,16 +60,15 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
 
         var sqlBuilder = new StringBuilder();
         var parameters = new List<MySqlParameter>
-        {
-            new("@created_at", currentTime),
-            new("@available_after", availableAfter),
-            new("@payload_type", payloadType),
-            new("@payload", payload),
-            new("@insert_id", insertId),
-            new("@trace_id", string.IsNullOrEmpty(traceId) ? DBNull.Value : traceId),
-            new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : spanId)
-        };
-
+            {
+                new("@created_at", currentTime),
+                new("@available_after", availableAfter),
+                new("@payload_type", payloadType),
+                new("@payload", payload),
+                new("@insert_id", insertId),
+                new("@trace_id", string.IsNullOrEmpty(traceId) ? DBNull.Value : traceId),
+                new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : spanId)
+            };
 
         var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
         for (var index = 0; index < consumerTypes.Count; index++)
@@ -74,6 +93,14 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
         await _dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
     }
 
+    /// <summary>
+    /// Produces a list of messages to the database.
+    /// </summary>
+    /// <typeparam name="TK">The type of the messages.</typeparam>
+    /// <param name="messages">The messages to produce.</param>
+    /// <param name="availableAfter">The time when the messages should be available for consumption.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task ProduceList<TK>(List<TK> messages, long? availableAfter = null,
         CancellationToken cancellationToken = default) where TK : IConsumerPayload
     {
@@ -84,12 +111,12 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
 
         var sqlBuilder = new StringBuilder();
         var parameters = new List<MySqlParameter>
-        {
-            new("@created_at", currentTime),
-            new("@available_after", availableAfter),
-            new("@trace_id", string.IsNullOrEmpty(traceId) ? DBNull.Value : traceId),
-            new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : spanId)
-        };
+            {
+                new("@created_at", currentTime),
+                new("@available_after", availableAfter),
+                new("@trace_id", string.IsNullOrEmpty(traceId) ? DBNull.Value : traceId),
+                new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : spanId)
+            };
 
         var payloadType = typeof(TK).Name;
         var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
@@ -126,6 +153,10 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
         await _dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
     }
 
+    /// <summary>
+    /// Produces a scheduled message to the database.
+    /// </summary>
+    /// <param name="message">The scheduled message to produce.</param>
     public void Produce(ScheduledMessage message)
     {
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
