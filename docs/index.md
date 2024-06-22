@@ -6,20 +6,19 @@
 [![PostgreSql](https://img.shields.io/nuget/v/AsyncMonolith.PostgreSql?label=PostgreSql)](https://www.nuget.org/packages/AsyncMonolith.PostgreSql)
 [![MariaDb](https://img.shields.io/nuget/v/AsyncMonolith.MariaDb?label=MariaDb)](https://www.nuget.org/packages/AsyncMonolith.MariaDb)
 
-AsyncMonolith is a lightweight library that facilitates simple asynchronous messaging in dotnet apps.
+AsyncMonolith is a lightweight library that facilitates simple, durable and asynchronous messaging in dotnet apps.
 
-## Overview
-- Makes building event driven architectures simple  
-- Produce messages transactionally along with changes to your domain  
-- Messages are stored in your DB context so you have full control over them  
-- Supports running multiple instances / versions of your application  
-- Delay processing messages  
-- Schedule messages to be processed using Chron expressions  
-- Deduplication ensures tagged messages are only processed once for time period  
-- Automatic message retries  
-- Automatically routes messages to multiple consumers  
-- Keep your infrastructure simple, It only requires a dotnet API and database  
-- Makes it very easy to write unit / integration tests  
+### Overview:
+- Speed up your API by offloading tasks to a background worker.
+- Distribute workload amongst multiple app instances.
+- Execute tasks at specific times or after a delay.
+- Execute tasks at regular intervals.
+- Simplify complex processes by building out an event-driven architecture.
+- Decouple your services by utilizing the Mediator pattern.
+- Improve your application's resiliency by utilizing the Transactional Outbox pattern.
+- Improve your application's resiliency by utilizing automatic retries.
+- Keep your infrastructure simple without using a message broker.
+- Simplify testability.
 
 > [!NOTE]  
 > Despite its name, AsyncMonolith can be used within a microservices architecture. The only requirement is that the producers and consumers share the same database i.e messaging within a single project. However, it is not suitable for passing messages between different projects in a microservices architecture, as microservices should not share the same database. 
