@@ -19,10 +19,11 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.6" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
-		<PackageReference Include="Testcontainers" Version="3.8.0" />
-		<PackageReference Include="Testcontainers.MsSql" Version="3.8.0" />
-		<PackageReference Include="Testcontainers.MySql" Version="3.8.0" />
-		<PackageReference Include="Testcontainers.PostgreSql" Version="3.8.0" />
+		<PackageReference Include="Testcontainers" Version="3.9.0" />
+		<PackageReference Include="Testcontainers.MariaDb" Version="3.9.0" />
+		<PackageReference Include="Testcontainers.MsSql" Version="3.9.0" />
+		<PackageReference Include="Testcontainers.MySql" Version="3.9.0" />
+		<PackageReference Include="Testcontainers.PostgreSql" Version="3.9.0" />
 		<PackageReference Include="xunit" Version="2.8.1" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
 			<PrivateAssets>all</PrivateAssets>
@@ -37,6 +38,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\AsyncMonolith.Ef\AsyncMonolith.Ef.csproj" />
+		<ProjectReference Include="..\AsyncMonolith.MariaDb\AsyncMonolith.MariaDb.csproj" />
 		<ProjectReference Include="..\AsyncMonolith.MsSql\AsyncMonolith.MsSql.csproj" />
 		<ProjectReference Include="..\AsyncMonolith.MySql\AsyncMonolith.MySql.csproj" />
 		<ProjectReference Include="..\AsyncMonolith.PostgreSql\AsyncMonolith.PostgreSql.csproj" />

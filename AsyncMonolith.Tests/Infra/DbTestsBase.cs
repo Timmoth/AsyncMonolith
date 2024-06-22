@@ -61,6 +61,7 @@ public abstract class DbTestsBase
         yield return new object[] { new MsSqlTestDbContainer() };
         yield return new object[] { new PostgreSqlTestDbContainer() };
         yield return new object[] { new EfTestDbContainer() };
+        yield return new object[] { new MariaDbTestDbContainer() };
     }
 
     public static TestDbContainerBase GetTestDbContainer(DbType dbType)
@@ -71,6 +72,7 @@ public abstract class DbTestsBase
             DbType.MySql => new MySqlTestDbContainer(),
             DbType.MsSql => new MsSqlTestDbContainer(),
             DbType.PostgreSql => new PostgreSqlTestDbContainer(),
+            DbType.MariaDb => new MariaDbTestDbContainer(),
             _ => throw new ArgumentOutOfRangeException(nameof(dbType), dbType, null)
         };
 

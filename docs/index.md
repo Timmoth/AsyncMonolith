@@ -4,12 +4,12 @@
 [![MySql](https://img.shields.io/nuget/v/AsyncMonolith.MySql?label=MySql)](https://www.nuget.org/packages/AsyncMonolith.MySql)
 [![MsSql](https://img.shields.io/nuget/v/AsyncMonolith.MsSql?label=MsSql)](https://www.nuget.org/packages/AsyncMonolith.MsSql)
 [![PostgreSql](https://img.shields.io/nuget/v/AsyncMonolith.PostgreSql?label=PostgreSql)](https://www.nuget.org/packages/AsyncMonolith.PostgreSql)
+[![MariaDb](https://img.shields.io/nuget/v/AsyncMonolith.MariaDb?label=MariaDb)](https://www.nuget.org/packages/AsyncMonolith.MariaDb)
 
-AsyncMonolith is a lightweight dotnet library that facillitates simple asynchronous processes in monolithic dotnet apps.
+AsyncMonolith is a lightweight library that facilitates simple asynchronous messaging in dotnet apps.
 
-# Overview
-
-- Makes building event driven architectures simple
+## Overview
+- Makes building event driven architectures simple  
 - Produce messages transactionally along with changes to your domain  
 - Messages are stored in your DB context so you have full control over them  
 - Supports running multiple instances / versions of your application  
@@ -20,6 +20,9 @@ AsyncMonolith is a lightweight dotnet library that facillitates simple asynchron
 - Automatically routes messages to multiple consumers  
 - Keep your infrastructure simple, It only requires a dotnet API and database  
 - Makes it very easy to write unit / integration tests  
+
+> [!NOTE]  
+> Despite its name, AsyncMonolith can be used within a microservices architecture. The only requirement is that the producers and consumers share the same database i.e messaging within a single project. However, it is not suitable for passing messages between different projects in a microservices architecture, as microservices should not share the same database. 
 
 !!! note
 

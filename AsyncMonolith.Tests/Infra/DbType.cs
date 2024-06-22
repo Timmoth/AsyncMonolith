@@ -5,5 +5,6 @@ public enum DbType
     Ef = 0,
     PostgreSql = 1,
     MySql = 2,
-    MsSql = 3
+    MsSql = 3,
+    MariaDb = 4,
 }

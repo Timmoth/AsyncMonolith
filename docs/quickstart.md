@@ -6,6 +6,7 @@ Install the nuget package to support your database
 [![MySql](https://img.shields.io/nuget/v/AsyncMonolith.MySql?label=MySql)](https://www.nuget.org/packages/AsyncMonolith.MySql)
 [![MsSql](https://img.shields.io/nuget/v/AsyncMonolith.MsSql?label=MsSql)](https://www.nuget.org/packages/AsyncMonolith.MsSql)
 [![PostgreSql](https://img.shields.io/nuget/v/AsyncMonolith.PostgreSql?label=PostgreSql)](https://www.nuget.org/packages/AsyncMonolith.PostgreSql)
+[![MariaDb](https://img.shields.io/nuget/v/AsyncMonolith.MariaDb?label=MariaDb)](https://www.nuget.org/packages/AsyncMonolith.MariaDb)
 
 ```csharp
     // Pick one
@@ -13,6 +14,7 @@ Install the nuget package to support your database
     dotnet add package AsyncMonolith.MySql
     dotnet add package AsyncMonolith.MsSql
     dotnet add package AsyncMonolith.PostgreSql
+    dotnet add package AsyncMonolith.MariaDb
 ```
 
 Setup your DbContext
@@ -54,6 +56,7 @@ Register your dependencies
 	// services.AddMsSqlAsyncMonolith
 	// services.AddMySqlAsyncMonolith
 	// services.AddPostgreSqlAsyncMonolith
+	// services.AddMariaDbAsyncMonolith
 
     builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(), new AsyncMonolithSettings()
     {

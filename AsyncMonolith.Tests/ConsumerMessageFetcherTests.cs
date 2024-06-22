@@ -14,6 +14,7 @@ public class ConsumerMessageFetcherTests : DbTestsBase
     [InlineData(DbType.MySql)]
     [InlineData(DbType.MsSql)]
     [InlineData(DbType.PostgreSql)]
+    [InlineData(DbType.MariaDb)]
     public async Task Fetch_Returns_Batch_Of_Messages(DbType dbType)
     {
         var dbContainer = GetTestDbContainer(dbType);

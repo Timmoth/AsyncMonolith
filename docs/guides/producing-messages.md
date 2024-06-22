@@ -37,7 +37,7 @@ You can produce messages to be consumed immediately like this:
 
 The message will be produced transactionally along with the change to your domain objects when you call `SaveChangesAsync`. Lean more about the [Transactional Outbox](../transactional-outbox) pattern.
 
-***If using the MySql, MsSql or PostgreSQL packages you will need to wrap your changes in a transaction see below***
+***If using the MySql, MsSql, MariaDb or PostgreSQL packages you will need to wrap your changes in a transaction see below***
 
 ## Delayed messages
 You can produce messages to be consumed after a delay by specifying the number of seconds to wait before a consumer should process the message.
@@ -73,7 +73,7 @@ Deduplicated messages are useful when you may emit the same message multiple tim
 
 Deduplicated events will ensure only a single message for a given consumer type and insertId are ever pending processing at any given time.
 
-### MySql / MsSql / PostgreSql Transactionality
+### MySql / MsSql / MariaDb / PostgreSql Transactionality
 
 The produce method makes use of `ExecuteSqlRawAsync` when using the MySql, MsSql or PostgreSQL package, if you want the messages to be inserted transactionally with your domain changes you must wrap all the changes in an explicit transaction.
 

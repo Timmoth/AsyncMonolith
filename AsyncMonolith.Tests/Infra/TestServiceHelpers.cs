@@ -1,6 +1,7 @@
 using System.Reflection;
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Ef;
+using AsyncMonolith.MariaDb;
 using AsyncMonolith.MsSql;
 using AsyncMonolith.MySql;
 using AsyncMonolith.PostgreSql;
@@ -55,6 +56,11 @@ public static class TestServiceHelpers
                 services.AddScoped<IProducerService, PostgreSqlProducerService<TestDbContext>>();
                 services.AddSingleton<IConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
                 services.AddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
+                break;
+            case DbType.MariaDb:
+                services.AddScoped<IProducerService, MariaDbProducerService<TestDbContext>>();
+                services.AddSingleton<IConsumerMessageFetcher, MariaDbConsumerMessageFetcher>();
+                services.AddSingleton<IScheduledMessageFetcher, MariaDbScheduledMessageFetcher>();
                 break;
         }
 

@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<LangVersion>preview</LangVersion>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>AsyncMonolith.MariaDb</PackageId>
+		<PackageVersion>8.0.5</PackageVersion>
+		<Authors>Tim Jones</Authors>
+		<Company>Aptacode</Company>
+		<Description>MariaDb interface for AsyncMonolith</Description>
+		<PackageProjectUrl>https://github.com/Timmoth/AsyncMonolith</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
+		<Title>AsyncMonolith.MariaDb</Title>
+		<PackageIcon>logo.png</PackageIcon>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<IncludeSymbols>true</IncludeSymbols>
+		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\AsyncMonolith\logo.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj">
+			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+			<IncludeAssets>AsyncMonolith.dll</IncludeAssets>
+		</ProjectReference>
+	</ItemGroup>
+	<Target DependsOnTargets="BuildOnlySettings;ResolveReferences" Name="CopyProjectReferencesToPackage">
+		<ItemGroup>
+			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+		</ItemGroup>
+	</Target>
+</Project>
