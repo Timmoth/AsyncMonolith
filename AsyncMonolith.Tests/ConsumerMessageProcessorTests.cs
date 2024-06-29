@@ -272,6 +272,59 @@ public class ConsumerMessageProcessorTests : DbTestsBase
 
     [Theory]
     [MemberData(nameof(GetTestDbContainers))]
+    public async Task ConsumerMessageProcessor_Moves_Message_To_PoisonedMessages_OnCustomMaxAttempts(TestDbContainerBase dbContainer)
+    {
+        try
+        {
+            // Given
+            var serviceProvider = await Setup(dbContainer);
+
+            ConsumerMessage message;
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
+
+                await producer.Produce(new ExceptionConsumer2AttemptsMessage
+                {
+                    Name = "test-name"
+                });
+
+                await dbContext.SaveChangesAsync();
+                message = await dbContext.ConsumerMessages.SingleAsync();
+                message.Attempts = 1;
+                await dbContext.SaveChangesAsync();
+            }
+
+            // When
+            var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
+
+            await processor.ProcessBatch(CancellationToken.None);
+
+            // Then
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+                var consumerMessageExists = await dbContext.ConsumerMessages.AnyAsync();
+                consumerMessageExists.Should().BeFalse();
+                var poisonedMessage = await dbContext.PoisonedMessages.SingleAsync();
+                poisonedMessage.Id.Should().Be(message.Id);
+                poisonedMessage.AvailableAfter.Should().Be(message.AvailableAfter);
+                poisonedMessage.ConsumerType.Should().Be(message.ConsumerType);
+                poisonedMessage.CreatedAt.Should().Be(message.CreatedAt);
+                poisonedMessage.Payload.Should().Be(message.Payload);
+                poisonedMessage.PayloadType.Should().Be(message.PayloadType);
+                poisonedMessage.Attempts.Should().Be(message.Attempts + 1);
+            }
+        }
+        finally
+        {
+            await dbContainer.DisposeAsync();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GetTestDbContainers))]
     public async Task ConsumerMessageProcessor_Removes_Consumed_Messages(TestDbContainerBase dbContainer)
     {
         try

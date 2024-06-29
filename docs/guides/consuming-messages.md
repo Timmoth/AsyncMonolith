@@ -10,6 +10,7 @@ Example
 
 ```csharp
 [ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
+[ConsumerAttempts(1)] // Consumer messages moved to poisoned table after 1 failed attempt
 public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 {
     private readonly ApplicationDbContext _dbContext;
@@ -29,6 +30,6 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 
 ## Consumer Failures 💢
 
-- **Retry Logic**: Messages will be retried up to `MaxAttempts` times (with a `AttemptDelay` seconds between attempts) until they are moved to the `poisoned_messages` table.
+- **Retry Logic**: Messages will be retried up to `MaxAttempts` times (with a `AttemptDelay` seconds between attempts) until they are moved to the `poisoned_messages` table. Add the `[ConsumerAttempts(1)]` attribute to override this behavior.
 - **Manual Intervention**: If a message is moved to the `poisoned_messages` table, it will need to be manually removed from the database or moved back to the `consumer_messages` table to be retried. Note that the poisoned message will only be retried a single time unless you set `attempts` back to 0.
 - **Monitoring**: Periodically monitor the `poisoned_messages` table to ensure there are not too many failed messages.

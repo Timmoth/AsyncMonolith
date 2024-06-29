@@ -111,7 +111,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             {
                 // Increment the number of attempts
                 message.Attempts++;
-                if (message.Attempts < _options.Value.MaxAttempts)
+                if (message.Attempts < _consumerRegistry.ResolveConsumerMaxAttempts(message))
                 {
                     // Retry the message after a delay
                     message.AvailableAfter =
@@ -213,11 +213,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             activity?.AddTag("exception.type", nameof(ex));
             activity?.AddTag("exception.message", ex.Message);
-
-            _logger.LogError(ex,
-                message.Attempts > _options.Value.MaxAttempts
-                    ? "Failed to consume message on attempt {attempt}, moving to poisoned messages."
-                    : "Failed to consume message on attempt {attempt}, will retry.", message.Attempts);
+            _logger.LogError(ex, "Failed to consume message on attempt {attempt}.", message.Attempts);
         }
 
         return (message, false);

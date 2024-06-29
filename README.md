@@ -68,6 +68,7 @@ Producing and scheduling messages
 Consuming messages
 ```csharp
 [ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
+[ConsumerAttempts(1)] // Consumer messages moved to poisoned table after 1 failed attempt
 public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 {
     private readonly ApplicationDbContext _dbContext;

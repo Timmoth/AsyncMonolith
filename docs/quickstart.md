@@ -84,6 +84,7 @@ Create messages and consumers
 
     // Define Consumer
     [ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
+    [ConsumerAttempts(1)] // Consumer messages moved to poisoned table after 1 failed attempt
     public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
     {
         private readonly ApplicationDbContext _dbContext;

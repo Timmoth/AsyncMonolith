@@ -18,6 +18,11 @@ public sealed class ConsumerRegistry
     public readonly IReadOnlyDictionary<string, int> ConsumerTimeoutDictionary;
 
     /// <summary>
+    ///     Gets the dictionary that maps consumer names to their associated number of attempts.
+    /// </summary>
+    public readonly IReadOnlyDictionary<string, int> ConsumerAttemptsDictionary;
+
+    /// <summary>
     ///     Gets the dictionary that maps consumer names to their associated types.
     /// </summary>
     public readonly IReadOnlyDictionary<string, Type> ConsumerTypeDictionary;
@@ -36,14 +41,17 @@ public sealed class ConsumerRegistry
     ///     handle them.
     /// </param>
     /// <param name="consumerTimeoutDictionary">The dictionary that maps consumer names to their associated time out.</param>
+    ///     /// <param name="consumerAttemptsDictionary">The dictionary that maps consumer names to their associated number of attempts.</param>
     /// <param name="settings">Async Monolith settings.</param>
     public ConsumerRegistry(IReadOnlyDictionary<string, Type> consumerTypeDictionary,
         IReadOnlyDictionary<string, List<string>> payloadConsumerDictionary,
-        IReadOnlyDictionary<string, int> consumerTimeoutDictionary, AsyncMonolithSettings settings)
+        IReadOnlyDictionary<string, int> consumerTimeoutDictionary,
+        IReadOnlyDictionary<string, int> consumerAttemptsDictionary, AsyncMonolithSettings settings)
     {
         ConsumerTypeDictionary = consumerTypeDictionary;
         PayloadConsumerDictionary = payloadConsumerDictionary;
         ConsumerTimeoutDictionary = consumerTimeoutDictionary;
+        ConsumerAttemptsDictionary = consumerAttemptsDictionary;
         _settings = settings;
     }
 
@@ -93,6 +101,22 @@ public sealed class ConsumerRegistry
         }
 
         return _settings.DefaultConsumerTimeout;
+    }
+
+    /// <summary>
+    ///     Resolves the consumer number of attempts the given consumer message.
+    /// </summary>
+    /// <param name="consumer">The consumer message.</param>
+    /// <returns>The consumer max attempts.</returns>
+    /// <exception cref="Exception">Thrown when the consumer type cannot be resolved.</exception>
+    public int ResolveConsumerMaxAttempts(ConsumerMessage consumer)
+    {
+        if (ConsumerAttemptsDictionary.TryGetValue(consumer.ConsumerType, out var attempts))
+        {
+            return attempts;
+        }
+
+        return _settings.MaxAttempts;
     }
 
     /// <summary>

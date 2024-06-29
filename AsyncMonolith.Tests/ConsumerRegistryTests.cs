@@ -127,4 +127,57 @@ public class ConsumerRegistryTests
         Assert.Single(consumerIds.Where(c => c == nameof(MultiConsumer1)));
         Assert.Single(consumerIds.Where(c => c == nameof(MultiConsumer2)));
     }
+
+
+    [Fact]
+    public void ConsumerRegistry_Resolves_Default_ConsumerAttempts_When_Not_Set()
+    {
+        // Given
+        var serviceProvider = Setup();
+        var registry = serviceProvider.GetRequiredService<ConsumerRegistry>();
+
+        // When
+        var timeout = registry.ResolveConsumerMaxAttempts(new ConsumerMessage
+        {
+            ConsumerType = nameof(ExceptionConsumer),
+            Id = default!,
+            CreatedAt = default!,
+            AvailableAfter = default!,
+            PayloadType = default!,
+            Payload = default!,
+            Attempts = default,
+            InsertId = string.Empty,
+            TraceId = null,
+            SpanId = null
+        });
+
+        // Then
+        timeout.Should().Be(5);
+    }
+
+    [Fact]
+    public void ConsumerRegistry_Resolves_ConsumerAttempts_By_ConsumerMessage()
+    {
+        // Given
+        var serviceProvider = Setup();
+        var registry = serviceProvider.GetRequiredService<ConsumerRegistry>();
+
+        // When
+        var timeout = registry.ResolveConsumerMaxAttempts(new ConsumerMessage
+        {
+            ConsumerType = nameof(SingleConsumer),
+            Id = default!,
+            CreatedAt = default!,
+            AvailableAfter = default!,
+            PayloadType = default!,
+            Payload = default!,
+            Attempts = default,
+            InsertId = string.Empty,
+            TraceId = null,
+            SpanId = null
+        });
+
+        // Then
+        timeout.Should().Be(2);
+    }
 }

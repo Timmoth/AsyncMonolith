@@ -146,6 +146,7 @@ public static class StartupExtensions
         var consumerServiceDictionary = new Dictionary<string, Type>();
         var payloadConsumerDictionary = new Dictionary<string, List<string>>();
         var consumerTimeoutDictionary = new Dictionary<string, int>();
+        var consumerAttemptsDictionary = new Dictionary<string, int>();
 
         var type = typeof(BaseConsumer<>);
 
@@ -174,6 +175,20 @@ public static class StartupExtensions
             }
 
             consumerTimeoutDictionary[consumerType.Name] = timeoutDuration;
+
+            var maxAttempts = settings.MaxAttempts;
+            attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerAttemptsAttribute));
+            if (attribute is ConsumerAttemptsAttribute attemptsAttribute)
+            {
+                maxAttempts = attemptsAttribute.Attempts;
+            }
+
+            if (maxAttempts <= 0)
+            {
+                maxAttempts = settings.MaxAttempts;
+            }
+
+            consumerAttemptsDictionary[consumerType.Name] = maxAttempts;
 
             // Get the generic argument (T) of the consumer type
             var payloadType = consumerType.BaseType.GetGenericArguments()[0];
@@ -204,6 +219,6 @@ public static class StartupExtensions
         }
 
         services.AddSingleton(new ConsumerRegistry(consumerServiceDictionary, payloadConsumerDictionary,
-            consumerTimeoutDictionary, settings));
+            consumerTimeoutDictionary, consumerAttemptsDictionary, settings));
     }
 }

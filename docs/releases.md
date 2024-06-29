@@ -2,6 +2,7 @@ Make sure to check this table before updating the nuget package in your solution
 
 | Version | Description                                | Migration Required |
 |---------|--------------------------------------------|--------------------|
+| 8.0.6   | Added ConsumerAttempts override attribute  | No                 |
 | 8.0.5   | Bundle debug symbols with nuget package    | No                 |
 | 8.0.4   | Bundle XML docs with nuget package         | No                 |
 | 8.0.3   | Optimised Sql                              | No                 |
