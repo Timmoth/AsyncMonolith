@@ -12,7 +12,7 @@ Writes scheduled messages to the `scheduled_messages` table.
 
 Stores all messages awaiting processing by the `ConsumerMessageProcessor`.
 
-## Dbset: ScheduledMessage
+## DbSet: ScheduledMessage
 
 Stores all scheduled messages awaiting processing by the `ScheduledMessageProcessor`.
 
