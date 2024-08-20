@@ -20,7 +20,7 @@ public static class TestServiceHelpers
     public static void AddInMemoryDb(this ServiceCollection services)
     {
         var dbId = Guid.NewGuid().ToString();
-        services.AddDbContext<TestDbContext>((sp, options) => { options.UseInMemoryDatabase(dbId); }
+        services.AddDbContext<TestDbContext>((_, options) => { options.UseInMemoryDatabase(dbId); }
         );
     }
 
@@ -31,8 +31,9 @@ public static class TestServiceHelpers
         services.AddSingleton<TimeProvider>(fakeTime);
         services.AddLogging();
 
-        settings = services.InternalConfigureAsyncMonolithSettings(settings);
-        services.InternalRegisterAsyncMonolithConsumers(Assembly.GetExecutingAssembly(), settings);
+        services.InternalConfigureAsyncMonolithSettings(settings);
+        settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
+        services.InternalRegisterAsyncMonolithConsumers(settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<TestDbContext>>();
         switch (dbType)

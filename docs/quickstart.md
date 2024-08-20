@@ -43,7 +43,7 @@ Setup your DbContext
 
 ***If you're not using ef migrations check out the sql to configure your database [here](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas)***
 
-Register your dependencies
+Register your dependencies and configure settings
 
 ```csharp
 
@@ -57,19 +57,25 @@ Register your dependencies
 	// services.AddMySqlAsyncMonolith
 	// services.AddPostgreSqlAsyncMonolith
 	// services.AddMariaDbAsyncMonolith
-
-    builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(), new AsyncMonolithSettings()
+    builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(settings =>
     {
-        AttemptDelay = 10, // Seconds before a failed message is retried
-        MaxAttempts = 5, // Number of times a failed message is retried
-        ProcessorMinDelay = 10, // Minimum millisecond delay before the next batch is processed
-        ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next batch is processed
-		ProcessorBatchSize = 5, // The number of messages to process in a single batch
-        ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
-        ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
-        DefaultConsumerTimeout = 10 // The default number of seconds before a consumer will timeout
+        settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
+        settings.AttemptDelay = 10, // Seconds before a failed message is retried
+        settings.MaxAttempts = 5, // Number of times a failed message is retried
+        settings.ProcessorMinDelay = 10, // Minimum millisecond delay before the next batch is processed
+        settings.ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next batch is processed
+		settings.ProcessorBatchSize = 5, // The number of messages to process in a single batch
+        settings.ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
+        settings.ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
+        settings.DefaultConsumerTimeout = 10 // The default number of seconds before a consumer will timeout
     });
 ```
+The following methods are available on the `AsyncMonolithSettings` passed into the `settings` lambda:
+
+- `RegisterTypesFromAssemblyContaining<T>()`
+- `RegisterTypesFromAssemblyContaining(Type type)`
+- `RegisterTypesFromAssembly(Assembly assembly)`
+- `RegisterTypesFromAssemblies(params Assembly[] assemblies)`
 
 Create messages and consumers
 

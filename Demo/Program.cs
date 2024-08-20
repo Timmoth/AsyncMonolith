@@ -38,17 +38,17 @@ public class Program
 
 
         builder.Services.AddSingleton(TimeProvider.System);
-        builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(Assembly.GetExecutingAssembly(),
-            new AsyncMonolithSettings
-            {
-                AttemptDelay = 10,
-                MaxAttempts = 5,
-                ProcessorMinDelay = 10,
-                ProcessorMaxDelay = 100,
-                ConsumerMessageProcessorCount = 1,
-                ScheduledMessageProcessorCount = 1,
-                ProcessorBatchSize = 10
-            });
+        builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(settings =>
+        {
+            settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
+            settings.AttemptDelay = 10;
+            settings.MaxAttempts = 5;
+            settings.ProcessorMinDelay = 10;
+            settings.ProcessorMaxDelay = 100;
+            settings.ConsumerMessageProcessorCount = 1;
+            settings.ScheduledMessageProcessorCount = 1;
+            settings.ProcessorBatchSize = 10;
+        });
 
         builder.Services.AddControllers();
         builder.Services.AddScoped<TotalValueService>();

@@ -1,10 +1,14 @@
-﻿namespace AsyncMonolith.Utilities;
+﻿using System.Reflection;
+
+namespace AsyncMonolith.Utilities;
 
 /// <summary>
 ///     Represents the settings for the AsyncMonolith application.
 /// </summary>
 public class AsyncMonolithSettings
 {
+    internal readonly HashSet<Assembly> AssembliesToRegister = [];
+
     /// <summary>
     ///     Gets or sets the maximum number of attempts for processing a message.
     ///     Default: 5, Min: 1, Max N/A
@@ -66,4 +70,43 @@ public class AsyncMonolithSettings
         ScheduledMessageProcessorCount = 1,
         ProcessorBatchSize = 5
     };
+    
+    /// <summary>
+    /// Register consumers and payloads from assembly containing given type.
+    /// </summary>
+    /// <typeparam name="T">Type from assembly to scan.</typeparam>
+    /// <returns>The current instance to continue configuration.</returns>
+    public AsyncMonolithSettings RegisterTypesFromAssemblyContaining<T>()
+        => RegisterTypesFromAssemblyContaining(typeof(T));
+
+    /// <summary>
+    /// Register consumers and payloads from assembly containing given type.
+    /// </summary>
+    /// <param name="type">Type from assembly to scan.</param>
+    /// <returns>The current instance to continue configuration.</returns>
+    public AsyncMonolithSettings RegisterTypesFromAssemblyContaining(Type type)
+        => RegisterTypesFromAssembly(type.Assembly);
+
+    /// <summary>
+    /// Register consumers and payloads from assembly.
+    /// </summary>
+    /// <param name="assembly">Assembly to scan</param>
+    /// <returns>The current instance to continue configuration.</returns>
+    public AsyncMonolithSettings RegisterTypesFromAssembly(Assembly assembly)
+        => RegisterTypesFromAssemblies([assembly]);
+
+    /// <summary>
+    /// Register consumers and payloads from assemblies.
+    /// </summary>
+    /// <param name="assemblies">Assemblies to scan.</param>
+    /// <returns>The current instance to continue configuration.</returns>
+    public AsyncMonolithSettings RegisterTypesFromAssemblies(params Assembly[] assemblies)
+    {
+        foreach (var assembly in assemblies)
+        {
+            AssembliesToRegister.Add(assembly);
+        }
+
+        return this;
+    }
 }
