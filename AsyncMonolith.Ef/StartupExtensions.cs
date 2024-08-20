@@ -18,13 +18,39 @@ public static class StartupExtensions
     /// </summary>
     /// <typeparam name="T">The DbContext type.</typeparam>
     /// <param name="services">The IServiceCollection to add the services to.</param>
+    /// <param name="settings">The action used to configure the settings.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
+    /// <exception cref="ArgumentException">Thrown when the ConsumerMessageProcessorCount or ScheduledMessageProcessorCount is greater than 1.</exception>
+    public static IServiceCollection AddEfAsyncMonolith<T>(
+        this IServiceCollection services,
+        Action<AsyncMonolithSettings> settings) where T : DbContext =>
+        AddEfAsyncMonolith<T>(services, settings, AsyncMonolithSettings.Default);
+
+    /// <summary>
+    /// Adds EF AsyncMonolith to the IServiceCollection.
+    /// </summary>
+    /// <typeparam name="T">The DbContext type.</typeparam>
+    /// <param name="services">The IServiceCollection to add the services to.</param>
     /// <param name="assembly">The assembly containing the DbContext.</param>
     /// <param name="settings">The optional AsyncMonolithSettings.</param>
+    /// <returns>A reference to this instance after the operation has completed.</returns>
     /// <exception cref="ArgumentException">Thrown when the ConsumerMessageProcessorCount or ScheduledMessageProcessorCount is greater than 1.</exception>
-    public static void AddEfAsyncMonolith<T>(this IServiceCollection services, Assembly assembly,
-        AsyncMonolithSettings? settings = null) where T : DbContext
+    [Obsolete("This method is obsolete. Use the method that accepts an Action<AsyncMonolithSettings> instead.")]
+    public static IServiceCollection AddEfAsyncMonolith<T>(
+        this IServiceCollection services,
+        Assembly assembly,
+        AsyncMonolithSettings? settings = null) where T : DbContext =>
+        AddEfAsyncMonolith<T>(
+            services,
+            configuration => configuration.RegisterTypesFromAssembly(assembly),
+            settings ?? AsyncMonolithSettings.Default);
+
+    private static IServiceCollection AddEfAsyncMonolith<T>(
+        this IServiceCollection services,
+        Action<AsyncMonolithSettings> configuration,
+        AsyncMonolithSettings settings) where T : DbContext
     {
-        settings ??= AsyncMonolithSettings.Default;
+        configuration(settings);
 
         if (settings.ConsumerMessageProcessorCount > 1)
         {
@@ -38,9 +64,10 @@ public static class StartupExtensions
                 "AsyncMonolithSettings.ScheduledMessageProcessorCount can only be set to 1 when using 'DbType.Ef'.");
         }
 
-        services.InternalAddAsyncMonolith<T>(assembly, settings);
+        services.InternalAddAsyncMonolith<T>(settings);
         services.AddScoped<IProducerService, EfProducerService<T>>();
         services.AddSingleton<IConsumerMessageFetcher, EfConsumerMessageFetcher>();
         services.AddSingleton<IScheduledMessageFetcher, EfScheduledMessageFetcher>();
+        return services;
     }
 }

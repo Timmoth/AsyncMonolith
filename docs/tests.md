@@ -30,7 +30,7 @@ Provides a fake `IScheduleService` implementation, which is useful for asserting
 Includes two methods to configure your `IServiceCollection` without including the background services for processing messages. 
 
 - `AddFakeAsyncMonolithBaseServices` configures fake services which don't depend on a database
-- `AddRealAsyncMonolithBaseServices` configrues real services without registering the background processors
+- `AddRealAsyncMonolithBaseServices` configures real services without registering the background processors
 
 ### TestConsumerMessageProcessor
 
@@ -55,7 +55,8 @@ public class CancelShipmentTests : ConsumerTestBase
             }
         );
 
-        services.AddRealAsyncMonolithBaseServices<ApplicationDbContext>(typeof(Program).Assembly, AsyncMonolithSettings.Default);
+        services.AddRealAsyncMonolithBaseServices<ApplicationDbContext>(settings =>
+            settings.RegisterTypesFromAssemblyContaining<Program>());
         return Task.CompletedTask;
     }
 
