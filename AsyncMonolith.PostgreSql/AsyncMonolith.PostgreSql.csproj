@@ -8,7 +8,7 @@
 		<LangVersion>preview</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith.PostgreSql</PackageId>
-		<PackageVersion>8.0.6</PackageVersion>
+		<PackageVersion>8.0.7</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>PostgreSql interface for AsyncMonolith</Description>
