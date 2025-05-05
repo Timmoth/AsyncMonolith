@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Timmoth" /><link rel="canonical" href="https://timmoth.github.io/AsyncMonolith/posts/mediator/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>What is the Mediator pattern? - AsyncMonolith Docs</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "What is the Mediator pattern?";
+        var mkdocs_page_input_path = "posts/mediator.md";
+        var mkdocs_page_url = "/AsyncMonolith/posts/mediator/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/csharp.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../..">
+          <img src="../../assets/logo.png" class="logo" alt="Logo"/>
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Overview ✅</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Quick start ▶️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../internals/">Internals 🧠</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../releases/">Releases 📒</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../warnings/">Warnings ⚠️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../support/">Support 🛟</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../demo/">Demo App ✨</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../contributing/">Contributing 🙏</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../tests/">Tests 🐞</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/producing-messages/">Producing messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/scheduling-messages/">Scheduling messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/consuming-messages/">Consuming messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/changing-messages/">Changing messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/opentelemetry/">Opentelemetry</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Posts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../transactional-outbox/">What is the Transactional Outbox?</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">What is the Mediator pattern?</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../idempotency/">What is Idempotency?</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">AsyncMonolith Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Posts</li>
+      <li class="breadcrumb-item active">What is the Mediator pattern?</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/Timmoth/AsyncMonolith/edit/main/docs/posts/mediator.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <p>Let's consider a scenario where you are developing an ordering system. When a user cancels an order, you need to cancel the associated shipment and send the user an email confirming the cancellation.</p>
+<div class="highlight"><pre><span></span><code><span class="n">order</span><span class="p">.</span><span class="n">Cancel</span><span class="p">();</span>
+<span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Update</span><span class="p">(</span><span class="n">order</span><span class="p">);</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+<span class="n">_shipmentService</span><span class="p">.</span><span class="n">CancelShipment</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">ShipmentId</span><span class="p">);</span>
+<span class="n">_emailService</span><span class="p">.</span><span class="n">SendCancellationEmail</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">Id</span><span class="p">);</span>
+</code></pre></div>
+<p>The problem with this approach is that each service is tightly coupled with its dependencies. The <code>OrderService</code> must know to tell <code>ShipmentService</code> and the <code>EmailService</code> that an order has been cancelled. In a simple system, this might not cause significant problems, but as it grows, the number of connections between classes can make them difficult to maintain.</p>
+<p>The Mediator pattern aims to solve this problem by introducing a <code>Mediator</code> service which acts as a coordinator between services. Each service sends requests to the Mediator without needing to concern itself with the responsibilities of other services.</p>
+<p>After refactoring the <code>OrderService</code>, it now simply updates the order domain object and tells the Mediator that an order has been canceled:</p>
+<div class="highlight"><pre><span></span><code><span class="n">order</span><span class="p">.</span><span class="n">Cancel</span><span class="p">();</span>
+<span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Update</span><span class="p">(</span><span class="n">order</span><span class="p">);</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+<span class="n">_mediator</span><span class="p">.</span><span class="n">Send</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">OrderCancelled</span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">Id</span><span class="p">));</span>
+</code></pre></div>
+<p>It's the Mediator's job to route the request to each handler configured to handle the <code>OrderCancelled</code> event within their own context.</p>
+<p>For example the handlers in this scenario could be implemented like this:</p>
+<div class="highlight"><pre><span></span><code><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">CancelShipmentHandler</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="nf">Handle</span><span class="p">(</span><span class="n">OrderCancelled</span><span class="w"> </span><span class="n">orderCancelled</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="p">...</span>
+<span class="w">            </span><span class="n">shipment</span><span class="p">.</span><span class="n">Cancel</span><span class="p">();</span>
+<span class="w">            </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">Shipments</span><span class="p">.</span><span class="n">Update</span><span class="p">(</span><span class="n">shipment</span><span class="p">);</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">CancellationEmailHandler</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="nf">Handle</span><span class="p">(</span><span class="n">OrderCancelled</span><span class="w"> </span><span class="n">orderCancelled</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="p">...</span>
+<span class="w">            </span><span class="c1">// Send order cancelled email</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+<p>This pattern promotes:</p>
+<h3 id="code-reuse">Code reuse</h3>
+<p>You may have multiple places where an order can be canceled. Now, you don't have to duplicate the logic to cancel the shipment, send an email, or coordinate those actions when an order is cancelled.</p>
+<h3 id="single-responsibility-principle">Single responsibility principle</h3>
+<p>Each handler is responsible for handling the <code>OrderCancelled</code> event within its own context.</p>
+<h3 id="openclosed-principle">Open/closed principle</h3>
+<p>Additional handlers can be easily added to extend the behavior of your system without modifying existing code.</p>
+<h3 id="testability">Testability</h3>
+<p>Handlers can be unit tested in isolation.</p>
+<p>One issue with the mediator pattern is that a part of your system could fail without recourse. For instance, if the <code>CancelShipmentHandler</code> fails, your system could be left in an inconsistent state since the order has been canceled, the email has been sent but shipment will still be made.</p>
+<p><a href="https://github.com/Timmoth/AsyncMonolith">AsyncMonolith</a> acts as a mediator, providing the benefits of decoupling while ensuring transactional consistency by using the <a href="../transactional-outbox">Transactional Outbox</a> pattern. This ensures that each message is stored in your database before being handled, so if anything fails, it will be retried multiple times before being moved into a <code>poisoned_messages</code> table where you can manually intervene.</p>
+<p>Refactoring the above scenario to use AsyncMonolith may look like this:</p>
+<div class="highlight"><pre><span></span><code><span class="n">order</span><span class="p">.</span><span class="n">Cancel</span><span class="p">();</span>
+<span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Update</span><span class="p">(</span><span class="n">order</span><span class="p">);</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_producerService</span><span class="p">.</span><span class="n">Produce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">OrderCancelled</span><span class="p">()</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="n">OrderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">Id</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">CancelShipment</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseConsumer</span><span class="o">&lt;</span><span class="n">OrderCancelled</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="nf">Consume</span><span class="p">(</span><span class="n">OrderCancelled</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="n">CancellationToken</span><span class="w"> </span><span class="n">cancellationToken</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">        </span><span class="n">shipment</span><span class="p">.</span><span class="n">Cancel</span><span class="p">();</span>
+<span class="w">        </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">Shipments</span><span class="p">.</span><span class="n">Update</span><span class="p">(</span><span class="n">shipment</span><span class="p">);</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">SendOrderCancelledEmail</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseConsumer</span><span class="o">&lt;</span><span class="n">OrderCancelled</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="nf">Consume</span><span class="p">(</span><span class="n">OrderCancelled</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="n">CancellationToken</span><span class="w"> </span><span class="n">cancellationToken</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">        </span><span class="c1">// Send order cancelled email</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../transactional-outbox/" class="btn btn-neutral float-left" title="What is the Transactional Outbox?"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../idempotency/" class="btn btn-neutral float-right" title="What is Idempotency?">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/Timmoth/AsyncMonolith/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../transactional-outbox/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../idempotency/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
