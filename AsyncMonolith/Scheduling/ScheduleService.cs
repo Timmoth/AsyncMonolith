@@ -45,11 +45,6 @@ public sealed class ScheduleService<T> : IScheduleService where T : DbContext
         var id = _idGenerator.GenerateId();
 
         var expression = CronExpression.Parse(chronExpression, CronFormat.IncludeSeconds);
-        if (expression == null)
-        {
-            throw new InvalidOperationException(
-                $"Couldn't determine scheduled message chron expression: '{chronExpression}'");
-        }
 
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(chronTimezone);
         if (timezone == null)

@@ -71,11 +71,6 @@ public class ScheduledMessage
     public long GetNextOccurrence(TimeProvider timeProvider)
     {
         var expression = CronExpression.Parse(ChronExpression, CronFormat.IncludeSeconds);
-        if (expression == null)
-        {
-            throw new InvalidOperationException(
-                $"Couldn't determine scheduled message chron expression: '{ChronExpression}'");
-        }
 
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(ChronTimezone);
         if (timezone == null)

@@ -57,11 +57,6 @@ public sealed class FakeScheduleService : IScheduleService
         var id = _fakeIdGenerator.GenerateId();
 
         var expression = CronExpression.Parse(chronExpression, CronFormat.IncludeSeconds);
-        if (expression == null)
-        {
-            throw new InvalidOperationException(
-                $"Couldn't determine scheduled message cron expression: '{chronExpression}'");
-        }
 
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(chronTimezone);
         if (timezone == null)
