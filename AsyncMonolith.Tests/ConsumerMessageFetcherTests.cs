@@ -41,11 +41,62 @@ public class ConsumerMessageFetcherTests : DbTestsBase
             await dbContext.SaveChangesAsync();
 
             // When
-            var dbMessages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(),
+            var dbMessages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), 0,
                 CancellationToken.None);
 
             // Then
             dbMessages.Count.Should().Be(settings.ProcessorBatchSize);
+        }
+        finally
+        {
+            await dbContainer.DisposeAsync();
+        }
+    }
+    
+    [Theory]
+    [InlineData(DbType.Ef)]
+    [InlineData(DbType.MySql)]
+    [InlineData(DbType.MsSql)]
+    [InlineData(DbType.PostgreSql)]
+    [InlineData(DbType.MariaDb)]
+    public async Task Fetch_Returns_Messages_Partitioned_By_Rail(DbType dbType)
+    {
+        var dbContainer = GetTestDbContainer(dbType);
+
+        try
+        {
+            // Given
+            var settings = AsyncMonolithSettings.Default;
+            var serviceProvider = await Setup(dbContainer, settings);
+            var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
+            var producer = serviceProvider.GetRequiredService<IProducerService>();
+            var fetcher = serviceProvider.GetRequiredService<IConsumerMessageFetcher>();
+
+            await producer.Produce(new RailConsumerMessage() { });
+            await dbContext.SaveChangesAsync();
+
+            // When
+            var rail0Messages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), 0,
+                CancellationToken.None);
+            
+            var rail1Messages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), 1,
+                CancellationToken.None);
+            
+            var rail2Messages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), 2,
+                CancellationToken.None);
+
+            // Then
+            rail0Messages.Count.Should().Be(1);
+            rail1Messages.Count.Should().Be(1);
+            rail2Messages.Count.Should().Be(1);
+
+            rail0Messages.Single().RailId.Should().Be(0);
+            rail1Messages.Single().RailId.Should().Be(1);
+            rail2Messages.Single().RailId.Should().Be(2);
+
+            rail0Messages.Single().ConsumerType.Should().Be(nameof(RailConsumer0));
+            rail1Messages.Single().ConsumerType.Should().Be(nameof(RailConsumer1));
+            rail2Messages.Single().ConsumerType.Should().Be(nameof(RailConsumer2));
         }
         finally
         {

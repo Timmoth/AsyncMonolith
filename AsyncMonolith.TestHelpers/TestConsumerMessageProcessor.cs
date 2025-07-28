@@ -132,7 +132,8 @@ public static class TestConsumerMessageProcessor
             Payload = JsonSerializer.Serialize(payload),
             PayloadType = typeof(V).Name,
             TraceId = null,
-            SpanId = null
+            SpanId = null,
+            RailId = 0
         }, cancellationToken);
     }
 }

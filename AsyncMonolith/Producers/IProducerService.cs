@@ -17,7 +17,7 @@ public interface IProducerService
     /// <param name="insertId">The insert ID for the message.</param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null,
+    public Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null, 
         CancellationToken cancellationToken = default)
         where TK : IConsumerPayload;
 

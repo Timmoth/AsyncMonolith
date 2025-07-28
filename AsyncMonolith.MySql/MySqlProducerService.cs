@@ -71,6 +71,8 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
             };
 
         var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
+        var consumerRailIds = _consumerRegistry.ResolveConsumerRailIds(consumerTypes);
+
         for (var index = 0; index < consumerTypes.Count; index++)
         {
             if (sqlBuilder.Length > 0)
@@ -79,14 +81,15 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
             }
 
             sqlBuilder.Append(
-                $@"(@id_{index}, @created_at, @available_after, 0, @consumer_type_{index}, @payload_type, @payload, @insert_id, @trace_id, @span_id)");
+                $@"(@id_{index}, @created_at, @available_after, 0, @consumer_type_{index}, @payload_type, @payload, @insert_id, @trace_id, @span_id, @rail_{index})");
 
             parameters.Add(new MySqlParameter($"@id_{index}", _idGenerator.GenerateId()));
             parameters.Add(new MySqlParameter($"@consumer_type_{index}", consumerTypes[index]));
+            parameters.Add(new MySqlParameter($"@rail_{index}", consumerRailIds[index]));
         }
 
         var sql = $@"
-    INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id, trace_id, span_id) 
+    INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id, trace_id, span_id, rail_id) 
     VALUES {sqlBuilder} 
     ON DUPLICATE KEY UPDATE id = id;";
 
@@ -120,6 +123,7 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
 
         var payloadType = typeof(TK).Name;
         var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
+        var consumerRailIds = _consumerRegistry.ResolveConsumerRailIds(consumerTypes);
 
         for (var i = 0; i < messages.Count; i++)
         {
@@ -138,15 +142,16 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
                 }
 
                 sqlBuilder.Append(
-                    $@"(@id_{i}_{index}, @created_at, @available_after, 0, @consumer_type_{i}_{index}, @payload_type_{i}, @payload_{i}, @insert_id_{i}, @trace_id, @span_id)");
+                    $@"(@id_{i}_{index}, @created_at, @available_after, 0, @consumer_type_{i}_{index}, @payload_type_{i}, @payload_{i}, @insert_id_{i}, @trace_id, @span_id, @rail_{i}_{index})");
 
                 parameters.Add(new MySqlParameter($"@id_{i}_{index}", _idGenerator.GenerateId()));
                 parameters.Add(new MySqlParameter($"@consumer_type_{i}_{index}", consumerTypes[index]));
+                parameters.Add(new MySqlParameter($"@rail_{i}_{index}", consumerRailIds[index]));
             }
         }
 
         var sql = $@"
-            INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id, trace_id, span_id) 
+            INSERT INTO consumer_messages (id, created_at, available_after, attempts, consumer_type, payload_type, payload, insert_id, trace_id, span_id, rail_id) 
             VALUES {sqlBuilder} 
             ON DUPLICATE KEY UPDATE id = id;";
 
@@ -175,7 +180,8 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
                 Attempts = 0,
                 InsertId = insertId,
                 TraceId = null,
-                SpanId = null
+                SpanId = null,
+                RailId = _consumerRegistry.ResolveConsumerRailId(consumerId)
             });
         }
     }

@@ -57,20 +57,21 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
         var traceId = Activity.Current?.TraceId.ToString();
         var spanId = Activity.Current?.SpanId.ToString();
 
-        foreach (var consumerId in _consumerRegistry.ResolvePayloadConsumerTypes(payloadType))
+        foreach (var consumerType in _consumerRegistry.ResolvePayloadConsumerTypes(payloadType))
         {
             set.Add(new ConsumerMessage
             {
                 Id = _idGenerator.GenerateId(),
                 CreatedAt = currentTime,
                 AvailableAfter = availableAfter.Value,
-                ConsumerType = consumerId,
+                ConsumerType = consumerType,
                 PayloadType = payloadType,
                 Payload = payload,
                 Attempts = 0,
                 InsertId = insertId,
                 TraceId = traceId,
-                SpanId = spanId
+                SpanId = spanId,
+                RailId = _consumerRegistry.ResolveConsumerRailId(consumerType)
             });
         }
 
@@ -115,7 +116,8 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
                     Attempts = 0,
                     InsertId = insertId,
                     TraceId = traceId,
-                    SpanId = spanId
+                    SpanId = spanId,
+                    RailId = _consumerRegistry.ResolveConsumerRailId(consumerId)
                 });
             }
         }
@@ -145,7 +147,8 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
                 Attempts = 0,
                 InsertId = insertId,
                 TraceId = null,
-                SpanId = null
+                SpanId = null,
+                RailId = _consumerRegistry.ResolveConsumerRailId(consumerId)
             });
         }
     }

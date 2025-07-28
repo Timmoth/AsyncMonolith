@@ -45,8 +45,7 @@ public class Program
             settings.MaxAttempts = 5;
             settings.ProcessorMinDelay = 10;
             settings.ProcessorMaxDelay = 100;
-            settings.ConsumerMessageProcessorCount = 1;
-            settings.ScheduledMessageProcessorCount = 1;
+            settings.ConsumerRailCount = 1;
             settings.ProcessorBatchSize = 10;
         });
 

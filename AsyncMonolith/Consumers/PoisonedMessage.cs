@@ -45,6 +45,13 @@ public sealed class PoisonedMessage
     [JsonPropertyName("consumer_type")]
     [Column("consumer_type")]
     public required string ConsumerType { get; set; }
+    
+    /// <summary>
+    ///     Gets or sets the consumer rail id that will fetch and process the message.
+    /// </summary>
+    [JsonPropertyName("rail_id")]
+    [Column("rail_id")]
+    public required int RailId { get; set; }
 
     /// <summary>
     ///     Gets or sets the type of payload contained in the consumer message.

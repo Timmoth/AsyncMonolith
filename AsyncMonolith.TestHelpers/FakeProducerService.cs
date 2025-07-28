@@ -66,7 +66,8 @@ public class FakeProducerService : IProducerService
                 Attempts = 0,
                 InsertId = insertId,
                 TraceId = null,
-                SpanId = null
+                SpanId = null,
+                RailId = _consumerRegistry.ResolveConsumerRailId(consumerId)
             });
         }
 
@@ -107,7 +108,8 @@ public class FakeProducerService : IProducerService
                     Attempts = 0,
                     InsertId = insertId,
                     TraceId = null,
-                    SpanId = null
+                    SpanId = null,
+                    RailId = _consumerRegistry.ResolveConsumerRailId(consumerId)
                 });
             }
         }
@@ -136,7 +138,8 @@ public class FakeProducerService : IProducerService
                 Attempts = 0,
                 InsertId = insertId,
                 TraceId = null,
-                SpanId = null
+                SpanId = null,
+                RailId = _consumerRegistry.ResolveConsumerRailId(consumerId)
             });
         }
     }

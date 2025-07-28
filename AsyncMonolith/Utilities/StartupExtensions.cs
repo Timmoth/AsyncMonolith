@@ -54,14 +54,9 @@ public static class StartupExtensions
                 "AsyncMonolithSettings.ProcessorMaxDelay must be greater than AsyncMonolithSettings.ProcessorMinDelay.");
         }
 
-        if (settings.ConsumerMessageProcessorCount < 1)
+        if (settings.ConsumerRailCount < 1)
         {
-            throw new ArgumentException("AsyncMonolithSettings.ConsumerMessageProcessorCount must be at least 1.");
-        }
-
-        if (settings.ScheduledMessageProcessorCount < 1)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.ScheduledMessageProcessorCount must be at least 1.");
+            throw new ArgumentException("AsyncMonolithSettings.ConsumerRailCount must be at least 1.");
         }
 
         if (settings.ProcessorBatchSize < 1)
@@ -86,8 +81,7 @@ public static class StartupExtensions
             options.ProcessorMaxDelay = settings.ProcessorMaxDelay;
             options.ProcessorMinDelay = settings.ProcessorMinDelay;
             options.ProcessorBatchSize = settings.ProcessorBatchSize;
-            options.ConsumerMessageProcessorCount = settings.ConsumerMessageProcessorCount;
-            options.ScheduledMessageProcessorCount = settings.ScheduledMessageProcessorCount;
+            options.ConsumerRailCount = settings.ConsumerRailCount;
             options.DefaultConsumerTimeout = settings.DefaultConsumerTimeout;
         });
     }
@@ -101,25 +95,17 @@ public static class StartupExtensions
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<T>>();
 
-        if (settings.ConsumerMessageProcessorCount > 1)
+        if (settings.ConsumerRailCount > 1)
         {
             services.AddHostedService(serviceProvider =>
-                new ConsumerMessageProcessorFactory<T>(serviceProvider, settings.ConsumerMessageProcessorCount));
+                new ConsumerMessageProcessorFactory<T>(serviceProvider, settings.ConsumerRailCount));
         }
         else
         {
             services.AddHostedService<ConsumerMessageProcessor<T>>();
         }
 
-        if (settings.ScheduledMessageProcessorCount > 1)
-        {
-            services.AddHostedService(serviceProvider =>
-                new ScheduledMessageProcessorFactory<T>(serviceProvider, settings.ScheduledMessageProcessorCount));
-        }
-        else
-        {
-            services.AddHostedService<ScheduledMessageProcessor<T>>();
-        }
+        services.AddHostedService<ScheduledMessageProcessor<T>>();
     }
 
     internal static void InternalRegisterAsyncMonolithConsumers(
@@ -130,6 +116,8 @@ public static class StartupExtensions
         var payloadConsumerDictionary = new Dictionary<string, List<string>>();
         var consumerTimeoutDictionary = new Dictionary<string, int>();
         var consumerAttemptsDictionary = new Dictionary<string, int>();
+        var consumerRailIdDictionary = new Dictionary<string, int>();
+        var consumerExecutionModeDictionary = new Dictionary<string, ConsumerInstanceExecutionMode>();
 
         var type = typeof(BaseConsumer<>);
         var typesToScan = settings.AssembliesToRegister.SelectMany(x => x.GetTypes()).ToArray();
@@ -174,6 +162,24 @@ public static class StartupExtensions
 
             consumerAttemptsDictionary[consumerType.Name] = maxAttempts;
 
+            var consumerExecutionMode = ConsumerInstanceExecutionMode.Parallel;
+            attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerExecutionModeAttribute));
+            if (attribute is ConsumerExecutionModeAttribute executionModeAttribute)
+            {
+                consumerExecutionMode = executionModeAttribute.ExecutionMode;
+            }
+            
+            consumerExecutionModeDictionary[consumerType.Name] = consumerExecutionMode;
+
+            var consumerRailId = 0;
+            attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerRailIdAttribute));
+            if (attribute is ConsumerRailIdAttribute consumerRailIdAttribute)
+            {
+                consumerRailId = consumerRailIdAttribute.RailId;
+            }
+            
+            consumerRailIdDictionary[consumerType.Name] = consumerRailId;
+
             // Get the generic argument (T) of the consumer type
             var payloadType = consumerType.BaseType.GetGenericArguments()[0];
 
@@ -201,6 +207,6 @@ public static class StartupExtensions
         }
 
         services.AddSingleton(new ConsumerRegistry(consumerServiceDictionary, payloadConsumerDictionary,
-            consumerTimeoutDictionary, consumerAttemptsDictionary, settings));
+            consumerTimeoutDictionary, consumerAttemptsDictionary, consumerRailIdDictionary, consumerExecutionModeDictionary, settings));
     }
 }

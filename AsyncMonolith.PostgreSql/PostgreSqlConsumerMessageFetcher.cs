@@ -14,7 +14,7 @@ public sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
     private const string PgSql = @"
                     SELECT * 
                     FROM consumer_messages 
-                    WHERE available_after <= @currentTime 
+                    WHERE available_after <= @currentTime AND rail_id = @railId
                     ORDER BY created_at 
                     FOR UPDATE SKIP LOCKED 
                     LIMIT @batchSize";
@@ -35,13 +35,15 @@ public sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
     /// </summary>
     /// <param name="consumerSet">The DbSet of consumer messages.</param>
     /// <param name="currentTime">The current time.</param>
+    /// <param name="railId">The message rail to fetch messages from.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the list of fetched consumer messages.</returns>
-    public Task<List<ConsumerMessage>> Fetch(DbSet<ConsumerMessage> consumerSet, long currentTime,
+    public Task<List<ConsumerMessage>> Fetch(DbSet<ConsumerMessage> consumerSet, long currentTime, int railId,
         CancellationToken cancellationToken = default)
     {
         return consumerSet
             .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime),
+                new NpgsqlParameter("@railId", railId),
                 new NpgsqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
             .ToListAsync(cancellationToken);
     }

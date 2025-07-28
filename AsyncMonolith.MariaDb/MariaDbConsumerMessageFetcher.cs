@@ -14,7 +14,7 @@ public sealed class MariaDbConsumerMessageFetcher : IConsumerMessageFetcher
     private const string MariaDb = @"
                     SELECT * 
                     FROM consumer_messages 
-                    WHERE available_after <= @currentTime 
+                    WHERE available_after <= @currentTime AND rail_id = @railId
                     ORDER BY created_at 
                     LIMIT @batchSize 
                     FOR UPDATE SKIP LOCKED";
@@ -35,13 +35,15 @@ public sealed class MariaDbConsumerMessageFetcher : IConsumerMessageFetcher
     /// </summary>
     /// <param name="consumerSet">The DbSet of consumer messages.</param>
     /// <param name="currentTime">The current time.</param>
+    /// <param name="railId">The message rail to fetch messages from.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a list of consumer messages.</returns>
-    public Task<List<ConsumerMessage>> Fetch(DbSet<ConsumerMessage> consumerSet, long currentTime,
+    public Task<List<ConsumerMessage>> Fetch(DbSet<ConsumerMessage> consumerSet, long currentTime, int railId,
         CancellationToken cancellationToken = default)
     {
         return consumerSet
             .FromSqlRaw(MariaDb, new MySqlParameter("@currentTime", currentTime),
+                new MySqlParameter("@railId", railId),
                 new MySqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
             .ToListAsync(cancellationToken);
     }

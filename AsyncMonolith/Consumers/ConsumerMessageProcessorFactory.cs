@@ -35,6 +35,7 @@ public class ConsumerMessageProcessorFactory<T> : IHostedService where T : DbCon
         for (var i = 0; i < _instances; i++)
         {
             var hostedService = ActivatorUtilities.CreateInstance<ConsumerMessageProcessor<T>>(_serviceProvider);
+            hostedService.SetRailId(i);
             _hostedServices.Add(hostedService);
             await hostedService.StartAsync(cancellationToken);
         }

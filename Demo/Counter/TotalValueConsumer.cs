@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Demo.Counter;
 
+[ConsumerExecutionMode(ConsumerInstanceExecutionMode.Parallel)]
 public class TotalValueConsumer : BaseConsumer<ValuePersisted>
 {
     private readonly ApplicationDbContext _dbContext;

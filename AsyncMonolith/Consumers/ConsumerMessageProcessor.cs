@@ -21,6 +21,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
 
+    private int _railId = 0;
     /// <summary>
     ///     Initializes a new instance of the <see cref="ConsumerMessageProcessor{T}" /> class.
     /// </summary>
@@ -32,7 +33,9 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     /// <param name="consumerMessageFetcher">The consumer message fetcher.</param>
     public ConsumerMessageProcessor(ILogger<ConsumerMessageProcessor<T>> logger,
         TimeProvider timeProvider,
-        ConsumerRegistry consumerRegistry, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory,
+        ConsumerRegistry consumerRegistry,
+        IOptions<AsyncMonolithSettings> options,
+        IServiceScopeFactory scopeFactory,
         IConsumerMessageFetcher consumerMessageFetcher)
     {
         _logger = logger;
@@ -41,6 +44,15 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         _options = options;
         _scopeFactory = scopeFactory;
         _consumerMessageFetcher = consumerMessageFetcher;
+    }
+
+    /// <summary>
+    /// Sets the rail id of this consumer message processor
+    /// </summary>
+    /// <param name="railId"></param>
+    public void SetRailId(int railId)
+    {
+        _railId = railId;
     }
 
     /// <summary>
@@ -85,21 +97,47 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var consumerSet = dbContext.Set<ConsumerMessage>();
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-        var messages = await _consumerMessageFetcher.Fetch(consumerSet, currentTime, cancellationToken);
+        var messages = await _consumerMessageFetcher.Fetch(consumerSet, currentTime, _railId, cancellationToken);
 
         if (messages.Count == 0)
         {
             return 0;
         }
+        
+        var tasks = new List<Task<List<(ConsumerMessage message, bool success)>>>();
 
-        var tasks = new List<Task<(ConsumerMessage message, bool success)>>();
-        foreach (var message in messages)
+        foreach (var consumerMessageGroup in messages.GroupBy(m => m.ConsumerType))
         {
-            tasks.Add(Process(message, cancellationToken));
+            var group = consumerMessageGroup.ToList(); // materialize to avoid deferred execution
+            var executionMode = _consumerRegistry.ResolveConsumerExecutionMode(consumerMessageGroup.Key);
+
+            if (executionMode == ConsumerInstanceExecutionMode.Parallel)
+            {
+                // Parallel: all messages in the group are processed concurrently
+                tasks.Add(Task.WhenAll(group.Select(m => Process(m, cancellationToken)))
+                    .ContinueWith(t => t.Result.ToList(), cancellationToken));
+            }
+            else
+            {
+                // Sequential: one message at a time in order
+                tasks.Add(Task.Run(async () =>
+                {
+                    var results = new List<(ConsumerMessage message, bool success)>();
+                    foreach (var message in group)
+                    {
+                        var result = await Process(message, cancellationToken);
+                        results.Add(result);
+                    }
+                    return results;
+                }, cancellationToken));
+            }
         }
 
+        // Wait for all group tasks (whether parallel or sequential within)
+        var allResults = (await Task.WhenAll(tasks)).SelectMany(r => r).ToList();
+        
         var processedMessageCount = 0;
-        foreach (var (message, success) in await Task.WhenAll(tasks))
+        foreach (var (message, success) in allResults)
         {
             if (success)
             {
@@ -133,7 +171,8 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                         PayloadType = message.PayloadType,
                         InsertId = message.InsertId,
                         TraceId = message.TraceId,
-                        SpanId = message.SpanId
+                        SpanId = message.SpanId,
+                        RailId = message.RailId,
                     });
                 }
             }

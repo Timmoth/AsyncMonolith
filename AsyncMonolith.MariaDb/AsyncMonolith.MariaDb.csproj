@@ -9,7 +9,7 @@
 		<LangVersion>preview</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith.MariaDb</PackageId>
-		<PackageVersion>9.0.0</PackageVersion>
+		<PackageVersion>9.0.2</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>MariaDb interface for AsyncMonolith</Description>

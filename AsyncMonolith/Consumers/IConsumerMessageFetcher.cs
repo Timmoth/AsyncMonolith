@@ -12,8 +12,12 @@ public interface IConsumerMessageFetcher
     /// </summary>
     /// <param name="consumerSet">The DbSet of consumer messages.</param>
     /// <param name="currentTime">The current time as unix timestamp seconds.</param>
+    /// <param name="railId">The message rail to fetch messages from.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a list of consumer messages.</returns>
-    public Task<List<ConsumerMessage>> Fetch(DbSet<ConsumerMessage> consumerSet, long currentTime,
+    public Task<List<ConsumerMessage>> Fetch(
+        DbSet<ConsumerMessage> consumerSet,
+        long currentTime,
+        int railId,
         CancellationToken cancellationToken = default);
 }

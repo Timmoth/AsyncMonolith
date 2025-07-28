@@ -52,18 +52,6 @@ public static class StartupExtensions
     {
         configuration(settings);
 
-        if (settings.ConsumerMessageProcessorCount > 1)
-        {
-            throw new ArgumentException(
-                "AsyncMonolithSettings.ConsumerMessageProcessorCount can only be set to 1 when using 'DbType.Ef'.");
-        }
-
-        if (settings.ScheduledMessageProcessorCount > 1)
-        {
-            throw new ArgumentException(
-                "AsyncMonolithSettings.ScheduledMessageProcessorCount can only be set to 1 when using 'DbType.Ef'.");
-        }
-
         services.InternalAddAsyncMonolith<T>(settings);
         services.AddScoped<IProducerService, EfProducerService<T>>();
         services.AddSingleton<IConsumerMessageFetcher, EfConsumerMessageFetcher>();

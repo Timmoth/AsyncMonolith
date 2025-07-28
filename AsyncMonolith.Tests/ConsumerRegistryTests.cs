@@ -79,7 +79,8 @@ public class ConsumerRegistryTests
             Attempts = default,
             InsertId = string.Empty,
             TraceId = null,
-            SpanId = null
+            SpanId = null,
+            RailId = 0
         });
 
         // Then
@@ -105,7 +106,8 @@ public class ConsumerRegistryTests
             Attempts = default,
             InsertId = string.Empty,
             TraceId = null,
-            SpanId = null
+            SpanId = null,
+            RailId = 0
         });
 
         // Then
@@ -148,7 +150,8 @@ public class ConsumerRegistryTests
             Attempts = default,
             InsertId = string.Empty,
             TraceId = null,
-            SpanId = null
+            SpanId = null,
+            RailId = 0
         });
 
         // Then
@@ -174,7 +177,8 @@ public class ConsumerRegistryTests
             Attempts = default,
             InsertId = string.Empty,
             TraceId = null,
-            SpanId = null
+            SpanId = null,
+            RailId = 0
         });
 
         // Then

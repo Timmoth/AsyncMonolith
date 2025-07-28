@@ -21,6 +21,16 @@ public sealed class ConsumerRegistry
     ///     Gets the dictionary that maps consumer names to their associated number of attempts.
     /// </summary>
     public readonly IReadOnlyDictionary<string, int> ConsumerAttemptsDictionary;
+    
+    /// <summary>
+    ///     Gets the dictionary that maps consumer types to their associated rail id.
+    /// </summary>
+    public readonly IReadOnlyDictionary<string, int> ConsumerRailIdDictionary;
+    
+    /// <summary>
+    ///     Gets the dictionary that maps consumer names to their associated app instance execution mode.
+    /// </summary>
+    public readonly IReadOnlyDictionary<string, ConsumerInstanceExecutionMode> ConsumerExecutionModeDictionary;
 
     /// <summary>
     ///     Gets the dictionary that maps consumer names to their associated types.
@@ -41,17 +51,24 @@ public sealed class ConsumerRegistry
     ///     handle them.
     /// </param>
     /// <param name="consumerTimeoutDictionary">The dictionary that maps consumer names to their associated time out.</param>
-    ///     /// <param name="consumerAttemptsDictionary">The dictionary that maps consumer names to their associated number of attempts.</param>
+    ///  <param name="consumerAttemptsDictionary">The dictionary that maps consumer names to their associated number of attempts.</param>
+    ///  <param name="consumerRailIdDictionary">The dictionary that maps consumer type to their associated rail id.</param>
+    ///  <param name="consumerExecutionModeDictionary">The dictionary that maps consumer names to their associated execution mode.</param>
     /// <param name="settings">Async Monolith settings.</param>
     public ConsumerRegistry(IReadOnlyDictionary<string, Type> consumerTypeDictionary,
         IReadOnlyDictionary<string, List<string>> payloadConsumerDictionary,
         IReadOnlyDictionary<string, int> consumerTimeoutDictionary,
-        IReadOnlyDictionary<string, int> consumerAttemptsDictionary, AsyncMonolithSettings settings)
+        IReadOnlyDictionary<string, int> consumerAttemptsDictionary, 
+        IReadOnlyDictionary<string, int> consumerRailIdDictionary, 
+        IReadOnlyDictionary<string, ConsumerInstanceExecutionMode> consumerExecutionModeDictionary, 
+        AsyncMonolithSettings settings)
     {
         ConsumerTypeDictionary = consumerTypeDictionary;
         PayloadConsumerDictionary = payloadConsumerDictionary;
         ConsumerTimeoutDictionary = consumerTimeoutDictionary;
         ConsumerAttemptsDictionary = consumerAttemptsDictionary;
+        ConsumerRailIdDictionary = consumerRailIdDictionary;
+        ConsumerExecutionModeDictionary = consumerExecutionModeDictionary;
         _settings = settings;
     }
 
@@ -117,6 +134,44 @@ public sealed class ConsumerRegistry
         }
 
         return _settings.MaxAttempts;
+    }
+    
+    /// <summary>
+    ///     Resolves the rail id used to process the given consumer message.
+    /// </summary>
+    /// <param name="consumerType">The consumer type message.</param>
+    /// <returns>The consumer max attempts.</returns>
+    /// <exception cref="Exception">Thrown when the consumer type cannot be resolved.</exception>
+    public int ResolveConsumerRailId(string consumerType)
+    {
+        return ConsumerRailIdDictionary.GetValueOrDefault(consumerType, 0);
+    }
+    
+    /// <summary>
+    ///     Resolves the rail id used to process the given consumer message.
+    /// </summary>
+    /// <param name="consumerTypes">The consumer type message.</param>
+    /// <returns>The consumer max attempts.</returns>
+    /// <exception cref="Exception">Thrown when the consumer type cannot be resolved.</exception>
+    public List<int> ResolveConsumerRailIds(IEnumerable<string> consumerTypes)
+    {
+        var railIds = new List<int>();
+        foreach (var consumerType in consumerTypes)
+        {
+            railIds.Add(ResolveConsumerRailId(consumerType));
+        }
+
+        return railIds;
+    }
+    
+    /// <summary>
+    ///     Resolves the ExecutionMode for the given consumer type name.
+    /// </summary>
+    /// <param name="consumerType"></param>
+    /// <returns></returns>
+    public ConsumerInstanceExecutionMode ResolveConsumerExecutionMode(string consumerType)
+    {
+        return ConsumerExecutionModeDictionary.GetValueOrDefault(consumerType, ConsumerInstanceExecutionMode.Parallel);
     }
 
     /// <summary>
