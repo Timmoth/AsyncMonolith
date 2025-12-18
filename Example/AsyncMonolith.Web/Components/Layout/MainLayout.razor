@@ -1,0 +1,18 @@
+﻿@inherits LayoutComponentBase
+
+<div class="min-h-screen flex flex-col">
+    <nav class="bg-slate-900 text-white p-4 shadow-xl">
+        <div class="container mx-auto flex items-center justify-between">
+            <h1 class="font-black tracking-tighter text-xl text-indigo-400">ASYNC MONOLITH</h1>
+            <div class="flex gap-6 text-sm font-medium">
+                <NavLink href="messages/consumers" class="hover:text-indigo-300 transition" ActiveClass="text-indigo-400 underline">Consumers</NavLink>
+                <NavLink href="messages/poisoned" class="hover:text-indigo-300 transition" ActiveClass="text-indigo-400 underline">Poisoned</NavLink>
+                <NavLink href="messages/scheduled" class="hover:text-indigo-300 transition" ActiveClass="text-indigo-400 underline">Scheduled</NavLink>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto py-8 px-4">
+        @Body
+    </main>
+</div>

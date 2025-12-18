@@ -1,0 +1,121 @@
+@page "/messages/scheduled"
+@using Microsoft.EntityFrameworkCore
+@using AsyncMonolith.Scheduling
+@inject DbContext DbContext
+@rendermode InteractiveServer
+
+<div class="mb-8">
+    <h2 class="text-3xl font-bold text-slate-800">Scheduled Messages</h2>
+    <p class="text-slate-500">Messages scheduled to be enqueued in the future.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Scheduled</div>
+        <div class="text-4xl font-black text-indigo-600">@TotalCount</div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <table class="w-full text-left border-collapse">
+        <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+                <th class="p-4 text-xs font-semibold text-slate-500 uppercase">Message ID</th>
+                <th class="p-4 text-xs font-semibold text-slate-500 uppercase">Tag</th>
+                <th class="p-4 text-xs font-semibold text-slate-500 uppercase">Payload Type</th>
+                <th class="p-4 text-xs font-semibold text-slate-500 uppercase">Available At</th>
+                <th class="p-4 text-xs font-semibold text-slate-500 uppercase">Cron</th>
+                <th class="p-4"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+            @foreach (var msg in Messages)
+            {
+                <tr class="hover:bg-indigo-50/30 transition-colors cursor-pointer" @onclick="() => ToggleRow(msg.Id)">
+                    <td class="p-4 font-mono text-xs text-slate-600">@msg.Id</td>
+                    <td class="p-4 text-sm text-slate-500">@msg.Tag</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-bold">@msg.PayloadType</span>
+                    </td>
+                    <td class="p-4 text-sm text-slate-500">@DateTimeOffset.FromUnixTimeSeconds(msg.AvailableAfter).ToString("HH:mm:ss")</td>
+                    <td class="p-4 text-sm text-slate-500">@msg.ChronExpression (@msg.ChronTimezone)</td>
+                    <td class="p-4 text-right text-indigo-600 font-bold">
+                        @(expandedIds.Contains(msg.Id) ? "−" : "+")
+                    </td>
+                </tr>
+                @if (expandedIds.Contains(msg.Id))
+                {
+                    <tr class="bg-slate-50">
+                        <td colspan="6" class="p-6">
+                            <div class="bg-white rounded border border-slate-200 p-4 shadow-inner">
+                                <div class="text-xs font-bold text-slate-400 mb-2 uppercase">Payload JSON</div>
+                                <pre class="p-3 bg-slate-900 text-indigo-300 rounded overflow-x-auto text-xs">@msg.Payload</pre>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<ScheduledMessage> Messages = new();
+    private int TotalCount;
+    private HashSet<string> expandedIds = new();
+
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+
+        _cts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+
+        _ = RunTimerAsync(_cts.Token);
+    }
+
+    private async Task RunTimerAsync(CancellationToken token)
+    {
+        try
+        {
+            while (await _timer!.WaitForNextTickAsync(token))
+            {
+                await RefreshAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on dispose
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        var scheduledSet = DbContext.Set<ScheduledMessage>();
+
+        TotalCount = await scheduledSet.CountAsync();
+
+        Messages = await scheduledSet
+            .OrderByDescending(x => x.AvailableAfter)
+            .Take(50)
+            .ToListAsync();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _timer?.Dispose();
+        _cts?.Dispose();
+    }
+
+    private void ToggleRow(string id)
+    {
+        if (!expandedIds.Remove(id))
+            expandedIds.Add(id);
+    }
+}

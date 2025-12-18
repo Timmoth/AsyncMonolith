@@ -54,11 +54,6 @@ public static class StartupExtensions
                 "AsyncMonolithSettings.ProcessorMaxDelay must be greater than AsyncMonolithSettings.ProcessorMinDelay.");
         }
 
-        if (settings.ConsumerRailCount < 1)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.ConsumerRailCount must be at least 1.");
-        }
-
         if (settings.ProcessorBatchSize < 1)
         {
             throw new ArgumentException("AsyncMonolithSettings.ProcessorBatchSize must be at least 1.");
@@ -81,7 +76,6 @@ public static class StartupExtensions
             options.ProcessorMaxDelay = settings.ProcessorMaxDelay;
             options.ProcessorMinDelay = settings.ProcessorMinDelay;
             options.ProcessorBatchSize = settings.ProcessorBatchSize;
-            options.ConsumerRailCount = settings.ConsumerRailCount;
             options.DefaultConsumerTimeout = settings.DefaultConsumerTimeout;
         });
     }
@@ -91,14 +85,17 @@ public static class StartupExtensions
         AsyncMonolithSettings settings) where T : DbContext
     {
         services.InternalConfigureAsyncMonolithSettings(settings);
-        services.InternalRegisterAsyncMonolithConsumers(settings);
+        var consumerRailIdDictionary = new Dictionary<string, int>();
+        services.InternalRegisterAsyncMonolithConsumers(settings, consumerRailIdDictionary);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<T>>();
-
-        if (settings.ConsumerRailCount > 1)
+        services.AddScoped<DbContext>(sp => sp.GetRequiredService<T>());
+        
+        var consumerRails = consumerRailIdDictionary.Values.ToHashSet().ToArray();
+        if (consumerRails.Length > 1)
         {
             services.AddHostedService(serviceProvider =>
-                new ConsumerMessageProcessorFactory<T>(serviceProvider, settings.ConsumerRailCount));
+                new ConsumerMessageProcessorFactory<T>(serviceProvider, consumerRails));
         }
         else
         {
@@ -110,15 +107,18 @@ public static class StartupExtensions
 
     internal static void InternalRegisterAsyncMonolithConsumers(
         this IServiceCollection services,
-        AsyncMonolithSettings settings)
+        AsyncMonolithSettings settings,
+        Dictionary<string, int>? consumerRailIdDictionary = null
+    )
     {
         var consumerServiceDictionary = new Dictionary<string, Type>();
         var payloadConsumerDictionary = new Dictionary<string, List<string>>();
         var consumerTimeoutDictionary = new Dictionary<string, int>();
         var consumerAttemptsDictionary = new Dictionary<string, int>();
-        var consumerRailIdDictionary = new Dictionary<string, int>();
         var consumerExecutionModeDictionary = new Dictionary<string, ConsumerInstanceExecutionMode>();
 
+        consumerRailIdDictionary ??= new Dictionary<string, int>();
+        
         var type = typeof(BaseConsumer<>);
         var typesToScan = settings.AssembliesToRegister.SelectMany(x => x.GetTypes()).ToArray();
 

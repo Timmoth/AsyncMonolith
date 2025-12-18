@@ -1,0 +1,14 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Example.Api.Spam;
+
+[Table("submitted_values")]
+public sealed class SubmittedValue
+{
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int Id { get; set; }
+
+    [Column("value")] public required double Value { get; set; }
+}

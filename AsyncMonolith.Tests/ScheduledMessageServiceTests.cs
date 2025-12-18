@@ -2,7 +2,7 @@ using System.Text.Json;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -36,11 +36,11 @@ public class ScheduledMessageServiceTests : DbTestsBase
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
                 var message = await postDbContext.AssertSingleScheduledMessage(consumerMessage);
-                message.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 1);
-                message.Id.Should().Be("fake-id-0");
-                message.Tag.Should().BeEquivalentTo(tag);
+                message.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 1);
+                message.Id.ShouldBe("fake-id-0");
+                message.Tag.ShouldBeEquivalentTo(tag);
                 message.PayloadType = nameof(SingleConsumerMessage);
-                message.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
+                message.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage));
             }
         }
         finally
@@ -82,7 +82,7 @@ public class ScheduledMessageServiceTests : DbTestsBase
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
                 var count = await postDbContext.ScheduledMessages.CountAsync();
-                count.Should().Be(0);
+                count.ShouldBe(0);
             }
         }
         finally
@@ -119,7 +119,7 @@ public class ScheduledMessageServiceTests : DbTestsBase
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
                 var count = await postDbContext.ScheduledMessages.CountAsync();
-                count.Should().Be(0);
+                count.ShouldBe(0);
             }
         }
         finally

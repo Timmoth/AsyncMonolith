@@ -11,15 +11,15 @@ namespace AsyncMonolith.Consumers;
 public class ConsumerMessageProcessorFactory<T> : IHostedService where T : DbContext
 {
     private readonly List<IHostedService> _hostedServices;
-    private readonly int _instances;
+    private readonly int[] _instances;
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ConsumerMessageProcessorFactory{T}" /> class.
     /// </summary>
     /// <param name="serviceProvider">The service provider used to create instances of consumer message processors.</param>
-    /// <param name="instances">The number of instances of consumer message processors to create.</param>
-    public ConsumerMessageProcessorFactory(IServiceProvider serviceProvider, int instances)
+    /// <param name="instances">The rails we need to create a consumer message processors for.</param>
+    public ConsumerMessageProcessorFactory(IServiceProvider serviceProvider, int[] instances)
     {
         _serviceProvider = serviceProvider;
         _instances = instances;
@@ -32,10 +32,10 @@ public class ConsumerMessageProcessorFactory<T> : IHostedService where T : DbCon
     /// <param name="cancellationToken">The cancellation token to stop the operation.</param>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        for (var i = 0; i < _instances; i++)
+        foreach (var instance in _instances)
         {
             var hostedService = ActivatorUtilities.CreateInstance<ConsumerMessageProcessor<T>>(_serviceProvider);
-            hostedService.SetRailId(i);
+            hostedService.SetRailId(instance);
             _hostedServices.Add(hostedService);
             await hostedService.StartAsync(cancellationToken);
         }

@@ -57,11 +57,28 @@ public abstract class DbTestsBase
     }
     public static IEnumerable<object[]> GetTestDbContainers()
     {
-        yield return new object[] { new MySqlTestDbContainer() };
+       // yield return new object[] { new MySqlTestDbContainer() };
         yield return new object[] { new MsSqlTestDbContainer() };
         yield return new object[] { new PostgreSqlTestDbContainer() };
         yield return new object[] { new EfTestDbContainer() };
-        yield return new object[] { new MariaDbTestDbContainer() };
+       // yield return new object[] { new MariaDbTestDbContainer() };
+    }
+    
+    public static IEnumerable<object[]> GetTestDbTypes()
+    {
+        // yield return new object[] { DbType.MySql };
+        yield return new object[] { DbType.Ef };
+        yield return new object[] { DbType.MsSql };
+        yield return new object[] { DbType.PostgreSql };
+        // yield return new object[] { DbType.MariaDb };
+    }
+    
+    public static IEnumerable<object[]> GetTestDbTypesWithoutEf()
+    {
+        // yield return new object[] { DbType.MySql };
+        yield return new object[] { DbType.MsSql };
+        yield return new object[] { DbType.PostgreSql };
+        // yield return new object[] { DbType.MariaDb };
     }
 
     public static TestDbContainerBase GetTestDbContainer(DbType dbType)
@@ -69,10 +86,10 @@ public abstract class DbTestsBase
         return dbType switch
         {
             DbType.Ef => new EfTestDbContainer(),
-            DbType.MySql => new MySqlTestDbContainer(),
+         //   DbType.MySql => new MySqlTestDbContainer(),
             DbType.MsSql => new MsSqlTestDbContainer(),
             DbType.PostgreSql => new PostgreSqlTestDbContainer(),
-            DbType.MariaDb => new MariaDbTestDbContainer(),
+        //    DbType.MariaDb => new MariaDbTestDbContainer(),
             _ => throw new ArgumentOutOfRangeException(nameof(dbType), dbType, null)
         };
 

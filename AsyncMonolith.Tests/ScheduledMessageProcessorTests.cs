@@ -2,7 +2,7 @@ using System.Text.Json;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -43,34 +43,34 @@ public class ScheduledMessageProcessorTests : DbTestsBase
             var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().Be(1);
+            consumedMessage.ShouldBe(1);
             using (var scope = serviceProvider.CreateScope())
             {
                 var postDbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var messages = await postDbContext.ConsumerMessages.ToListAsync();
-                messages.Count.Should().Be(2);
+                messages.Count.ShouldBe(2);
 
                 var message1 =
                     await postDbContext.AssertSingleConsumerMessageById<MultiConsumer1, MultiConsumerMessage>(
                         consumerMessage, "fake-id-2");
-                message1.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds());
-                message1.Attempts.Should().Be(0);
-                message1.InsertId.Should().Be("fake-id-1");
-                message1.Id.Should().Be("fake-id-2");
+                message1.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds());
+                message1.Attempts.ShouldBe(0);
+                message1.InsertId.ShouldBe("fake-id-1");
+                message1.Id.ShouldBe("fake-id-2");
                 message1.ConsumerType = nameof(MultiConsumer1);
                 message1.PayloadType = nameof(MultiConsumerMessage);
-                message1.Payload.Should().Be(serializedMessage);
+                message1.Payload.ShouldBe(serializedMessage);
 
                 var message2 =
                     await postDbContext.AssertSingleConsumerMessageById<MultiConsumer2, MultiConsumerMessage>(
                         consumerMessage, "fake-id-3");
-                message2.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds());
-                message2.Attempts.Should().Be(0);
-                message2.InsertId.Should().Be("fake-id-1");
-                message2.Id.Should().Be("fake-id-3");
+                message2.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds());
+                message2.Attempts.ShouldBe(0);
+                message2.InsertId.ShouldBe("fake-id-1");
+                message2.Id.ShouldBe("fake-id-3");
                 message2.ConsumerType = nameof(MultiConsumer2);
                 message2.PayloadType = nameof(MultiConsumerMessage);
-                message2.Payload.Should().Be(serializedMessage);
+                message2.Payload.ShouldBe(serializedMessage);
             }
         }
         finally
@@ -111,12 +111,12 @@ public class ScheduledMessageProcessorTests : DbTestsBase
             var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().Be(1);
+            consumedMessage.ShouldBe(1);
             using (var scope = serviceProvider.CreateScope())
             {
                 var postDbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var message = await postDbContext.AssertSingleScheduledMessage(consumerMessage);
-                message!.AvailableAfter.Should().Be(FakeTime.GetUtcNow().AddSeconds(1).ToUnixTimeSeconds());
+                message!.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().AddSeconds(1).ToUnixTimeSeconds());
             }
         }
         finally

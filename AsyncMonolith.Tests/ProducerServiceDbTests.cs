@@ -3,7 +3,7 @@ using System.Text.Json;
 using AsyncMonolith.Producers;
 using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,10 +12,7 @@ namespace AsyncMonolith.Tests;
 public class ProducerServiceDbTests : DbTestsBase
 {
     [Theory]
-    [InlineData(DbType.MySql)]
-    [InlineData(DbType.MsSql)]
-    [InlineData(DbType.PostgreSql)]
-    [InlineData(DbType.MariaDb)]
+    [MemberData(nameof(GetTestDbTypesWithoutEf))]
     public async Task Producer_Inserts_ConsumerMessage(DbType dbType)
     {
         var dbContainer = GetTestDbContainer(dbType);
@@ -44,15 +41,15 @@ public class ProducerServiceDbTests : DbTestsBase
                 var message =
                     await postDbContext.AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(
                         consumerMessage);
-                message.AvailableAfter.Should().Be(delay);
-                message.Attempts.Should().Be(0);
-                message.InsertId.Should().Be("fake-id-0");
-                message.Id.Should().Be("fake-id-1");
+                message.AvailableAfter.ShouldBe(delay);
+                message.Attempts.ShouldBe(0);
+                message.InsertId.ShouldBe("fake-id-0");
+                message.Id.ShouldBe("fake-id-1");
                 message.ConsumerType = nameof(SingleConsumer);
                 message.PayloadType = nameof(SingleConsumerMessage);
-                message.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
-                message.TraceId.Should().Be(activity?.TraceId.ToString());
-                message.SpanId.Should().Be(activity?.SpanId.ToString());
+                message.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage));
+                message.TraceId.ShouldBe(activity?.TraceId.ToString());
+                message.SpanId.ShouldBe(activity?.SpanId.ToString());
             }
         }
         finally
@@ -62,10 +59,7 @@ public class ProducerServiceDbTests : DbTestsBase
     }
 
     [Theory]
-    [InlineData(DbType.MySql)]
-    [InlineData(DbType.MsSql)]
-    [InlineData(DbType.PostgreSql)]
-    [InlineData(DbType.MariaDb)]
+    [MemberData(nameof(GetTestDbTypesWithoutEf))]
     public async Task Producer_Inserts_List_Of_ConsumerMessages(DbType dbType)
     {
         var dbContainer = GetTestDbContainer(dbType);
@@ -101,33 +95,33 @@ public class ProducerServiceDbTests : DbTestsBase
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
                 var messages = await postDbContext.ConsumerMessages.ToListAsync();
-                messages.Count.Should().Be(2);
+                messages.Count.ShouldBe(2);
 
                 var message1 =
                     await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
                         consumerMessage1, "fake-id-1");
-                message1.AvailableAfter.Should().Be(delay);
-                message1.Attempts.Should().Be(0);
-                message1.InsertId.Should().Be("fake-id-0");
-                message1.Id.Should().Be("fake-id-1");
+                message1.AvailableAfter.ShouldBe(delay);
+                message1.Attempts.ShouldBe(0);
+                message1.InsertId.ShouldBe("fake-id-0");
+                message1.Id.ShouldBe("fake-id-1");
                 message1.ConsumerType = nameof(SingleConsumer);
                 message1.PayloadType = nameof(SingleConsumerMessage);
-                message1.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage1));
-                message1.TraceId.Should().Be(activity?.TraceId.ToString());
-                message1.SpanId.Should().Be(activity?.SpanId.ToString());
+                message1.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage1));
+                message1.TraceId.ShouldBe(activity?.TraceId.ToString());
+                message1.SpanId.ShouldBe(activity?.SpanId.ToString());
 
                 var message2 =
                     await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
                         consumerMessage2, "fake-id-3");
-                message2.AvailableAfter.Should().Be(delay);
-                message2.Attempts.Should().Be(0);
-                message2.InsertId.Should().Be("fake-id-2");
-                message2.Id.Should().Be("fake-id-3");
+                message2.AvailableAfter.ShouldBe(delay);
+                message2.Attempts.ShouldBe(0);
+                message2.InsertId.ShouldBe("fake-id-2");
+                message2.Id.ShouldBe("fake-id-3");
                 message2.ConsumerType = nameof(SingleConsumer);
                 message2.PayloadType = nameof(SingleConsumerMessage);
-                message2.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage2));
-                message2.TraceId.Should().Be(activity?.TraceId.ToString());
-                message2.SpanId.Should().Be(activity?.SpanId.ToString());
+                message2.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage2));
+                message2.TraceId.ShouldBe(activity?.TraceId.ToString());
+                message2.SpanId.ShouldBe(activity?.SpanId.ToString());
             }
         }
         finally
@@ -175,32 +169,32 @@ public class ProducerServiceDbTests : DbTestsBase
             {
                 var postDbContext = postScope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var messages = await postDbContext.ConsumerMessages.ToListAsync();
-                messages.Count.Should().Be(2);
+                messages.Count.ShouldBe(2);
 
                 var message1 =
                     await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
                         consumerMessage1, "fake-id-1");
-                message1.AvailableAfter.Should().Be(delay);
-                message1.Attempts.Should().Be(0);
-                message1.InsertId.Should().Be("fake-id-0");
-                message1.Id.Should().Be("fake-id-1");
+                message1.AvailableAfter.ShouldBe(delay);
+                message1.Attempts.ShouldBe(0);
+                message1.InsertId.ShouldBe("fake-id-0");
+                message1.Id.ShouldBe("fake-id-1");
                 message1.ConsumerType = nameof(SingleConsumer);
                 message1.PayloadType = nameof(SingleConsumerMessage);
-                message1.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage1));
-                message1.TraceId.Should().Be(activity?.TraceId.ToString());
-                message1.SpanId.Should().Be(activity?.SpanId.ToString());
+                message1.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage1));
+                message1.TraceId.ShouldBe(activity?.TraceId.ToString());
+                message1.SpanId.ShouldBe(activity?.SpanId.ToString());
                 var message2 =
                     await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
                         consumerMessage2, "fake-id-3");
-                message2.AvailableAfter.Should().Be(delay);
-                message2.Attempts.Should().Be(0);
-                message2.InsertId.Should().Be("fake-id-2");
-                message2.Id.Should().Be("fake-id-3");
+                message2.AvailableAfter.ShouldBe(delay);
+                message2.Attempts.ShouldBe(0);
+                message2.InsertId.ShouldBe("fake-id-2");
+                message2.Id.ShouldBe("fake-id-3");
                 message2.ConsumerType = nameof(SingleConsumer);
                 message2.PayloadType = nameof(SingleConsumerMessage);
-                message2.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage2));
-                message2.TraceId.Should().Be(activity?.TraceId.ToString());
-                message2.SpanId.Should().Be(activity?.SpanId.ToString());
+                message2.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage2));
+                message2.TraceId.ShouldBe(activity?.TraceId.ToString());
+                message2.SpanId.ShouldBe(activity?.SpanId.ToString());
             }
         }
         finally
@@ -210,10 +204,7 @@ public class ProducerServiceDbTests : DbTestsBase
     }
 
     [Theory]
-    [InlineData(DbType.MySql)]
-    [InlineData(DbType.MsSql)]
-    [InlineData(DbType.PostgreSql)]
-    [InlineData(DbType.MariaDb)]
+    [MemberData(nameof(GetTestDbTypesWithoutEf))]
     public async Task Producer_Does_Not_Insert_Duplicate_ConsumerMessage(DbType dbType)
     {
         var dbContainer = GetTestDbContainer(dbType);
@@ -248,15 +239,15 @@ public class ProducerServiceDbTests : DbTestsBase
                 var message =
                     await postDbContext.AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(
                         consumerMessage);
-                message.AvailableAfter.Should().Be(delay);
-                message.Attempts.Should().Be(0);
-                message.Id.Should().Be("fake-id-0");
+                message.AvailableAfter.ShouldBe(delay);
+                message.Attempts.ShouldBe(0);
+                message.Id.ShouldBe("fake-id-0");
                 message.ConsumerType = nameof(SingleConsumer);
                 message.PayloadType = nameof(SingleConsumerMessage);
-                message.Payload.Should().Be(JsonSerializer.Serialize(consumerMessage));
-                message.InsertId.Should().Be(insertId);
-                message.TraceId.Should().Be(activity?.TraceId.ToString());
-                message.SpanId.Should().Be(activity?.SpanId.ToString());
+                message.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage));
+                message.InsertId.ShouldBe(insertId);
+                message.TraceId.ShouldBe(activity?.TraceId.ToString());
+                message.SpanId.ShouldBe(activity?.SpanId.ToString());
             }
         }
         finally

@@ -1,12 +1,6 @@
 version: '3.4'
 
 services:
-  demo:
-    image: ${DOCKER_REGISTRY-}demo
-    build:
-      context: .
-      dockerfile: Demo/Dockerfile
-
   async_monolith_demo_postgres:
     image: postgres:latest
     container_name: async_monolith_demo_postgres

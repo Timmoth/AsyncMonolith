@@ -40,12 +40,6 @@ public class AsyncMonolithSettings
     public int ProcessorBatchSize { get; set; } = 5;
 
     /// <summary>
-    ///     Gets or sets the number of consumer message processors rails to be ran for each app instance.
-    ///     Default: 1, Min: 1, Max N/A
-    /// </summary>
-    public int ConsumerRailCount { get; set; } = 1;
-
-    /// <summary>
     ///     Gets or sets the default number of seconds a consumer waits before timing out.
     ///     Default: 10 seconds, Min: 1 second, Max 3600 seconds
     /// </summary>
@@ -60,7 +54,6 @@ public class AsyncMonolithSettings
         AttemptDelay = 10,
         ProcessorMaxDelay = 1000,
         ProcessorMinDelay = 10,
-        ConsumerRailCount = 1,
         ProcessorBatchSize = 5
     };
     

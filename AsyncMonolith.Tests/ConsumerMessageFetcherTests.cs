@@ -2,7 +2,7 @@
 using AsyncMonolith.Producers;
 using AsyncMonolith.Tests.Infra;
 using AsyncMonolith.Utilities;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Tests;
@@ -10,11 +10,7 @@ namespace AsyncMonolith.Tests;
 public class ConsumerMessageFetcherTests : DbTestsBase
 {
     [Theory]
-    [InlineData(DbType.Ef)]
-    [InlineData(DbType.MySql)]
-    [InlineData(DbType.MsSql)]
-    [InlineData(DbType.PostgreSql)]
-    [InlineData(DbType.MariaDb)]
+    [MemberData(nameof(GetTestDbTypes))]
     public async Task Fetch_Returns_Batch_Of_Messages(DbType dbType)
     {
         var dbContainer = GetTestDbContainer(dbType);
@@ -45,7 +41,7 @@ public class ConsumerMessageFetcherTests : DbTestsBase
                 CancellationToken.None);
 
             // Then
-            dbMessages.Count.Should().Be(settings.ProcessorBatchSize);
+            dbMessages.Count.ShouldBe(settings.ProcessorBatchSize);
         }
         finally
         {
@@ -54,11 +50,7 @@ public class ConsumerMessageFetcherTests : DbTestsBase
     }
     
     [Theory]
-    [InlineData(DbType.Ef)]
-    [InlineData(DbType.MySql)]
-    [InlineData(DbType.MsSql)]
-    [InlineData(DbType.PostgreSql)]
-    [InlineData(DbType.MariaDb)]
+    [MemberData(nameof(GetTestDbTypes))]
     public async Task Fetch_Returns_Messages_Partitioned_By_Rail(DbType dbType)
     {
         var dbContainer = GetTestDbContainer(dbType);
@@ -86,17 +78,17 @@ public class ConsumerMessageFetcherTests : DbTestsBase
                 CancellationToken.None);
 
             // Then
-            rail0Messages.Count.Should().Be(1);
-            rail1Messages.Count.Should().Be(1);
-            rail2Messages.Count.Should().Be(1);
+            rail0Messages.Count.ShouldBe(1);
+            rail1Messages.Count.ShouldBe(1);
+            rail2Messages.Count.ShouldBe(1);
 
-            rail0Messages.Single().RailId.Should().Be(0);
-            rail1Messages.Single().RailId.Should().Be(1);
-            rail2Messages.Single().RailId.Should().Be(2);
+            rail0Messages.Single().RailId.ShouldBe(0);
+            rail1Messages.Single().RailId.ShouldBe(1);
+            rail2Messages.Single().RailId.ShouldBe(2);
 
-            rail0Messages.Single().ConsumerType.Should().Be(nameof(RailConsumer0));
-            rail1Messages.Single().ConsumerType.Should().Be(nameof(RailConsumer1));
-            rail2Messages.Single().ConsumerType.Should().Be(nameof(RailConsumer2));
+            rail0Messages.Single().ConsumerType.ShouldBe(nameof(RailConsumer0));
+            rail1Messages.Single().ConsumerType.ShouldBe(nameof(RailConsumer1));
+            rail2Messages.Single().ConsumerType.ShouldBe(nameof(RailConsumer2));
         }
         finally
         {

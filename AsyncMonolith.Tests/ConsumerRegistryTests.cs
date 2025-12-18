@@ -1,7 +1,7 @@
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Tests.Infra;
 using AsyncMonolith.Utilities;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Tests;
@@ -27,8 +27,8 @@ public class ConsumerRegistryTests
         var testConsumer = serviceProvider.GetService<SingleConsumer>();
 
         // Then
-        testConsumer.Should().NotBeNull();
-        testConsumer.Should().BeOfType<SingleConsumer>();
+        testConsumer.ShouldNotBeNull();
+        testConsumer.ShouldBeOfType<SingleConsumer>();
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class ConsumerRegistryTests
         var timeout = registry.ResolveConsumerTimeout(nameof(SingleConsumer));
 
         // Then
-        timeout.Should().Be(1);
+        timeout.ShouldBe(1);
     }
 
 
@@ -57,7 +57,7 @@ public class ConsumerRegistryTests
         var timeout = registry.ResolveConsumerTimeout(nameof(ExceptionConsumer));
 
         // Then
-        timeout.Should().Be(10);
+        timeout.ShouldBe(10);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class ConsumerRegistryTests
         });
 
         // Then
-        timeout.Should().Be(1);
+        timeout.ShouldBe(1);
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class ConsumerRegistryTests
         });
 
         // Then
-        consumerType.Should().Be(typeof(SingleConsumer));
+        consumerType.ShouldBe(typeof(SingleConsumer));
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class ConsumerRegistryTests
         var consumerIds = registry.ResolvePayloadConsumerTypes(nameof(MultiConsumerMessage));
 
         // Then
-        consumerIds.Count.Should().Be(2);
+        consumerIds.Count.ShouldBe(2);
         Assert.Single(consumerIds.Where(c => c == nameof(MultiConsumer1)));
         Assert.Single(consumerIds.Where(c => c == nameof(MultiConsumer2)));
     }
@@ -155,7 +155,7 @@ public class ConsumerRegistryTests
         });
 
         // Then
-        timeout.Should().Be(5);
+        timeout.ShouldBe(5);
     }
 
     [Fact]
@@ -182,6 +182,6 @@ public class ConsumerRegistryTests
         });
 
         // Then
-        timeout.Should().Be(2);
+        timeout.ShouldBe(2);
     }
 }

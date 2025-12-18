@@ -33,6 +33,8 @@ public static class TestServiceHelpers
 
         services.InternalConfigureAsyncMonolithSettings(settings);
         settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
+        
+        
         services.InternalRegisterAsyncMonolithConsumers(settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<TestDbContext>>();

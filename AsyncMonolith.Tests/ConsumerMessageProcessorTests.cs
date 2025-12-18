@@ -2,9 +2,9 @@ using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
 using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 
 namespace AsyncMonolith.Tests;
 
@@ -38,8 +38,8 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().Be(1);
-            TestConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(1);
+            consumedMessage.ShouldBe(1);
+            TestConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).ShouldBe(1);
         }
         finally
         {
@@ -75,8 +75,8 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().Be(0);
-            TestConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).Should().Be(0);
+            consumedMessage.ShouldBe(0);
+            TestConsumerInvocations.GetInvocationCount(nameof(SingleConsumer)).ShouldBe(0);
         }
         finally
         {
@@ -120,7 +120,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var message =
                     await dbContext.AssertSingleConsumerMessage<ExceptionConsumer, ExceptionConsumerMessage>(
                         consumerMessage);
-                message?.Attempts.Should().Be(1);
+                message?.Attempts.ShouldBe(1);
             }
         }
         finally
@@ -164,7 +164,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var message =
                     await dbContext.AssertSingleConsumerMessage<TimeoutConsumer, TimeoutConsumerMessage>(
                         consumerMessage);
-                message?.Attempts.Should().Be(1);
+                message?.Attempts.ShouldBe(1);
             }
         }
         finally
@@ -208,7 +208,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var message =
                     await dbContext.AssertSingleConsumerMessage<ExceptionConsumer, ExceptionConsumerMessage>(
                         consumerMessage);
-                message?.AvailableAfter.Should().Be(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 10);
+                message?.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 10);
             }
         }
         finally
@@ -253,15 +253,15 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var consumerMessageExists = await dbContext.ConsumerMessages.AnyAsync();
-                consumerMessageExists.Should().BeFalse();
+                consumerMessageExists.ShouldBeFalse();
                 var poisonedMessage = await dbContext.PoisonedMessages.SingleAsync();
-                poisonedMessage.Id.Should().Be(message.Id);
-                poisonedMessage.AvailableAfter.Should().Be(message.AvailableAfter);
-                poisonedMessage.ConsumerType.Should().Be(message.ConsumerType);
-                poisonedMessage.CreatedAt.Should().Be(message.CreatedAt);
-                poisonedMessage.Payload.Should().Be(message.Payload);
-                poisonedMessage.PayloadType.Should().Be(message.PayloadType);
-                poisonedMessage.Attempts.Should().Be(message.Attempts + 1);
+                poisonedMessage.Id.ShouldBe(message.Id);
+                poisonedMessage.AvailableAfter.ShouldBe(message.AvailableAfter);
+                poisonedMessage.ConsumerType.ShouldBe(message.ConsumerType);
+                poisonedMessage.CreatedAt.ShouldBe(message.CreatedAt);
+                poisonedMessage.Payload.ShouldBe(message.Payload);
+                poisonedMessage.PayloadType.ShouldBe(message.PayloadType);
+                poisonedMessage.Attempts.ShouldBe(message.Attempts + 1);
             }
         }
         finally
@@ -306,15 +306,15 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var consumerMessageExists = await dbContext.ConsumerMessages.AnyAsync();
-                consumerMessageExists.Should().BeFalse();
+                consumerMessageExists.ShouldBeFalse();
                 var poisonedMessage = await dbContext.PoisonedMessages.SingleAsync();
-                poisonedMessage.Id.Should().Be(message.Id);
-                poisonedMessage.AvailableAfter.Should().Be(message.AvailableAfter);
-                poisonedMessage.ConsumerType.Should().Be(message.ConsumerType);
-                poisonedMessage.CreatedAt.Should().Be(message.CreatedAt);
-                poisonedMessage.Payload.Should().Be(message.Payload);
-                poisonedMessage.PayloadType.Should().Be(message.PayloadType);
-                poisonedMessage.Attempts.Should().Be(message.Attempts + 1);
+                poisonedMessage.Id.ShouldBe(message.Id);
+                poisonedMessage.AvailableAfter.ShouldBe(message.AvailableAfter);
+                poisonedMessage.ConsumerType.ShouldBe(message.ConsumerType);
+                poisonedMessage.CreatedAt.ShouldBe(message.CreatedAt);
+                poisonedMessage.Payload.ShouldBe(message.Payload);
+                poisonedMessage.PayloadType.ShouldBe(message.PayloadType);
+                poisonedMessage.Attempts.ShouldBe(message.Attempts + 1);
             }
         }
         finally
@@ -351,13 +351,13 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             var consumedMessage = await processor.ProcessBatch(CancellationToken.None);
 
             // Then
-            consumedMessage.Should().Be(1);
+            consumedMessage.ShouldBe(1);
 
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var remaining = await dbContext.ConsumerMessages.CountAsync();
-                remaining.Should().Be(0);
+                remaining.ShouldBe(0);
             }
         }
         finally

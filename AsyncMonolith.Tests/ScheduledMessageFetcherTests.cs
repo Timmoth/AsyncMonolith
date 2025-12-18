@@ -1,7 +1,7 @@
 ﻿using AsyncMonolith.Scheduling;
 using AsyncMonolith.Tests.Infra;
 using AsyncMonolith.Utilities;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Tests;
@@ -9,11 +9,7 @@ namespace AsyncMonolith.Tests;
 public class ScheduledMessageFetcherTests : DbTestsBase
 {
     [Theory]
-    [InlineData(DbType.Ef)]
-    [InlineData(DbType.MySql)]
-    [InlineData(DbType.MsSql)]
-    [InlineData(DbType.PostgreSql)]
-    [InlineData(DbType.MariaDb)]
+    [MemberData(nameof(GetTestDbTypes))]
     public async Task Fetch_Returns_Batch_Of_Messages(DbType dbType)
     {
         var dbContainer = GetTestDbContainer(dbType);
@@ -48,7 +44,7 @@ public class ScheduledMessageFetcherTests : DbTestsBase
                 CancellationToken.None);
 
             // Then
-            dbMessages.Count.Should().Be(settings.ProcessorBatchSize);
+            dbMessages.Count.ShouldBe(settings.ProcessorBatchSize);
         }
         finally
         {
