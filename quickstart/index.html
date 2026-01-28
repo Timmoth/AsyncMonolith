@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Timmoth" /><link rel="canonical" href="https://timmoth.github.io/AsyncMonolith/quickstart/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Quick start ▶️ - AsyncMonolith Docs</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Quick start \u25b6\ufe0f";
+        var mkdocs_page_input_path = "quickstart.md";
+        var mkdocs_page_url = "/AsyncMonolith/quickstart/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/csharp.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="..">
+          <img src="../assets/logo.png" class="logo" alt="Logo"/>
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Overview ✅</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Quick start ▶️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../internals/">Internals 🧠</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../releases/">Releases 📒</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../warnings/">Warnings ⚠️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../support/">Support 🛟</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../demo/">Demo App ✨</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing 🙏</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../tests/">Tests 🐞</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../guides/producing-messages/">Producing messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../guides/scheduling-messages/">Scheduling messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../guides/consuming-messages/">Consuming messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../guides/changing-messages/">Changing messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../guides/opentelemetry/">Opentelemetry</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Posts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../posts/transactional-outbox/">What is the Transactional Outbox?</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../posts/mediator/">What is the Mediator pattern?</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../posts/idempotency/">What is Idempotency?</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">AsyncMonolith Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Quick start ▶️</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/Timmoth/AsyncMonolith/edit/main/docs/quickstart.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <p><a href="https://github.com/Timmoth/AsyncMonolith/tree/main/Demo">For a more detailed example look at the Demo project</a></p>
+<p>Install the nuget package to support your database</p>
+<p><a href="https://www.nuget.org/packages/AsyncMonolith.Ef"><img alt="Ef" src="https://img.shields.io/nuget/v/AsyncMonolith.Ef?label=Ef" /></a>
+<a href="https://www.nuget.org/packages/AsyncMonolith.MySql"><img alt="MySql" src="https://img.shields.io/nuget/v/AsyncMonolith.MySql?label=MySql" /></a>
+<a href="https://www.nuget.org/packages/AsyncMonolith.MsSql"><img alt="MsSql" src="https://img.shields.io/nuget/v/AsyncMonolith.MsSql?label=MsSql" /></a>
+<a href="https://www.nuget.org/packages/AsyncMonolith.PostgreSql"><img alt="PostgreSql" src="https://img.shields.io/nuget/v/AsyncMonolith.PostgreSql?label=PostgreSql" /></a>
+<a href="https://www.nuget.org/packages/AsyncMonolith.MariaDb"><img alt="MariaDb" src="https://img.shields.io/nuget/v/AsyncMonolith.MariaDb?label=MariaDb" /></a></p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">// Pick one</span>
+<span class="w">    </span><span class="n">dotnet</span><span class="w"> </span><span class="k">add</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="n">AsyncMonolith</span><span class="p">.</span><span class="n">Ef</span>
+<span class="w">    </span><span class="n">dotnet</span><span class="w"> </span><span class="k">add</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="n">AsyncMonolith</span><span class="p">.</span><span class="n">MySql</span>
+<span class="w">    </span><span class="n">dotnet</span><span class="w"> </span><span class="k">add</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="n">AsyncMonolith</span><span class="p">.</span><span class="n">MsSql</span>
+<span class="w">    </span><span class="n">dotnet</span><span class="w"> </span><span class="k">add</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="n">AsyncMonolith</span><span class="p">.</span><span class="n">PostgreSql</span>
+<span class="w">    </span><span class="n">dotnet</span><span class="w"> </span><span class="k">add</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="n">AsyncMonolith</span><span class="p">.</span><span class="n">MariaDb</span>
+</code></pre></div>
+<p>Setup your DbContext</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">ApplicationDbContext</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">DbContext</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="nf">ApplicationDbContext</span><span class="p">(</span><span class="n">DbContextOptions</span><span class="o">&lt;</span><span class="n">ApplicationDbContext</span><span class="o">&gt;</span><span class="w"> </span><span class="n">options</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="k">base</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// Add Db Sets</span>
+<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="n">DbSet</span><span class="o">&lt;</span><span class="n">ConsumerMessage</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ConsumerMessages</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="o">!</span><span class="p">;</span>
+<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="n">DbSet</span><span class="o">&lt;</span><span class="n">PoisonedMessage</span><span class="o">&gt;</span><span class="w"> </span><span class="n">PoisonedMessages</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="o">!</span><span class="p">;</span>
+<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="n">DbSet</span><span class="o">&lt;</span><span class="n">ScheduledMessage</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ScheduledMessages</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="o">!</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// Configure the ModelBuilder</span>
+<span class="w">        </span><span class="k">protected</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="k">void</span><span class="w"> </span><span class="nf">OnModelCreating</span><span class="p">(</span><span class="n">ModelBuilder</span><span class="w"> </span><span class="n">modelBuilder</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="n">modelBuilder</span><span class="p">.</span><span class="n">ConfigureAsyncMonolith</span><span class="p">();</span>
+<span class="w">            </span><span class="k">base</span><span class="p">.</span><span class="n">OnModelCreating</span><span class="p">(</span><span class="n">modelBuilder</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+<p><strong><em>If you're not using ef migrations check out the sql to configure your database <a href="https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas">here</a></em></strong></p>
+<p>Register your dependencies and configure settings</p>
+<p><div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">// Register required services</span>
+<span class="w">    </span><span class="n">builder</span><span class="p">.</span><span class="n">Services</span><span class="p">.</span><span class="n">AddLogging</span><span class="p">();</span>
+<span class="w">    </span><span class="n">builder</span><span class="p">.</span><span class="n">Services</span><span class="p">.</span><span class="n">AddSingleton</span><span class="p">(</span><span class="n">TimeProvider</span><span class="p">.</span><span class="n">System</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Register AsyncMonolith using either:</span>
+<span class="w">    </span><span class="c1">// services.AddEfAsyncMonolith</span>
+<span class="w">    </span><span class="c1">// services.AddMsSqlAsyncMonolith</span>
+<span class="w">    </span><span class="c1">// services.AddMySqlAsyncMonolith</span>
+<span class="w">    </span><span class="c1">// services.AddPostgreSqlAsyncMonolith</span>
+<span class="w">    </span><span class="c1">// services.AddMariaDbAsyncMonolith</span>
+<span class="w">    </span><span class="n">builder</span><span class="p">.</span><span class="n">Services</span><span class="p">.</span><span class="n">AddPostgreSqlAsyncMonolith</span><span class="o">&lt;</span><span class="n">ApplicationDbContext</span><span class="o">&gt;</span><span class="p">(</span><span class="n">settings</span><span class="w"> </span><span class="o">=&gt;</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">settings</span><span class="p">.</span><span class="n">RegisterTypesFromAssembly</span><span class="p">(</span><span class="n">Assembly</span><span class="p">.</span><span class="n">GetExecutingAssembly</span><span class="p">());</span>
+<span class="w">        </span><span class="n">settings</span><span class="p">.</span><span class="n">AttemptDelay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="c1">// Seconds before a failed message is retried</span>
+<span class="w">        </span><span class="n">settings</span><span class="p">.</span><span class="n">MaxAttempts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="c1">// Number of times a failed message is retried</span>
+<span class="w">        </span><span class="n">settings</span><span class="p">.</span><span class="n">ProcessorMinDelay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="c1">// Minimum millisecond delay before the next batch is processed</span>
+<span class="w">        </span><span class="n">settings</span><span class="p">.</span><span class="n">ProcessorMaxDelay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="c1">// Maximum millisecond delay before the next batch is processed</span>
+<span class="w">        </span><span class="n">settings</span><span class="p">.</span><span class="n">ProcessorBatchSize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="c1">// The number of messages to process in a single batch</span>
+<span class="w">        </span><span class="n">settings</span><span class="p">.</span><span class="n">ConsumerMessageProcessorCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="c1">// The number of concurrent consumer message processors to run in each app instance</span>
+<span class="w">        </span><span class="n">settings</span><span class="p">.</span><span class="n">ScheduledMessageProcessorCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="c1">// The number of concurrent scheduled message processors to run in each app instance</span>
+<span class="w">        </span><span class="n">settings</span><span class="p">.</span><span class="n">DefaultConsumerTimeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="c1">// The default number of seconds before a consumer will timeout</span>
+<span class="w">    </span><span class="p">});</span>
+</code></pre></div>
+The following methods are available on the <code>AsyncMonolithSettings</code> passed into the <code>settings</code> lambda:</p>
+<ul>
+<li><code>RegisterTypesFromAssemblyContaining&lt;T&gt;()</code></li>
+<li><code>RegisterTypesFromAssemblyContaining(Type type)</code></li>
+<li><code>RegisterTypesFromAssembly(Assembly assembly)</code></li>
+<li><code>RegisterTypesFromAssemblies(params Assembly[] assemblies)</code></li>
+</ul>
+<p>Create messages and consumers</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">// Define Consumer Payload</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">ValueSubmitted</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IConsumerPayload</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="na">[JsonPropertyName(&quot;value&quot;)]</span>
+<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="n">required</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Define Consumer</span>
+<span class="w">    </span><span class="na">[ConsumerTimeout(5)]</span><span class="w"> </span><span class="c1">// Consumer timeouts after 5 seconds</span>
+<span class="w">    </span><span class="na">[ConsumerAttempts(1)]</span><span class="w"> </span><span class="c1">// Consumer messages moved to poisoned table after 1 failed attempt</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">ValueSubmittedConsumer</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseConsumer</span><span class="o">&lt;</span><span class="n">ValueSubmitted</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="n">ApplicationDbContext</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">;</span>
+<span class="w">        </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="n">IProducerService</span><span class="w"> </span><span class="n">_producerService</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="nf">ValueSubmittedConsumer</span><span class="p">(</span><span class="n">ApplicationDbContext</span><span class="w"> </span><span class="n">dbContext</span><span class="p">,</span><span class="w"> </span><span class="n">IProducerService</span><span class="w"> </span><span class="n">producerService</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="n">_dbContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dbContext</span><span class="p">;</span>
+<span class="w">            </span><span class="n">_producerService</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">producerService</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="nf">Consume</span><span class="p">(</span><span class="n">ValueSubmitted</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="n">CancellationToken</span><span class="w"> </span><span class="n">cancellationToken</span><span class="p">)</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="p">...</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+<p>Produce / schedule messages</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">// Inject services</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="n">IProducerService</span><span class="w"> </span><span class="n">_producerService</span><span class="p">;</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="n">IScheduleService</span><span class="w"> </span><span class="n">_scheduleService</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Produce a message to be processed immediately</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_producerService</span><span class="p">.</span><span class="n">Produce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ValueSubmitted</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="n">Value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newValue</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">    </span><span class="c1">// Produce a message to be processed in 10 seconds</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_producerService</span><span class="p">.</span><span class="n">Produce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ValueSubmitted</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="n">Value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newValue</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mi">10</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Produce a message to be processed in 10 seconds, but only once for a given userId</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_producerService</span><span class="p">.</span><span class="n">Produce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ValueSubmitted</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="n">Value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newValue</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="s">$&quot;user:{userId}&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Publish a message every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.</span>
+<span class="w">    </span><span class="n">_scheduleService</span><span class="p">.</span><span class="n">Schedule</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">ValueSubmitted</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="n">Value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newValue</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="s">&quot;0 0 12 * * MON&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;UTC&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;id:{id}&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Save changes</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+</code></pre></div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Overview ✅"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../internals/" class="btn btn-neutral float-right" title="Internals 🧠">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/Timmoth/AsyncMonolith/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../internals/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

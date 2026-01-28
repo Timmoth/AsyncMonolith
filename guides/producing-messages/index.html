@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Timmoth" /><link rel="canonical" href="https://timmoth.github.io/AsyncMonolith/guides/producing-messages/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Producing messages - AsyncMonolith Docs</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Producing messages";
+        var mkdocs_page_input_path = "guides/producing-messages.md";
+        var mkdocs_page_url = "/AsyncMonolith/guides/producing-messages/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/csharp.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../..">
+          <img src="../../assets/logo.png" class="logo" alt="Logo"/>
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Overview ✅</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Quick start ▶️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../internals/">Internals 🧠</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../releases/">Releases 📒</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../warnings/">Warnings ⚠️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../support/">Support 🛟</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../demo/">Demo App ✨</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../contributing/">Contributing 🙏</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../tests/">Tests 🐞</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Producing messages</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../scheduling-messages/">Scheduling messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../consuming-messages/">Consuming messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../changing-messages/">Changing messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../opentelemetry/">Opentelemetry</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Posts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../posts/transactional-outbox/">What is the Transactional Outbox?</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../posts/mediator/">What is the Mediator pattern?</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../posts/idempotency/">What is Idempotency?</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">AsyncMonolith Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Guides</li>
+      <li class="breadcrumb-item active">Producing messages</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/Timmoth/AsyncMonolith/edit/main/docs/guides/producing-messages.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <p>To produce messages in dotnet apps using <a href="https://github.com/timmoth/asyncmonolith">AsyncMonolith</a> you must first define a consumer payload class. This will act as the body of the message being passed to each consumer configured to handle it.</p>
+<div class="highlight"><pre><span></span><code><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">OrderCancelled</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IConsumerPayload</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="na">[JsonPropertyName(&quot;order_id&quot;)]</span>
+<span class="w">  </span><span class="k">public</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="n">OrderId</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="w">  </span><span class="na">[JsonPropertyName(&quot;cancelled_at&quot;)]</span>
+<span class="w">  </span><span class="k">public</span><span class="w"> </span><span class="n">DateTimeOffset</span><span class="w"> </span><span class="n">CancelledAt</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">get</span><span class="p">;</span><span class="w"> </span><span class="k">set</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>When defining a consumer payload it must derive from the <code>IConsumerPayload</code> interface and be serializable by the <code>System.Text.Json.JsonSerializer</code>.</p>
+<p>As the consumer payload will be stored in the database in a serialized string, it is a good practice to keep it as small as possible.</p>
+<p>To produce your message you'll need to inject a <code>IProducerService</code></p>
+<h2 id="immediate-messages">Immediate messages</h2>
+<p>You can produce messages to be consumed immediately like this:
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">order</span><span class="p">.</span><span class="n">Cancel</span><span class="p">();</span>
+<span class="w">    </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Update</span><span class="p">(</span><span class="n">order</span><span class="p">);</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_producerService</span><span class="p">.</span><span class="n">Produce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">OrderCancelled</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="n">OrderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span>
+<span class="w">      </span><span class="n">CancelledAt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">_timeProvider</span><span class="p">.</span><span class="n">UtcNow</span><span class="p">()</span>
+<span class="w">    </span><span class="p">});</span>
+
+<span class="w">    </span><span class="c1">// Save changes</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+</code></pre></div></p>
+<p>The message will be produced transactionally along with the change to your domain objects when you call <code>SaveChangesAsync</code>. Lean more about the <a href="../transactional-outbox">Transactional Outbox</a> pattern.</p>
+<p><strong><em>If using the MySql, MsSql, MariaDb or PostgreSQL packages you will need to wrap your changes in a transaction see below</em></strong></p>
+<h2 id="delayed-messages">Delayed messages</h2>
+<p>You can produce messages to be consumed after a delay by specifying the number of seconds to wait before a consumer should process the message.
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">order</span><span class="p">.</span><span class="n">Cancel</span><span class="p">();</span>
+<span class="w">    </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Update</span><span class="p">(</span><span class="n">order</span><span class="p">);</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_producerService</span><span class="p">.</span><span class="n">Produce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">OrderCancelled</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="n">OrderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span>
+<span class="w">      </span><span class="n">CancelledAt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">_timeProvider</span><span class="p">.</span><span class="n">UtcNow</span><span class="p">()</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mi">60</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Save changes</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+</code></pre></div></p>
+<h2 id="deduplicated-messages">Deduplicated messages</h2>
+<p>Deduplicated messages are useful when you may emit the same message multiple times but only require it to be processed once for a given time period. For instance you may want to aggregate page views no more frequently then once every 10 seconds, you could schedule a reccuring message for this, but it may be wasteful if you anticipate pages go without views for extended periods of time.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">pageView</span><span class="p">.</span><span class="n">Increment</span><span class="p">();</span>
+<span class="w">    </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">PageViews</span><span class="p">.</span><span class="n">Update</span><span class="p">(</span><span class="n">pageView</span><span class="p">);</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_producerService</span><span class="p">.</span><span class="n">Produce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">PageViewed</span><span class="p">()</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="n">PageId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pageView</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span>
+<span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="s">$&quot;page_id:{pageView.Id}&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Save changes</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+</code></pre></div>
+<p>Deduplicated events will ensure only a single message for a given consumer type and insertId are ever pending processing at any given time.</p>
+<h3 id="mysql-mssql-mariadb-postgresql-transactionality">MySql / MsSql / MariaDb / PostgreSql Transactionality</h3>
+<p>The produce method makes use of <code>ExecuteSqlRawAsync</code> when using the MySql, MsSql or PostgreSQL package, if you want the messages to be inserted transactionally with your domain changes you must wrap all the changes in an explicit transaction.</p>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">dbContextTransaction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">Database</span><span class="p">.</span><span class="n">BeginTransactionAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+
+<span class="w">  </span><span class="n">order</span><span class="p">.</span><span class="n">Cancel</span><span class="p">();</span>
+<span class="w">  </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Update</span><span class="p">(</span><span class="n">order</span><span class="p">);</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="n">_producerService</span><span class="p">.</span><span class="n">Produce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">OrderCancelled</span><span class="p">()</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="n">OrderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">CancelledAt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">_timeProvider</span><span class="p">.</span><span class="n">UtcNow</span><span class="p">()</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="n">dbContextTransaction</span><span class="p">.</span><span class="n">CommitAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+</code></pre></div>
+<p>Summary</p>
+<ul>
+<li><strong>Transactional Persistence</strong>: Produce messages along with changes to your <code>DbContext</code> before calling <code>SaveChangesAsync</code>, ensuring your domain changes and the messages they produce are persisted transactionally.</li>
+<li><strong>Delay</strong>: Specify the number of seconds a message should remain in the queue before it is processed by a consumer.</li>
+<li><strong>Deduplication</strong>: By specifying a <code>insert_id</code> when producing messages the system ensures only one message with the same <code>insert_id</code> and <code>consumer_type</code> will be in the table at a given time. This is useful when you need a process to take place an amount of time after the first action in a sequence occured.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../tests/" class="btn btn-neutral float-left" title="Tests 🐞"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../scheduling-messages/" class="btn btn-neutral float-right" title="Scheduling messages">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/Timmoth/AsyncMonolith/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../../tests/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../scheduling-messages/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

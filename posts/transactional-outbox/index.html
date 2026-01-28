@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Timmoth" /><link rel="canonical" href="https://timmoth.github.io/AsyncMonolith/posts/transactional-outbox/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>What is the Transactional Outbox? - AsyncMonolith Docs</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "What is the Transactional Outbox?";
+        var mkdocs_page_input_path = "posts/transactional-outbox.md";
+        var mkdocs_page_url = "/AsyncMonolith/posts/transactional-outbox/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/csharp.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../..">
+          <img src="../../assets/logo.png" class="logo" alt="Logo"/>
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Overview ✅</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Quick start ▶️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../internals/">Internals 🧠</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../releases/">Releases 📒</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../warnings/">Warnings ⚠️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../support/">Support 🛟</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../demo/">Demo App ✨</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../contributing/">Contributing 🙏</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../tests/">Tests 🐞</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/producing-messages/">Producing messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/scheduling-messages/">Scheduling messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/consuming-messages/">Consuming messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/changing-messages/">Changing messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/opentelemetry/">Opentelemetry</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Posts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">What is the Transactional Outbox?</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../mediator/">What is the Mediator pattern?</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../idempotency/">What is Idempotency?</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">AsyncMonolith Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Posts</li>
+      <li class="breadcrumb-item active">What is the Transactional Outbox?</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/Timmoth/AsyncMonolith/edit/main/docs/posts/transactional-outbox.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <p>Consider a scenario where when a user places an order, you also need to create an entity that tracks the shipment.</p>
+<p>This scenario is fine as the order and shipment are both committed to your database transactionally; either both succeed, or neither do. You will never have an order created without a shipment.</p>
+<div class="highlight"><pre><span></span><code><span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">newOrder</span><span class="p">);</span>
+<span class="n">_dbContext</span><span class="p">.</span><span class="n">Shipments</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">newShipment</span><span class="p">);</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+</code></pre></div>
+<p>As your application grows, you find that an increasing number of things need to happen when an order is created, and some of them have their own chain of operations. This will quickly cause any method that needs to create an order to grow in complexity and scope. As a result you decide you want to decouple the process of creating an order from the process of creating a shipment, so you adopt an event-driven approach.</p>
+<p>However, now you have to make a difficult decision: should I commit my order to my database first, then produce an event, or should I produce the event first, then commit the order to my database?</p>
+<p>In the first scenario, it is possible an order is created but publishing the 'OrderCreated' event fails.</p>
+<div class="highlight"><pre><span></span><code><span class="c1">// Create order</span>
+<span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">newOrder</span><span class="p">);</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+<span class="c1">// Dispatch event</span>
+<span class="n">channel</span><span class="p">.</span><span class="n">BasicPublish</span><span class="p">(...);</span><span class="w"> </span><span class="err">\\</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="n">fails</span>
+</code></pre></div>
+<p>In the second scenario, it is possible that an event is published, but the order fails to be created.</p>
+<div class="highlight"><pre><span></span><code><span class="c1">// Dispatch event</span>
+<span class="n">channel</span><span class="p">.</span><span class="n">BasicPublish</span><span class="p">(...);</span>
+<span class="c1">// Create order</span>
+<span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">newOrder</span><span class="p">);</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span><span class="w"> </span><span class="err">\\</span><span class="w"> </span><span class="n">This</span><span class="w"> </span><span class="n">fails</span>
+</code></pre></div>
+<p>The transactional outbox is a pattern which solves this problem. The general idea is that instead of publishing an event along with making a change to your database, you create an entity that will publish an event at a later time and commit both changes to the database as part of the same transaction. You then have a process capable of checking for records in the outbox table and publishing them as events while handling failures and retries.</p>
+<div class="highlight"><pre><span></span><code><span class="c1">// Create order</span>
+<span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">newOrder</span><span class="p">);</span>
+<span class="c1">// Insert event into outbox</span>
+<span class="n">_dbContext</span><span class="p">.</span><span class="n">Outbox</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">orderCreated</span><span class="p">)</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+</code></pre></div>
+<p>For simple use cases, you may realize that the outbox message can act as the event, and you don't actually need the additional step of publishing to a message broker. Instead, you write your events to your database along with the changes to your domain and have a process that periodically fetches, processes, and then removes messages from the outbox table. This is one of the core principles behind <a href="https://github.com/Timmoth/AsyncMonolith">AsyncMonolith</a>.</p>
+<p>In summary, the transactional outbox pattern ensures that events are reliably published, maintaining consistency between operations. While it introduces the need for an additional process to handle the outbox and increases the load on your application database, the benefits of decoupling and reliability often outweigh these overheads.</p>
+<p>Here is how the above example may look if you’re using <a href="https://github.com/Timmoth/AsyncMonolith">AsyncMonolith</a></p>
+<div class="highlight"><pre><span></span><code><span class="c1">// Create order</span>
+<span class="n">_dbContext</span><span class="p">.</span><span class="n">Orders</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">newOrder</span><span class="p">);</span>
+<span class="c1">// Insert event into outbox</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_producerService</span><span class="p">.</span><span class="n">Produce</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">OrderCreated</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">OrderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">Id</span>
+<span class="p">});</span>
+<span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">CreateShipment</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">BaseConsumer</span><span class="o">&lt;</span><span class="n">OrderCreated</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">override</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="nf">Consume</span><span class="p">(</span><span class="n">OrderCreated</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="n">CancellationToken</span><span class="w"> </span><span class="n">cancellationToken</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">        </span><span class="c1">// Create Order</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../guides/opentelemetry/" class="btn btn-neutral float-left" title="Opentelemetry"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../mediator/" class="btn btn-neutral float-right" title="What is the Mediator pattern?">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/Timmoth/AsyncMonolith/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../../guides/opentelemetry/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../mediator/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
