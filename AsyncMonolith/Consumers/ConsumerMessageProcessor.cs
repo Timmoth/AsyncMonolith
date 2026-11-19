@@ -111,7 +111,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         }
 
         var tasks = new List<Task<List<bool>>>();
-        foreach (var consumerMessageGroup in messages.GroupBy(m => m.ConsumerType))
+        foreach (var consumerMessageGroup in messages.GroupBy(m => m.Message.ConsumerType))
         {
             var group = consumerMessageGroup.ToList();
             var executionMode = _consumerRegistry.ResolveConsumerExecutionMode(consumerMessageGroup.Key);
@@ -146,7 +146,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     ///     Fetches the next batch for this rail and leases it in one short transaction.
     /// </summary>
     /// <returns>The claimed messages, with their attempt counted and their lease in AvailableAfter.</returns>
-    internal async Task<List<ConsumerMessage>> ClaimBatch(CancellationToken cancellationToken)
+    internal async Task<List<ClaimedMessage>> ClaimBatch(CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
@@ -157,9 +157,10 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             cancellationToken);
         if (messages.Count == 0)
         {
-            return messages;
+            return [];
         }
 
+        var claimed = messages.Select(m => new ClaimedMessage(m, m.AvailableAfter)).ToList();
         foreach (var message in messages)
         {
             message.Attempts++;
@@ -169,15 +170,15 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return messages;
+        return claimed;
     }
 
-    private async Task<bool> ProcessAndComplete(ConsumerMessage message, CancellationToken cancellationToken)
+    private async Task<bool> ProcessAndComplete(ClaimedMessage claimed, CancellationToken cancellationToken)
     {
-        var error = await Process(message, cancellationToken);
+        var error = await Process(claimed.Message, cancellationToken);
 
         // Record the outcome even when stopping, so the attempt isn't left waiting for its lease to expire.
-        await Complete(message, error is null, CancellationToken.None, error);
+        await Complete(claimed, error is null, CancellationToken.None, error);
         return error is null;
     }
 
@@ -185,9 +186,10 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     ///     Records the outcome of a claimed message: removes it on success, otherwise schedules a retry or
     ///     moves it to the poisoned messages. Does nothing if the lease has since been taken over.
     /// </summary>
-    internal async Task Complete(ConsumerMessage message, bool success, CancellationToken cancellationToken,
+    internal async Task Complete(ClaimedMessage claimed, bool success, CancellationToken cancellationToken,
         string? error = null)
     {
+        var message = claimed.Message;
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
         var leased = dbContext.Set<ConsumerMessage>()
@@ -219,7 +221,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         {
             Id = message.Id,
             Attempts = message.Attempts,
-            AvailableAfter = message.AvailableAfter,
+            AvailableAfter = claimed.DueAt,
             ConsumerType = message.ConsumerType,
             CreatedAt = message.CreatedAt,
             Payload = message.Payload,
@@ -317,3 +319,9 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         return description.Length <= MaxErrorLength ? description : description[..MaxErrorLength];
     }
 }
+
+/// <summary>
+///     A message claimed by a processor: the message (attempt counted, lease in AvailableAfter) and the time it
+///     became due before it was leased.
+/// </summary>
+internal sealed record ClaimedMessage(ConsumerMessage Message, long DueAt);

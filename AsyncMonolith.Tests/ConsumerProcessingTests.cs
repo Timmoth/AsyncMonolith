@@ -100,6 +100,7 @@ public class ConsumerProcessingTests
         poisoned.Payload.ShouldBe(original.Payload);
         poisoned.InsertId.ShouldBe("insert-1");
         poisoned.CreatedAt.ShouldBe(original.CreatedAt);
+        poisoned.AvailableAfter.ShouldBe(original.AvailableAfter, "it records when the message last became due");
         poisoned.RailId.ShouldBe(original.RailId);
 
         // Poisoned messages are never picked up again
@@ -291,7 +292,7 @@ public class ConsumerProcessingTests
 
         // Simulate a processor that claimed the message and then crashed before finishing it.
         var claimed = await host.ConsumerProcessor.ClaimBatch(Ct);
-        claimed.ShouldHaveSingleItem().Attempts.ShouldBe(1);
+        claimed.ShouldHaveSingleItem().Message.Attempts.ShouldBe(1);
 
         // While the lease (consumer timeout + grace period) is held, nobody else picks it up.
         (await host.ConsumerProcessor.ProcessBatch(Ct)).ShouldBe(0);
@@ -311,7 +312,7 @@ public class ConsumerProcessingTests
         var claimed = (await host.ConsumerProcessor.ClaimBatch(Ct)).ShouldHaveSingleItem();
 
         // Another processor re-claimed the message after our lease expired.
-        await host.Change(db => db.ConsumerMessages.Single().AvailableAfter = claimed.AvailableAfter + 100);
+        await host.Change(db => db.ConsumerMessages.Single().AvailableAfter = claimed.Message.AvailableAfter + 100);
 
         await host.ConsumerProcessor.Complete(claimed, success: true, Ct);
 
