@@ -67,4 +67,16 @@ public static class ClashingTypes
 
         return assembly;
     }
+
+    /// <summary>Builds an assembly with a payload that has no consumer.</summary>
+    public static Assembly PayloadOnly(string ns)
+    {
+        var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName($"PayloadOnly{Guid.NewGuid():N}"),
+            AssemblyBuilderAccess.Run);
+        var payload = assembly.DefineDynamicModule("PayloadOnly").DefineType($"{ns}.Orphan",
+            TypeAttributes.Public | TypeAttributes.Class, typeof(object), [typeof(IConsumerPayload)]);
+        payload.DefineDefaultConstructor(MethodAttributes.Public);
+        payload.CreateType();
+        return assembly;
+    }
 }

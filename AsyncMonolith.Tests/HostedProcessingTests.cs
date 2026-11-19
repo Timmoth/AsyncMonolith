@@ -25,7 +25,7 @@ public sealed class HostedProcessingTests : IAsyncLifetime
 
     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
-    private async Task StartHost(Action<AsyncMonolithSettings>? configure = null)
+    private async Task StartHost(Action<AsyncMonolithSettings>? configure = null, bool registerAsModule = false)
     {
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddDbContext<TestDbContext>(o => o.UseSqlite($"Data Source={_path}"));
@@ -34,11 +34,20 @@ public sealed class HostedProcessingTests : IAsyncLifetime
         builder.Services.AddSingleton<ConcurrencyProbe>();
         builder.Services.AddEfAsyncMonolith<TestDbContext>(s =>
         {
-            s.RegisterTypesFromAssemblyContaining<HostedProcessingTests>();
+            if (!registerAsModule)
+            {
+                s.RegisterTypesFromAssemblyContaining<HostedProcessingTests>();
+            }
+
             s.ProcessorMaxDelay = 50;
             s.ProcessorMinDelay = 10;
             configure?.Invoke(s);
         });
+        if (registerAsModule)
+        {
+            builder.Services.AddAsyncMonolithConsumersFromAssemblyContaining<HostedProcessingTests>();
+        }
+
         _host = builder.Build();
 
         using (var scope = _host.Services.CreateScope())
@@ -102,6 +111,20 @@ public sealed class HostedProcessingTests : IAsyncLifetime
         (await Query(db => db.PoisonedMessages.CountAsync())).ShouldBe(0);
         await WaitUntil(() => Query(db => db.ConsumerMessages.AnyAsync()).ContinueWith(t => !t.Result),
             "the queue is empty");
+    }
+
+    [Fact]
+    public async Task Consumers_registered_by_a_module_after_the_host_are_processed()
+    {
+        await StartHost(registerAsModule: true);
+
+        await Produce(new RailConsumerMessage());
+
+        await WaitUntil(() => Task.FromResult(
+                Invocations.GetInvocationCount(nameof(RailConsumer0)) == 1 &&
+                Invocations.GetInvocationCount(nameof(RailConsumer1)) == 1 &&
+                Invocations.GetInvocationCount(nameof(RailConsumer2)) == 1),
+            "the module's consumers on every rail have run");
     }
 
     [Fact]

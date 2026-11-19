@@ -17,7 +17,11 @@ public class NamingTests
     {
         var settings = AsyncMonolithSettings.Default;
         settings.RegisterTypesFromAssemblies(assemblies);
-        new ServiceCollection().InternalRegisterAsyncMonolithConsumers(settings);
+        var services = new ServiceCollection();
+        services.InternalRegisterAsyncMonolithConsumers(settings);
+
+        // The registry is built and validated when it is first resolved, as at host start.
+        services.BuildServiceProvider().GetRequiredService<ConsumerRegistry>();
     }
 
     [Fact]

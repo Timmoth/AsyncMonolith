@@ -1,7 +1,10 @@
-﻿using AsyncMonolith.Consumers;
+﻿using System.Reflection;
+using AsyncMonolith.Consumers;
 using AsyncMonolith.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace AsyncMonolith.Utilities;
 
@@ -85,31 +88,86 @@ public static class StartupExtensions
         AsyncMonolithSettings settings) where T : DbContext
     {
         services.InternalConfigureAsyncMonolithSettings(settings);
-        var consumerRailIdDictionary = new Dictionary<string, int>();
-        services.InternalRegisterAsyncMonolithConsumers(settings, consumerRailIdDictionary);
+        services.InternalRegisterAsyncMonolithConsumers(settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<T>>();
         services.AddScoped<DbContext>(sp => sp.GetRequiredService<T>());
-        
-        var consumerRails = consumerRailIdDictionary.Values.ToHashSet().ToArray();
-        if (consumerRails.Length > 1)
-        {
-            services.AddHostedService(serviceProvider =>
-                new ConsumerMessageProcessorFactory<T>(serviceProvider, consumerRails));
-        }
-        else
-        {
-            services.AddHostedService<ConsumerMessageProcessor<T>>();
-        }
+
+        // One processor per rail. Rails are read when the host starts, after every module has
+        // registered its consumers.
+        services.AddHostedService(serviceProvider => new ConsumerMessageProcessorFactory<T>(serviceProvider,
+            serviceProvider.GetRequiredService<ConsumerRegistry>().RailIds.ToArray()));
 
         services.AddHostedService<ScheduledMessageProcessor<T>>();
     }
 
     internal static void InternalRegisterAsyncMonolithConsumers(
         this IServiceCollection services,
-        AsyncMonolithSettings settings,
-        Dictionary<string, int>? consumerRailIdDictionary = null
-    )
+        AsyncMonolithSettings settings)
+    {
+        services.AddAsyncMonolithConsumers(settings.AssembliesToRegister.ToArray());
+    }
+
+    /// <summary>
+    ///     Registers the consumers and payloads in the given assemblies. Call it from each module that has
+    ///     consumers; the host calls <c>Add*AsyncMonolith</c> once. Order doesn't matter, and registering the
+    ///     same assembly twice is harmless.
+    /// </summary>
+    /// <remarks>
+    ///     The consumer registry is built, and checked for name clashes and payloads without consumers, the first
+    ///     time it is resolved, which happens when the host starts.
+    /// </remarks>
+    /// <param name="services">The service collection.</param>
+    /// <param name="assemblies">The assemblies to scan.</param>
+    /// <returns>The service collection.</returns>
+    public static IServiceCollection AddAsyncMonolithConsumers(this IServiceCollection services,
+        params Assembly[] assemblies)
+    {
+        var registered = services
+            .Where(d => d.ServiceType == typeof(ConsumerAssemblies))
+            .Select(d => d.ImplementationInstance)
+            .OfType<ConsumerAssemblies>()
+            .FirstOrDefault();
+        if (registered is null)
+        {
+            registered = new ConsumerAssemblies();
+            services.AddSingleton(registered);
+            services.AddOptions();
+            services.TryAddSingleton(serviceProvider => BuildConsumerRegistry(registered,
+                serviceProvider.GetRequiredService<IOptions<AsyncMonolithSettings>>().Value));
+        }
+
+        foreach (var assembly in assemblies)
+        {
+            if (!registered.Add(assembly))
+            {
+                continue;
+            }
+
+            foreach (var consumerType in FindConsumerTypes(assembly.GetTypes()))
+            {
+                services.TryAddScoped(consumerType);
+            }
+        }
+
+        return services;
+    }
+
+    /// <summary>
+    ///     Registers the consumers and payloads in the assembly containing <typeparamref name="TMarker" />.
+    /// </summary>
+    /// <typeparam name="TMarker">Any type in the assembly to scan.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection.</returns>
+    public static IServiceCollection AddAsyncMonolithConsumersFromAssemblyContaining<TMarker>(
+        this IServiceCollection services) => services.AddAsyncMonolithConsumers(typeof(TMarker).Assembly);
+
+    private static IEnumerable<Type> FindConsumerTypes(IEnumerable<Type> types) =>
+        types.Where(t => t is { IsAbstract: false, BaseType.IsGenericType: true } &&
+                         t.BaseType.GetGenericTypeDefinition() == typeof(BaseConsumer<>));
+
+    internal static ConsumerRegistry BuildConsumerRegistry(IEnumerable<Assembly> assemblies,
+        AsyncMonolithSettings settings)
     {
         var consumerServiceDictionary = new Dictionary<string, Type>();
         var payloadConsumerDictionary = new Dictionary<string, List<string>>();
@@ -118,14 +176,11 @@ public static class StartupExtensions
         var consumerExecutionModeDictionary = new Dictionary<string, ConsumerInstanceExecutionMode>();
         var payloadTypeDictionary = new Dictionary<string, Type>();
 
-        consumerRailIdDictionary ??= new Dictionary<string, int>();
+        var consumerRailIdDictionary = new Dictionary<string, int>();
         
-        var type = typeof(BaseConsumer<>);
-        var typesToScan = settings.AssembliesToRegister.SelectMany(x => x.GetTypes()).ToArray();
+        var typesToScan = assemblies.SelectMany(x => x.GetTypes()).ToArray();
 
-        foreach (var consumerType in typesToScan
-            .Where(t => t is { IsAbstract: false, BaseType.IsGenericType: true } &&
-                        t.BaseType.GetGenericTypeDefinition() == type))
+        foreach (var consumerType in FindConsumerTypes(typesToScan))
         {
             if (consumerType.BaseType == null || string.IsNullOrEmpty(consumerType.Name))
             {
@@ -133,9 +188,6 @@ public static class StartupExtensions
             }
 
             var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
-
-            // Register each consumer service
-            services.AddScoped(consumerType);
 
             var timeoutDuration = settings.DefaultConsumerTimeout;
             var attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerTimeoutAttribute));
@@ -211,9 +263,12 @@ public static class StartupExtensions
             }
         }
 
-        services.AddSingleton(new ConsumerRegistry(consumerServiceDictionary, payloadConsumerDictionary,
-            consumerTimeoutDictionary, consumerAttemptsDictionary, consumerRailIdDictionary, consumerExecutionModeDictionary, settings));
+        return new ConsumerRegistry(consumerServiceDictionary, payloadConsumerDictionary,
+            consumerTimeoutDictionary, consumerAttemptsDictionary, consumerRailIdDictionary,
+            consumerExecutionModeDictionary, settings);
     }
+
+    private sealed class ConsumerAssemblies : HashSet<Assembly>;
 
     private static string RegisterPayloadName(Dictionary<string, Type> payloadTypes, Type payloadType)
     {

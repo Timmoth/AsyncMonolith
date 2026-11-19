@@ -73,6 +73,12 @@ public sealed class ConsumerRegistry
     }
 
     /// <summary>
+    ///     Gets the distinct rails that registered consumers run on, or rail 0 when there are none.
+    /// </summary>
+    public IReadOnlyList<int> RailIds =>
+        ConsumerRailIdDictionary.Count == 0 ? [0] : ConsumerRailIdDictionary.Values.Distinct().Order().ToList();
+
+    /// <summary>
     ///     Resolves the list of consumer names that can handle the specified payload type.
     /// </summary>
     /// <param name="payloadType">The payload type.</param>

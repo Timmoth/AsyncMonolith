@@ -77,6 +77,18 @@ The following methods are available on the `AsyncMonolithSettings` passed into t
 - `RegisterTypesFromAssembly(Assembly assembly)`
 - `RegisterTypesFromAssemblies(params Assembly[] assemblies)`
 
+### Modules
+
+Call `Add*AsyncMonolith` once, in the host. A module or library with its own consumers registers them itself, before or after the host's call:
+
+```csharp
+services.AddAsyncMonolithConsumersFromAssemblyContaining<BillingModule>();
+// or
+services.AddAsyncMonolithConsumers(typeof(BillingModule).Assembly);
+```
+
+Registering an assembly more than once is harmless. Consumers from every module are checked together when the host starts: a payload with no consumer in any module, or two payloads or consumers with the same stored name, stops startup with an error (see [Stored names](guides/changing-messages.md#stored-names)).
+
 Create messages and consumers
 
 ```csharp
