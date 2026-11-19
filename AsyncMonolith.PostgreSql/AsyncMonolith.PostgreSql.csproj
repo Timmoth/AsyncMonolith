@@ -30,8 +30,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AsyncMonolith" Version="10.0.0" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+		<PackageReference Include="AsyncMonolith" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
 	</ItemGroup>
 
 </Project>

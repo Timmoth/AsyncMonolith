@@ -31,8 +31,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AsyncMonolith" Version="10.0.0" />
-		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
-		<PackageReference Include="MySqlConnector" Version="2.6.2" />
+		<PackageReference Include="AsyncMonolith" />
+		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
+		<PackageReference Include="MySqlConnector" />
 	</ItemGroup>
 </Project>
