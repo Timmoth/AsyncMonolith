@@ -9,8 +9,9 @@ CREATE TABLE consumer_messages (
     payload_type VARCHAR(255) NOT NULL,
     payload TEXT NOT NULL,
     insert_id VARCHAR(255) NOT NULL,
-    trace_id VARCHAR(255) NOT NULL,
-    span_id VARCHAR(255) NOT NULL,
+    trace_id VARCHAR(255) NULL,
+    span_id VARCHAR(255) NULL,
+    rail_id INT NOT NULL DEFAULT 0,
     last_error TEXT NULL,
     PRIMARY KEY (id)
 );
@@ -24,8 +25,9 @@ CREATE TABLE poisoned_messages (
     payload_type VARCHAR(255) NOT NULL,
     payload TEXT NOT NULL,
     insert_id VARCHAR(255) NOT NULL,
-    trace_id VARCHAR(255) NOT NULL,
-    span_id VARCHAR(255) NOT NULL,
+    trace_id VARCHAR(255) NULL,
+    span_id VARCHAR(255) NULL,
+    rail_id INT NOT NULL DEFAULT 0,
     last_error TEXT NULL,
     PRIMARY KEY (id)
 );
