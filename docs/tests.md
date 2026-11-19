@@ -5,13 +5,13 @@ Tests are split into two groups:
 - **Fast tests** run in-process with no external services. Run them on every change:
 
   ```bash
-  dotnet test AsyncMonolith.Tests --filter "Category!=Integration"
+  dotnet test --project AsyncMonolith.Tests --filter-not-trait "Category=Integration"
   ```
 
 - **Integration tests** (`[Trait("Category", "Integration")]`) use Testcontainers to run against real databases, so they need Docker and are much slower. Run them before a release:
 
   ```bash
-  dotnet test AsyncMonolith.Tests --filter "Category=Integration"
+  dotnet test --project AsyncMonolith.Tests --filter-trait "Category=Integration"
   ```
 
 
@@ -19,7 +19,7 @@ Tests are split into two groups:
 
 [![NuGet](https://img.shields.io/nuget/v/AsyncMonolith.TestHelpers)](https://www.nuget.org/packages/AsyncMonolith.TestHelpers)
 
-Install the TestHelpers package to help with unit / integration tests.
+Install the TestHelpers package to help with unit / integration tests. It targets xunit v3 (`xunit.v3`).
 
 ### FakeIdGenerator
 

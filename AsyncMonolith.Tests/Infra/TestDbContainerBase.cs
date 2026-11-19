@@ -9,14 +9,15 @@ public abstract class TestDbContainerBase : IAsyncLifetime
     protected string ConnectionString { get; set; } = default!;
     public DbType DbType => GetDbType();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await InitializeContainerAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        await DbContainer.DisposeAsync().AsTask();
+        await DbContainer.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     public abstract Task InitializeContainerAsync();

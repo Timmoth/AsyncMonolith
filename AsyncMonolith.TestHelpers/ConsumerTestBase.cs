@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
-using Xunit.Abstractions;
 using Xunit;
 
 namespace AsyncMonolith.TestHelpers
@@ -69,7 +68,7 @@ namespace AsyncMonolith.TestHelpers
         /// Initializes the test asynchronously.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public virtual async Task InitializeAsync()
+        public virtual async ValueTask InitializeAsync()
         {
             _startTime = DateTime.Now;
             TestOutput.WriteLine($"[Lifecycle] Initialise {_startTime.ToString(CultureInfo.InvariantCulture)}");
@@ -80,10 +79,11 @@ namespace AsyncMonolith.TestHelpers
         /// Disposes the test asynchronously.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public virtual Task DisposeAsync()
+        public virtual ValueTask DisposeAsync()
         {
             TestOutput.WriteLine($"[Lifecycle] Dispose ({(DateTime.Now - _startTime).TotalSeconds}s)");
-            return Task.CompletedTask;
+            GC.SuppressFinalize(this);
+            return ValueTask.CompletedTask;
         }
 
         /// <summary>
