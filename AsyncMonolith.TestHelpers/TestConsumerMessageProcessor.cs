@@ -56,19 +56,19 @@ public static class TestConsumerMessageProcessor
     }
 
     /// <summary>
-    /// Processes the next consumer message of type T and TPayload.
+    /// Processes the next message for the consumer <typeparamref name="TConsumer" />.
     /// </summary>
     /// <typeparam name="T">The type of DbContext.</typeparam>
-    /// <typeparam name="TPayload">The type of IConsumer.</typeparam>
+    /// <typeparam name="TConsumer">The type of IConsumer.</typeparam>
     /// <param name="scope">The service scope.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The processed consumer message, or null if no message is available.</returns>
-    public static async Task<ConsumerMessage?> ProcessNext<T, TPayload>(IServiceScope scope,
-        CancellationToken cancellationToken = default) where T : DbContext where TPayload : IConsumer
+    public static async Task<ConsumerMessage?> ProcessNext<T, TConsumer>(IServiceScope scope,
+        CancellationToken cancellationToken = default) where T : DbContext where TConsumer : IConsumer
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
         var consumerMessageSet = dbContext.Set<ConsumerMessage>();
-        var consumerType = typeof(T);
+        var consumerType = typeof(TConsumer);
         var message = await consumerMessageSet
             .Where(m => m.ConsumerType == consumerType.Name)
             .OrderBy(m => m.AvailableAfter)
