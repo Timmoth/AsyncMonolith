@@ -3,7 +3,6 @@
 	<PropertyGroup>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith.TestHelpers</PackageId>
-		<PackageVersion>10.0.0</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>Test helpers for AsyncMonolith</Description>

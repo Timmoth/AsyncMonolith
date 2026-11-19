@@ -3,7 +3,6 @@
 	<PropertyGroup>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith.PostgreSql</PackageId>
-		<PackageVersion>10.0.1</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>PostgreSql interface for AsyncMonolith</Description>

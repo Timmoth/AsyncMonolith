@@ -1,0 +1,36 @@
+name: Publish NuGet packages
+
+# Publishes every package at the version in Directory.Build.props. The providers and test helpers
+# depend on the core package at that same version, so they are always released together.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build AsyncMonolith.sln -c Release
+
+      - name: Fast tests
+        run: dotnet test --project AsyncMonolith.Tests -c Release --no-build --filter-not-trait "Category=Integration"
+
+      - name: Pack
+        run: |
+          for project in AsyncMonolith AsyncMonolith.Ef AsyncMonolith.PostgreSql AsyncMonolith.MsSql AsyncMonolith.MySql AsyncMonolith.MariaDb AsyncMonolith.TestHelpers; do
+            dotnet pack "$project/$project.csproj" -c Release --no-build --output nupkg
+          done
+
+      - name: Publish to NuGet
+        run: dotnet nuget push "nupkg/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate

@@ -3,7 +3,6 @@
 	<PropertyGroup>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith</PackageId>
-		<PackageVersion>10.0.0</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>Messaging library for monolithic dotnet apps</Description>

@@ -22,7 +22,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 10.0.x
+        global-json-file: global.json
 
     - name: Fast tests
       run: dotnet test --project AsyncMonolith.Tests --filter-not-trait "Category=Integration"
@@ -37,7 +37,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 10.0.x
+        global-json-file: global.json
 
     - name: Integration tests
       run: dotnet test --project AsyncMonolith.Tests --filter-trait "Category=Integration"

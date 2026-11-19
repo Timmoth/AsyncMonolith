@@ -2,6 +2,7 @@ Make sure to check this table before updating the nuget package in your solution
 
 | Version | Description                                | Migration Required |
 |---------|--------------------------------------------|--------------------|
+| 10.1.0  | SQLite-safe processing, stored names, modules, backoff, poisoned message service (see below) | Yes |
 | 8.0.6   | Added ConsumerAttempts override attribute  | No                 |
 | 8.0.5   | Bundle debug symbols with nuget package    | No                 |
 | 8.0.4   | Bundle XML docs with nuget package         | No                 |
@@ -12,3 +13,27 @@ Make sure to check this table before updating the nuget package in your solution
 | 1.0.9   | Initial                                    | Yes                |
 
 ***If you're not using ef migrations check out the sql to configure your database [here](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas)***
+
+
+## 10.1.0
+
+All packages now share one version and must be upgraded together.
+
+**Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_10_1_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
+
+**Changes**
+- Consumers can write to the database on SQLite. Messages are claimed and leased in a short transaction, consumers run outside it, and each message is completed in its own short write. If the app stops mid-message, the message is retried once its consumer timeout plus 30 seconds has passed.
+- Retries back off exponentially from `AttemptDelay` up to the new `MaxAttemptDelay` setting (default 300 seconds).
+- The last error is stored on retried and poisoned messages.
+- `IPoisonedMessageService` counts, lists, retries and deletes poisoned messages.
+- `IScheduleService.EnsureSchedule` creates or updates a schedule by tag, so it can run at every startup.
+- `IQueueStatisticsService` reports queue depth and the age of the oldest due message, for health checks.
+- `[ConsumerPayloadName]` and `[ConsumerName]` give payloads and consumers stable stored names. Name clashes now fail at startup instead of silently mixing messages.
+- `AddAsyncMonolithConsumers` lets modules register their own consumers alongside the host's `Add*AsyncMonolith` call.
+
+**Breaking changes**
+- `AsyncMonolith.TestHelpers` uses xunit v3, and `ConsumerTestBase.InitializeAsync`/`DisposeAsync` return `ValueTask`.
+- `IScheduleService` has a new member (`EnsureSchedule`), so custom implementations must add it.
+- Errors that were thrown as `System.Exception` are now `InvalidOperationException`.
+- `ConsumerRegistry` exposes properties instead of public fields.
+- `TestConsumerMessageProcessor.ProcessNext<TDbContext, TConsumer>` now finds the consumer's message. It previously always returned null.

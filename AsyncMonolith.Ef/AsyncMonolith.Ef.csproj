@@ -3,7 +3,6 @@
 	<PropertyGroup>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith.Ef</PackageId>
-		<PackageVersion>10.0.1</PackageVersion>
 		<Authors>Tim Jones</Authors>
 		<Company>Aptacode</Company>
 		<Description>Entity Framework interface for AsyncMonolith</Description>
