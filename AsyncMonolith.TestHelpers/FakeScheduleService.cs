@@ -75,7 +75,7 @@ public sealed class FakeScheduleService : IScheduleService
         CreatedScheduledMessages.Add(new ScheduledMessage
         {
             Id = id,
-            PayloadType = typeof(TK).Name,
+            PayloadType = AsyncMonolithNames.ForPayload<TK>(),
             AvailableAfter = next.Value.ToUnixTimeSeconds(),
             Tag = tag,
             ChronExpression = chronExpression,

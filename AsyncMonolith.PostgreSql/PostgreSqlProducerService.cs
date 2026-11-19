@@ -57,7 +57,7 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
         var traceId = Activity.Current?.TraceId.ToString();
         var spanId = Activity.Current?.SpanId.ToString();
 
-        var payloadType = typeof(TK).Name;
+        var payloadType = AsyncMonolithNames.ForPayload<TK>();
         insertId ??= _idGenerator.GenerateId();
 
         var sqlBuilder = new StringBuilder();
@@ -124,7 +124,7 @@ public sealed class PostgreSqlProducerService<T> : IProducerService where T : Db
                 new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : spanId)
             };
 
-        var payloadType = typeof(TK).Name;
+        var payloadType = AsyncMonolithNames.ForPayload<TK>();
         var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
         var consumerRailIds = _consumerRegistry.ResolveConsumerRailIds(consumerTypes);
 

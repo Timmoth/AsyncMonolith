@@ -116,6 +116,7 @@ public static class StartupExtensions
         var consumerTimeoutDictionary = new Dictionary<string, int>();
         var consumerAttemptsDictionary = new Dictionary<string, int>();
         var consumerExecutionModeDictionary = new Dictionary<string, ConsumerInstanceExecutionMode>();
+        var payloadTypeDictionary = new Dictionary<string, Type>();
 
         consumerRailIdDictionary ??= new Dictionary<string, int>();
         
@@ -130,6 +131,8 @@ public static class StartupExtensions
             {
                 continue;
             }
+
+            var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
 
             // Register each consumer service
             services.AddScoped(consumerType);
@@ -146,7 +149,7 @@ public static class StartupExtensions
                 timeoutDuration = settings.DefaultConsumerTimeout;
             }
 
-            consumerTimeoutDictionary[consumerType.Name] = timeoutDuration;
+            consumerTimeoutDictionary[consumerName] = timeoutDuration;
 
             var maxAttempts = settings.MaxAttempts;
             attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerAttemptsAttribute));
@@ -160,7 +163,7 @@ public static class StartupExtensions
                 maxAttempts = settings.MaxAttempts;
             }
 
-            consumerAttemptsDictionary[consumerType.Name] = maxAttempts;
+            consumerAttemptsDictionary[consumerName] = maxAttempts;
 
             var consumerExecutionMode = ConsumerInstanceExecutionMode.Parallel;
             attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerExecutionModeAttribute));
@@ -169,7 +172,7 @@ public static class StartupExtensions
                 consumerExecutionMode = executionModeAttribute.ExecutionMode;
             }
             
-            consumerExecutionModeDictionary[consumerType.Name] = consumerExecutionMode;
+            consumerExecutionModeDictionary[consumerName] = consumerExecutionMode;
 
             var consumerRailId = 0;
             attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerRailIdAttribute));
@@ -178,27 +181,29 @@ public static class StartupExtensions
                 consumerRailId = consumerRailIdAttribute.RailId;
             }
             
-            consumerRailIdDictionary[consumerType.Name] = consumerRailId;
+            consumerRailIdDictionary[consumerName] = consumerRailId;
 
             // Get the generic argument (T) of the consumer type
             var payloadType = consumerType.BaseType.GetGenericArguments()[0];
 
-            if (!consumerServiceDictionary.TryAdd(consumerType.Name, consumerType))
+            if (!consumerServiceDictionary.TryAdd(consumerName, consumerType))
             {
-                throw new InvalidOperationException($"Consumer: '{consumerType.Name}' already defined.");
+                throw new InvalidOperationException(
+                    $"Consumer: '{consumerName}' already defined by '{consumerServiceDictionary[consumerName].FullName}' and '{consumerType.FullName}'. Give one a unique name with [ConsumerName].");
             }
 
-            if (!payloadConsumerDictionary.TryGetValue(payloadType.Name, out var payloadConsumers))
+            var payloadName = RegisterPayloadName(payloadTypeDictionary, payloadType);
+            if (!payloadConsumerDictionary.TryGetValue(payloadName, out var payloadConsumers))
             {
-                payloadConsumerDictionary[payloadType.Name] = payloadConsumers = new List<string>();
+                payloadConsumerDictionary[payloadName] = payloadConsumers = new List<string>();
             }
 
-            payloadConsumers.Add(consumerType.Name);
+            payloadConsumers.Add(consumerName);
         }
 
         foreach (var consumerPayload in typesToScan
             .Where(t => t is { IsClass: true, IsAbstract: false } && t.IsAssignableTo(typeof(IConsumerPayload)))
-            .Select(t => t.Name))
+            .Select(t => RegisterPayloadName(payloadTypeDictionary, t)))
         {
             if (!payloadConsumerDictionary.ContainsKey(consumerPayload))
             {
@@ -208,5 +213,18 @@ public static class StartupExtensions
 
         services.AddSingleton(new ConsumerRegistry(consumerServiceDictionary, payloadConsumerDictionary,
             consumerTimeoutDictionary, consumerAttemptsDictionary, consumerRailIdDictionary, consumerExecutionModeDictionary, settings));
+    }
+
+    private static string RegisterPayloadName(Dictionary<string, Type> payloadTypes, Type payloadType)
+    {
+        var payloadName = AsyncMonolithNames.ForPayload(payloadType);
+        if (payloadTypes.TryGetValue(payloadName, out var existing) && existing != payloadType)
+        {
+            throw new InvalidOperationException(
+                $"Payload name: '{payloadName}' is used by both '{existing.FullName}' and '{payloadType.FullName}'. Give one a unique name with [ConsumerPayloadName].");
+        }
+
+        payloadTypes[payloadName] = payloadType;
+        return payloadName;
     }
 }

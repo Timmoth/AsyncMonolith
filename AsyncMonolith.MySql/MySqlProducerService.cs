@@ -54,7 +54,7 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         availableAfter ??= currentTime;
         var payload = JsonSerializer.Serialize(message);
-        var payloadType = typeof(TK).Name;
+        var payloadType = AsyncMonolithNames.ForPayload<TK>();
         insertId ??= _idGenerator.GenerateId();
         var traceId = Activity.Current?.TraceId.ToString();
         var spanId = Activity.Current?.SpanId.ToString();
@@ -122,7 +122,7 @@ public sealed class MySqlProducerService<T> : IProducerService where T : DbConte
                 new("@span_id", string.IsNullOrEmpty(spanId) ? DBNull.Value : spanId)
             };
 
-        var payloadType = typeof(TK).Name;
+        var payloadType = AsyncMonolithNames.ForPayload<TK>();
         var consumerTypes = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
         var consumerRailIds = _consumerRegistry.ResolveConsumerRailIds(consumerTypes);
 

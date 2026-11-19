@@ -70,7 +70,7 @@ public static class TestConsumerMessageProcessor
         var consumerMessageSet = dbContext.Set<ConsumerMessage>();
         var consumerType = typeof(TConsumer);
         var message = await consumerMessageSet
-            .Where(m => m.ConsumerType == consumerType.Name)
+            .Where(m => m.ConsumerType == AsyncMonolithNames.ForConsumer(consumerType))
             .OrderBy(m => m.AvailableAfter)
             .ThenBy(m => m.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
@@ -125,12 +125,12 @@ public static class TestConsumerMessageProcessor
         {
             Attempts = 0,
             AvailableAfter = 0,
-            ConsumerType = consumerType.Name,
+            ConsumerType = AsyncMonolithNames.ForConsumer(consumerType),
             CreatedAt = 0,
             Id = string.Empty,
             InsertId = string.Empty,
             Payload = JsonSerializer.Serialize(payload),
-            PayloadType = typeof(TPayload).Name,
+            PayloadType = AsyncMonolithNames.ForPayload<TPayload>(),
             TraceId = null,
             SpanId = null,
             RailId = 0

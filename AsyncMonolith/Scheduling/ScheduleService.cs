@@ -62,7 +62,7 @@ public sealed class ScheduleService<T> : IScheduleService where T : DbContext
         _dbContext.Set<ScheduledMessage>().Add(new ScheduledMessage
         {
             Id = id,
-            PayloadType = typeof(TK).Name,
+            PayloadType = AsyncMonolithNames.ForPayload<TK>(),
             AvailableAfter = next.Value.ToUnixTimeSeconds(),
             Tag = tag,
             ChronExpression = chronExpression,

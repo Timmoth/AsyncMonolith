@@ -21,9 +21,10 @@ public static class ConsumerMessageTestHelpers
         where T : IConsumerPayload
     {
         var payloadType = typeof(T);
+        var payloadName = AsyncMonolithNames.ForPayload(payloadType);
         return await dbContext.Set<ConsumerMessage>()
             .Where(m =>
-                m.PayloadType == payloadType.Name)
+                m.PayloadType == payloadName)
             .ToListAsync();
     }
 
@@ -38,11 +39,13 @@ public static class ConsumerMessageTestHelpers
         where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
     {
         var consumerType = typeof(T);
+        var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
         var payloadType = typeof(TPayload);
+        var payloadName = AsyncMonolithNames.ForPayload(payloadType);
         return await dbContext.Set<ConsumerMessage>()
             .Where(m =>
-                m.ConsumerType == consumerType.Name &&
-                m.PayloadType == payloadType.Name)
+                m.ConsumerType == consumerName &&
+                m.PayloadType == payloadName)
             .ToListAsync();
     }
 
@@ -58,12 +61,14 @@ public static class ConsumerMessageTestHelpers
         where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
     {
         var consumerType = typeof(T);
+        var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
         var payloadType = typeof(TPayload);
+        var payloadName = AsyncMonolithNames.ForPayload(payloadType);
         var serializedPayload = JsonSerializer.Serialize(payload);
         return await dbContext.Set<ConsumerMessage>()
             .Where(m =>
-                m.ConsumerType == consumerType.Name &&
-                m.PayloadType == payloadType.Name &&
+                m.ConsumerType == consumerName &&
+                m.PayloadType == payloadName &&
                 m.Payload == serializedPayload)
             .ToListAsync();
     }
@@ -80,12 +85,14 @@ public static class ConsumerMessageTestHelpers
         where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
     {
         var consumerType = typeof(T);
+        var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
         var payloadType = typeof(TPayload);
+        var payloadName = AsyncMonolithNames.ForPayload(payloadType);
         var serializedPayload = JsonSerializer.Serialize(payload);
         var messages = await dbContext.Set<ConsumerMessage>()
             .Where(m =>
-                m.ConsumerType == consumerType.Name &&
-                m.PayloadType == payloadType.Name &&
+                m.ConsumerType == consumerName &&
+                m.PayloadType == payloadName &&
                 m.Payload == serializedPayload)
             .ToListAsync();
 
@@ -103,10 +110,11 @@ public static class ConsumerMessageTestHelpers
         where T : IConsumerPayload
     {
         var payloadType = typeof(T);
+        var payloadName = AsyncMonolithNames.ForPayload(payloadType);
         var serializedPayload = JsonSerializer.Serialize(payload);
         var messages = await dbContext.Set<ScheduledMessage>()
             .Where(m =>
-                m.PayloadType == payloadType.Name &&
+                m.PayloadType == payloadName &&
                 m.Payload == serializedPayload)
             .ToListAsync();
 
@@ -126,12 +134,14 @@ public static class ConsumerMessageTestHelpers
         string id) where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
     {
         var consumerType = typeof(T);
+        var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
         var payloadType = typeof(TPayload);
+        var payloadName = AsyncMonolithNames.ForPayload(payloadType);
         var serializedPayload = JsonSerializer.Serialize(payload);
         var messages = await dbContext.Set<ConsumerMessage>()
             .Where(m =>
-                m.ConsumerType == consumerType.Name &&
-                m.PayloadType == payloadType.Name &&
+                m.ConsumerType == consumerName &&
+                m.PayloadType == payloadName &&
                 m.Payload == serializedPayload &&
                 m.Id == id)
             .ToListAsync();

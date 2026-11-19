@@ -109,6 +109,6 @@ public class ScheduledMessage
     {
         var payload = JsonSerializer.Serialize(message);
         Payload = payload;
-        PayloadType = typeof(TK).Name;
+        PayloadType = AsyncMonolithNames.ForPayload<TK>();
     }
 }

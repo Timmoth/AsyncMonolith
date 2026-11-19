@@ -52,7 +52,7 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
         availableAfter ??= currentTime;
         var payload = JsonSerializer.Serialize(message);
         insertId ??= _idGenerator.GenerateId();
-        var payloadType = typeof(TK).Name;
+        var payloadType = AsyncMonolithNames.ForPayload<TK>();
         var set = _dbContext.Set<ConsumerMessage>();
         var traceId = Activity.Current?.TraceId.ToString();
         var spanId = Activity.Current?.SpanId.ToString();
@@ -93,7 +93,7 @@ public sealed class EfProducerService<T> : IProducerService where T : DbContext
         availableAfter ??= currentTime;
 
         var set = _dbContext.Set<ConsumerMessage>();
-        var payloadType = typeof(TK).Name;
+        var payloadType = AsyncMonolithNames.ForPayload<TK>();
         var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
         var traceId = Activity.Current?.TraceId.ToString();
         var spanId = Activity.Current?.SpanId.ToString();

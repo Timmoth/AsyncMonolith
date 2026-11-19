@@ -51,7 +51,7 @@ public class FakeProducerService : IProducerService
         availableAfter ??= currentTime;
         var payload = JsonSerializer.Serialize(message);
         insertId ??= _idGenerator.GenerateId();
-        var payloadType = typeof(TK).Name;
+        var payloadType = AsyncMonolithNames.ForPayload<TK>();
 
         foreach (var consumerId in _consumerRegistry.ResolvePayloadConsumerTypes(payloadType))
         {
@@ -88,7 +88,7 @@ public class FakeProducerService : IProducerService
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         availableAfter ??= currentTime;
 
-        var payloadType = typeof(TK).Name;
+        var payloadType = AsyncMonolithNames.ForPayload<TK>();
         var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
         foreach (var message in messages)
         {
