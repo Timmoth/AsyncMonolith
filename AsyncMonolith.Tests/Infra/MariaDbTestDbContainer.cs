@@ -9,7 +9,7 @@ public class MariaDbTestDbContainer : TestDbContainerBase
 {
     public override async Task InitializeContainerAsync()
     {
-        var container = new MariaDbBuilder().Build();
+        var container = new MariaDbBuilder("mariadb:11.8").Build();
         await container.StartAsync();
         ConnectionString = container.GetConnectionString();
         DbContainer = container;

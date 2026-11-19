@@ -34,7 +34,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
 
                 scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", "test-tag");
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // When
@@ -48,7 +48,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var postDbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var messages = await postDbContext.ConsumerMessages.ToListAsync();
+                var messages = await postDbContext.ConsumerMessages.ToListAsync(TestContext.Current.CancellationToken);
                 messages.Count.ShouldBe(2);
 
                 var message1 =
@@ -102,7 +102,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
 
                 scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", "test-tag");
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             FakeTime.SetUtcNow(FakeTime.GetUtcNow().AddSeconds(100));

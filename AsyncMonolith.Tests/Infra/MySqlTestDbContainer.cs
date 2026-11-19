@@ -8,7 +8,7 @@ public class MySqlTestDbContainer : TestDbContainerBase
 {
     public override async Task InitializeContainerAsync()
     {
-        var container = new MySqlBuilder().Build();
+        var container = new MySqlBuilder("mysql:8.4").Build();
         await container.StartAsync();
         ConnectionString = container.GetConnectionString();
         DbContainer = container;

@@ -14,7 +14,7 @@ namespace AsyncMonolith.Tests;
 
 public class ProducerServiceTests
 {
-    public FakeTimeProvider FakeTime = default!;
+    private FakeTimeProvider FakeTime { get; set; } = default!;
 
     private ServiceProvider Setup()
     {
@@ -25,7 +25,7 @@ public class ProducerServiceTests
         return services.BuildServiceProvider();
     }
 
-    public Activity? GetActivity()
+    public static Activity? GetActivity()
     {
         var activitySource = new ActivitySource("AsyncMonolith.Tests");
         var listener = new ActivityListener
@@ -60,8 +60,8 @@ public class ProducerServiceTests
         Activity.Current = activity;
 
         // When
-        await producer.Produce(consumerMessage, delay, insertId);
-        await dbContext.SaveChangesAsync();
+        await producer.Produce(consumerMessage, delay, insertId, cancellationToken: TestContext.Current.CancellationToken);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Then
         using var scope = serviceProvider.CreateScope();
@@ -99,8 +99,8 @@ public class ProducerServiceTests
         Activity.Current = activity;
 
         // When
-        await producer.Produce(consumerMessage, delay, insertId);
-        await dbContext.SaveChangesAsync();
+        await producer.Produce(consumerMessage, delay, insertId, cancellationToken: TestContext.Current.CancellationToken);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Then
         using var scope = serviceProvider.CreateScope();
@@ -148,8 +148,8 @@ public class ProducerServiceTests
         Activity.Current = activity;
 
         // When
-        await producer.Produce(consumerMessage);
-        await dbContext.SaveChangesAsync();
+        await producer.Produce(consumerMessage, cancellationToken: TestContext.Current.CancellationToken);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Then
         using var scope = serviceProvider.CreateScope();
@@ -198,7 +198,7 @@ public class ProducerServiceTests
 
         // When
         producer.Produce(scheduledMessage);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Then
         using var scope = serviceProvider.CreateScope();
@@ -245,13 +245,13 @@ public class ProducerServiceTests
 
         // When
         producer.Produce(scheduledMessage);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Then
         using var scope = serviceProvider.CreateScope();
         {
             var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-            var messages = await postDbContext.ConsumerMessages.ToListAsync();
+            var messages = await postDbContext.ConsumerMessages.ToListAsync(TestContext.Current.CancellationToken);
             messages.Count.ShouldBe(2);
 
             var message1 =

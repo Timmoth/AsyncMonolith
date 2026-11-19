@@ -9,8 +9,8 @@ namespace AsyncMonolith.Tests.Infra;
 
 public abstract class DbTestsBase
 {
-    protected FakeTimeProvider FakeTime = default!;
-    protected TestConsumerInvocations TestConsumerInvocations = default!;
+    protected FakeTimeProvider FakeTime { get; private set; } = default!;
+    protected TestConsumerInvocations TestConsumerInvocations { get; private set; } = default!;
 
     protected async Task<ServiceProvider> Setup(TestDbContainerBase dbContainer, AsyncMonolithSettings? settings = null)
     {
@@ -39,7 +39,7 @@ public abstract class DbTestsBase
         return serviceProvider;
     }
 
-    public Activity? GetActivity()
+    public static Activity? GetActivity()
     {
         var activitySource = new ActivitySource("AsyncMonolith.Tests");
         var listener = new ActivityListener

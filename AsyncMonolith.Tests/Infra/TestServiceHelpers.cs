@@ -27,7 +27,7 @@ public static class TestServiceHelpers
     public static (FakeTimeProvider fakeTime, TestConsumerInvocations invocations) AddTestServices(
         this ServiceCollection services, DbType dbType, AsyncMonolithSettings settings)
     {
-        var fakeTime = new FakeTimeProvider(DateTimeOffset.Parse("2020-08-31T10:00:00.0000000Z"));
+        var fakeTime = new FakeTimeProvider(DateTimeOffset.Parse("2020-08-31T10:00:00.0000000Z", System.Globalization.CultureInfo.InvariantCulture));
         services.AddSingleton<TimeProvider>(fakeTime);
         services.AddLogging();
 

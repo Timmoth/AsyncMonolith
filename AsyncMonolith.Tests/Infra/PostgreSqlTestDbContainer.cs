@@ -8,7 +8,7 @@ public class PostgreSqlTestDbContainer : TestDbContainerBase
 {
     public override async Task InitializeContainerAsync()
     {
-        var container = new PostgreSqlBuilder().Build();
+        var container = new PostgreSqlBuilder("postgres:18-alpine").Build();
         await container.StartAsync();
         ConnectionString = container.GetConnectionString();
         DbContainer = container;

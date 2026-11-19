@@ -34,8 +34,8 @@ public class ConsumerMessageFetcherTests : DbTestsBase
                 });
             }
 
-            await producer.ProduceList(messages);
-            await dbContext.SaveChangesAsync();
+            await producer.ProduceList(messages, cancellationToken: TestContext.Current.CancellationToken);
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // When
             var dbMessages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), 0,
@@ -65,8 +65,8 @@ public class ConsumerMessageFetcherTests : DbTestsBase
             var producer = serviceProvider.GetRequiredService<IProducerService>();
             var fetcher = serviceProvider.GetRequiredService<IConsumerMessageFetcher>();
 
-            await producer.Produce(new RailConsumerMessage() { });
-            await dbContext.SaveChangesAsync();
+            await producer.Produce(new RailConsumerMessage() { }, cancellationToken: TestContext.Current.CancellationToken);
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // When
             var rail0Messages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), 0,

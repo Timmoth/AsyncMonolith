@@ -8,7 +8,7 @@ namespace AsyncMonolith.Tests;
 
 public class ConsumerRegistryTests
 {
-    private ServiceProvider Setup()
+    private static ServiceProvider Setup()
     {
         var services = new ServiceCollection();
         services.AddTestServices(DbType.Ef, AsyncMonolithSettings.Default);
@@ -126,8 +126,8 @@ public class ConsumerRegistryTests
 
         // Then
         consumerIds.Count.ShouldBe(2);
-        Assert.Single(consumerIds.Where(c => c == nameof(MultiConsumer1)));
-        Assert.Single(consumerIds.Where(c => c == nameof(MultiConsumer2)));
+        Assert.Single(consumerIds, c => c == nameof(MultiConsumer1));
+        Assert.Single(consumerIds, c => c == nameof(MultiConsumer2));
     }
 
 

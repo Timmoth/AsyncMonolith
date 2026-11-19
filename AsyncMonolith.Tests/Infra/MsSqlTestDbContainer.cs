@@ -8,7 +8,7 @@ public class MsSqlTestDbContainer : TestDbContainerBase
 {
     public override async Task InitializeContainerAsync()
     {
-        var container = new MsSqlBuilder().Build();
+        var container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
         await container.StartAsync();
         ConnectionString = container.GetConnectionString();
         DbContainer = container;

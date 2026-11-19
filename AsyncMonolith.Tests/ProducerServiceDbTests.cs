@@ -33,7 +33,7 @@ public class ProducerServiceDbTests : DbTestsBase
             Activity.Current = activity;
 
             // When
-            await producer.Produce(consumerMessage, delay);
+            await producer.Produce(consumerMessage, delay, cancellationToken: TestContext.Current.CancellationToken);
 
             // Then
             using var scope = serviceProvider.CreateScope();
@@ -89,13 +89,13 @@ public class ProducerServiceDbTests : DbTestsBase
             Activity.Current = activity;
 
             // When
-            await producer.ProduceList(insertMessages, delay);
+            await producer.ProduceList(insertMessages, delay, cancellationToken: TestContext.Current.CancellationToken);
 
             // Then
             using var scope = serviceProvider.CreateScope();
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-                var messages = await postDbContext.ConsumerMessages.ToListAsync();
+                var messages = await postDbContext.ConsumerMessages.ToListAsync(TestContext.Current.CancellationToken);
                 messages.Count.ShouldBe(2);
 
                 var message1 =
@@ -162,14 +162,14 @@ public class ProducerServiceDbTests : DbTestsBase
             Activity.Current = activity;
 
             // When
-            await producer.ProduceList(insertMessages, delay);
-            await dbContext.SaveChangesAsync();
+            await producer.ProduceList(insertMessages, delay, cancellationToken: TestContext.Current.CancellationToken);
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // Then
             using var postScope = serviceProvider.CreateScope();
             {
                 var postDbContext = postScope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var messages = await postDbContext.ConsumerMessages.ToListAsync();
+                var messages = await postDbContext.ConsumerMessages.ToListAsync(TestContext.Current.CancellationToken);
                 messages.Count.ShouldBe(2);
 
                 var message1 =
@@ -225,13 +225,13 @@ public class ProducerServiceDbTests : DbTestsBase
             using var activity = GetActivity();
             Activity.Current = activity;
 
-            await producer.Produce(consumerMessage, delay, insertId);
+            await producer.Produce(consumerMessage, delay, insertId, cancellationToken: TestContext.Current.CancellationToken);
 
             // When
             await producer.Produce(new SingleConsumerMessage
             {
                 Name = "test-name-2"
-            }, delay, insertId);
+            }, delay, insertId, cancellationToken: TestContext.Current.CancellationToken);
 
             // Then
             using var scope = serviceProvider.CreateScope();
@@ -277,15 +277,15 @@ public class ProducerServiceDbTests : DbTestsBase
             {
                 Name = "test-name"
             };
-            await producer.Produce(consumerMessage, 10, insertId);
+            await producer.Produce(consumerMessage, 10, insertId, cancellationToken: TestContext.Current.CancellationToken);
 
             // When
             await producer.Produce(new SingleConsumerMessage
             {
                 Name = "test-name-2"
-            }, delay, insertId);
+            }, delay, insertId, cancellationToken: TestContext.Current.CancellationToken);
 
-            await Assert.ThrowsAsync<DbUpdateException>(async () => { await dbContext.SaveChangesAsync(); });
+            await Assert.ThrowsAsync<DbUpdateException>(async () => { await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken); });
         }
         finally
         {

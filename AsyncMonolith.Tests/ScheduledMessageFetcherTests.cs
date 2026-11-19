@@ -38,7 +38,7 @@ public class ScheduledMessageFetcherTests : DbTestsBase
                 });
             }
 
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // When
             var dbMessages = await fetcher.Fetch(dbContext.ScheduledMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(),

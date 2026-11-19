@@ -15,6 +15,6 @@ public class ExceptionConsumer2Attempts : BaseConsumer<ExceptionConsumer2Attempt
     public override Task Consume(ExceptionConsumer2AttemptsMessage message, CancellationToken cancellationToken)
     {
         _consumerInvocations.Increment(nameof(ExceptionConsumer2AttemptsMessage));
-        throw new Exception();
+        throw new InvalidOperationException();
     }
 }
