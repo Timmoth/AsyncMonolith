@@ -11,6 +11,7 @@ CREATE TABLE consumer_messages (
     insert_id text NOT NULL,
     trace_id text NOT NULL,
     span_id text NOT NULL,
+    last_error text NULL,
 
     CONSTRAINT "PK_consumer_messages" PRIMARY KEY (id)
 );
@@ -26,6 +27,7 @@ CREATE TABLE poisoned_messages (
     insert_id text NOT NULL,
     trace_id text NOT NULL,
     span_id text NOT NULL,
+    last_error text NULL,
     
     CONSTRAINT "PK_poisoned_messages" PRIMARY KEY (id)
 );

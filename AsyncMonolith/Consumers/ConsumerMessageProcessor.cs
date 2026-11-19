@@ -174,18 +174,19 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
 
     private async Task<bool> ProcessAndComplete(ConsumerMessage message, CancellationToken cancellationToken)
     {
-        var (_, success) = await Process(message, cancellationToken);
+        var error = await Process(message, cancellationToken);
 
         // Record the outcome even when stopping, so the attempt isn't left waiting for its lease to expire.
-        await Complete(message, success, CancellationToken.None);
-        return success;
+        await Complete(message, error is null, CancellationToken.None, error);
+        return error is null;
     }
 
     /// <summary>
     ///     Records the outcome of a claimed message: removes it on success, otherwise schedules a retry or
     ///     moves it to the poisoned messages. Does nothing if the lease has since been taken over.
     /// </summary>
-    internal async Task Complete(ConsumerMessage message, bool success, CancellationToken cancellationToken)
+    internal async Task Complete(ConsumerMessage message, bool success, CancellationToken cancellationToken,
+        string? error = null)
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
@@ -200,9 +201,11 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
 
         if (message.Attempts < _consumerRegistry.ResolveConsumerMaxAttempts(message))
         {
-            var retryAt = _timeProvider.GetUtcNow().ToUnixTimeSeconds() + _options.Value.AttemptDelay;
-            await leased.ExecuteUpdateAsync(s => s.SetProperty(m => m.AvailableAfter, retryAt),
-                cancellationToken);
+            var retryAt = _timeProvider.GetUtcNow().ToUnixTimeSeconds() +
+                          _options.Value.GetRetryDelay(message.Attempts);
+            await leased.ExecuteUpdateAsync(s => s
+                .SetProperty(m => m.AvailableAfter, retryAt)
+                .SetProperty(m => m.LastError, error), cancellationToken);
             return;
         }
 
@@ -224,7 +227,8 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             InsertId = message.InsertId,
             TraceId = message.TraceId,
             SpanId = message.SpanId,
-            RailId = message.RailId
+            RailId = message.RailId,
+            LastError = error
         });
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -255,9 +259,8 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     /// </summary>
     /// <param name="message">The consumer message to process.</param>
     /// <param name="cancellationToken">The cancellation token to stop the execution.</param>
-    /// <returns>A tuple containing the processed consumer message and a flag indicating success.</returns>
-    internal async Task<(ConsumerMessage message, bool success)> Process(ConsumerMessage message,
-        CancellationToken cancellationToken = default)
+    /// <returns>Null on success, otherwise a description of the error.</returns>
+    internal async Task<string?> Process(ConsumerMessage message, CancellationToken cancellationToken = default)
     {
         using var activity = StartActivity(message);
 
@@ -266,10 +269,10 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         activity?.AddTag("consumer_message.payload.type", message.PayloadType);
         activity?.AddTag("consumer_message.type", message.ConsumerType);
 
+        var consumerTimeout = _consumerRegistry.ResolveConsumerTimeout(message);
         try
         {
             var consumerType = _consumerRegistry.ResolveConsumerType(message);
-            var consumerTimeout = _consumerRegistry.ResolveConsumerTimeout(message);
 
             using var timeoutCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCancellationToken.CancelAfter(TimeSpan.FromSeconds(consumerTimeout));
@@ -288,7 +291,13 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
 
             activity?.SetStatus(ActivityStatusCode.Ok);
             _logger.ConsumerMessageProcessed(message.ConsumerType);
-            return (message, true);
+            return null;
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            _logger.ConsumerMessageFailed(ex, message.Attempts);
+            return $"Timed out after {consumerTimeout} seconds.";
         }
         catch (Exception ex)
         {
@@ -296,8 +305,15 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             activity?.AddTag("exception.type", ex.GetType().FullName);
             activity?.AddTag("exception.message", ex.Message);
             _logger.ConsumerMessageFailed(ex, message.Attempts);
+            return Describe(ex);
         }
+    }
 
-        return (message, false);
+    private const int MaxErrorLength = 2000;
+
+    private static string Describe(Exception exception)
+    {
+        var description = $"{exception.GetType().FullName}: {exception.Message}";
+        return description.Length <= MaxErrorLength ? description : description[..MaxErrorLength];
     }
 }

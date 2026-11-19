@@ -30,6 +30,18 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
 
 ## Consumer Failures 💢
 
-- **Retry Logic**: Messages will be retried up to `MaxAttempts` times (with a `AttemptDelay` seconds between attempts) until they are moved to the `poisoned_messages` table. Add the `[ConsumerAttempts(1)]` attribute to override this behavior.
-- **Manual Intervention**: If a message is moved to the `poisoned_messages` table, it will need to be manually removed from the database or moved back to the `consumer_messages` table to be retried. Note that the poisoned message will only be retried a single time unless you set `attempts` back to 0.
+- **Retry Logic**: Messages are retried up to `MaxAttempts` times before they are moved to the `poisoned_messages` table. Add the `[ConsumerAttempts(1)]` attribute to override this per consumer.
+- **Backoff**: The first retry waits `AttemptDelay` seconds (default 10), and each later retry waits twice as long as the one before, up to `MaxAttemptDelay` seconds (default 300). With the defaults a message is retried after 10, 20, 40 and 80 seconds.
+- **Errors**: The error from the most recent failed attempt is stored in `last_error` on both tables, for example `System.InvalidOperationException: ...` or `Timed out after 10 seconds.`
+- **Interrupted processing**: A message is leased while its consumer runs. If the app stops mid-message, the message becomes available again once its consumer timeout plus 30 seconds has passed, and the interrupted attempt counts.
+- **Manual Intervention**: Use `IPoisonedMessageService` to count, list, retry or delete poisoned messages. Retrying moves a message back to `consumer_messages` with its attempts reset. Changes are saved immediately.
 - **Monitoring**: Periodically monitor the `poisoned_messages` table to ensure there are not too many failed messages.
+
+```csharp
+public class FailedMessagesController(IPoisonedMessageService poisoned) : ControllerBase
+{
+    [HttpGet] public Task<IReadOnlyList<PoisonedMessage>> List() => poisoned.List(skip: 0, take: 50);
+    [HttpPost("{id}/retry")] public Task<bool> Retry(string id) => poisoned.Retry(id);
+    [HttpDelete("{id}")] public Task<bool> Delete(string id) => poisoned.Delete(id);
+}
+```

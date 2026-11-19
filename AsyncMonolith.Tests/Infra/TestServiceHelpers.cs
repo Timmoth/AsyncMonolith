@@ -38,6 +38,7 @@ public static class TestServiceHelpers
         services.InternalRegisterAsyncMonolithConsumers(settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<TestDbContext>>();
+        services.AddScoped<IPoisonedMessageService, PoisonedMessageService<TestDbContext>>();
         switch (dbType)
         {
             case DbType.Ef:

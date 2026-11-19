@@ -88,4 +88,11 @@ public sealed class PoisonedMessage
     [JsonPropertyName("span_id")]
     [Column("span_id")]
     public required string? SpanId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the error from the most recent failed attempt, if any.
+    /// </summary>
+    [JsonPropertyName("last_error")]
+    [Column("last_error")]
+    public string? LastError { get; set; }
 }

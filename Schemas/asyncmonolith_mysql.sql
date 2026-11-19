@@ -11,6 +11,7 @@ CREATE TABLE consumer_messages (
     insert_id VARCHAR(255) NOT NULL,
     trace_id VARCHAR(255) NOT NULL,
     span_id VARCHAR(255) NOT NULL,
+    last_error TEXT NULL,
     PRIMARY KEY (id)
 );
 
@@ -25,6 +26,7 @@ CREATE TABLE poisoned_messages (
     insert_id VARCHAR(255) NOT NULL,
     trace_id VARCHAR(255) NOT NULL,
     span_id VARCHAR(255) NOT NULL,
+    last_error TEXT NULL,
     PRIMARY KEY (id)
 );
 

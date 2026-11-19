@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
@@ -90,6 +91,7 @@ public static class SetupTestHelpers
         services.InternalRegisterAsyncMonolithConsumers(settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<T>>();
+        services.AddScoped<IPoisonedMessageService, PoisonedMessageService<T>>();
         return services;
     }
 }

@@ -36,6 +36,11 @@ public static class StartupExtensions
             throw new ArgumentException("AsyncMonolithSettings.AttemptDelay must be positive.");
         }
 
+        if (settings.MaxAttemptDelay < 0)
+        {
+            throw new ArgumentException("AsyncMonolithSettings.MaxAttemptDelay must be positive.");
+        }
+
         if (settings.MaxAttempts < 1)
         {
             throw new ArgumentException("AsyncMonolithSettings.MaxAttempts must be at least 1.");
@@ -75,6 +80,7 @@ public static class StartupExtensions
         services.Configure<AsyncMonolithSettings>(options =>
         {
             options.AttemptDelay = settings.AttemptDelay;
+            options.MaxAttemptDelay = settings.MaxAttemptDelay;
             options.MaxAttempts = settings.MaxAttempts;
             options.ProcessorMaxDelay = settings.ProcessorMaxDelay;
             options.ProcessorMinDelay = settings.ProcessorMinDelay;
@@ -91,6 +97,7 @@ public static class StartupExtensions
         services.InternalRegisterAsyncMonolithConsumers(settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<T>>();
+        services.AddScoped<IPoisonedMessageService, PoisonedMessageService<T>>();
         services.AddScoped<DbContext>(sp => sp.GetRequiredService<T>());
 
         // One processor per rail. Rails are read when the host starts, after every module has
