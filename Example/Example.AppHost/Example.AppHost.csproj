@@ -1,10 +1,9 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.6.5">
 
   <PropertyGroup>
+    <!-- The example does not use the Aspire CLI bundle. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);ASPIRE010</MSBuildWarningsAsMessages>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <UserSecretsId>0ad4215a-f9fc-4c99-82ac-69d5df8fce04</UserSecretsId>
   </PropertyGroup>
 
