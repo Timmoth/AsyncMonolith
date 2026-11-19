@@ -15,17 +15,20 @@ namespace AsyncMonolith.Tests.Infra;
 ///     and no Docker.
 /// </summary>
 /// <remarks>
-///     All DbContexts share one open connection, so consumers used with this host must not write to the
-///     database while a batch is being processed.
+///     By default all DbContexts share one open in-memory connection, so consumers must not write to the
+///     database while a batch is being processed. Pass <c>fileDatabase: true</c> to give every DbContext its
+///     own connection to a temporary database file, as in a real host.
 /// </remarks>
 public sealed class SqliteTestHost : IAsyncDisposable
 {
-    private readonly SqliteConnection _connection;
+    private readonly SqliteConnection? _connection;
+    private readonly string? _path;
 
-    private SqliteTestHost(SqliteConnection connection, ServiceProvider services, FakeTimeProvider time,
-        TestConsumerInvocations invocations)
+    private SqliteTestHost(SqliteConnection? connection, string? path, ServiceProvider services,
+        FakeTimeProvider time, TestConsumerInvocations invocations)
     {
         _connection = connection;
+        _path = path;
         Services = services;
         Time = time;
         Invocations = invocations;
@@ -43,16 +46,37 @@ public sealed class SqliteTestHost : IAsyncDisposable
     public ScheduledMessageProcessor<TestDbContext> ScheduledProcessor =>
         Services.GetRequiredService<ScheduledMessageProcessor<TestDbContext>>();
 
-    public static async Task<SqliteTestHost> Create(Action<AsyncMonolithSettings>? configure = null)
+    public static async Task<SqliteTestHost> Create(Action<AsyncMonolithSettings>? configure = null,
+        bool fileDatabase = false)
     {
-        var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
+        SqliteConnection? connection = null;
+        string? path = null;
+        if (fileDatabase)
+        {
+            path = Path.Combine(Path.GetTempPath(), $"asyncmonolith-{Guid.NewGuid():N}.db");
+        }
+        else
+        {
+            connection = new SqliteConnection("DataSource=:memory:");
+            await connection.OpenAsync();
+        }
 
         var settings = AsyncMonolithSettings.Default;
         configure?.Invoke(settings);
 
         var services = new ServiceCollection();
-        services.AddDbContext<TestDbContext>(options => options.UseSqlite(connection));
+        services.AddDbContext<TestDbContext>(options =>
+        {
+            if (connection is not null)
+            {
+                options.UseSqlite(connection);
+            }
+            else
+            {
+                // A short busy timeout makes lock contention fail fast instead of waiting 30 seconds.
+                options.UseSqlite($"Data Source={path};Default Timeout=3");
+            }
+        });
         var (time, invocations) = services.AddTestServices(DbType.Ef, settings);
         services.AddSingleton<ConsumerMessageProcessor<TestDbContext>>();
         services.AddSingleton<ScheduledMessageProcessor<TestDbContext>>();
@@ -64,7 +88,7 @@ public sealed class SqliteTestHost : IAsyncDisposable
             await scope.ServiceProvider.GetRequiredService<TestDbContext>().Database.EnsureCreatedAsync();
         }
 
-        return new SqliteTestHost(connection, provider, time, invocations);
+        return new SqliteTestHost(connection, path, provider, time, invocations);
     }
 
     /// <summary>Produces a message in its own scope and saves it.</summary>
@@ -115,6 +139,18 @@ public sealed class SqliteTestHost : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await Services.DisposeAsync();
-        await _connection.DisposeAsync();
+        if (_connection is not null)
+        {
+            await _connection.DisposeAsync();
+        }
+
+        if (_path is not null)
+        {
+            SqliteConnection.ClearAllPools();
+            foreach (var file in new[] { _path, _path + "-journal", _path + "-wal", _path + "-shm" })
+            {
+                File.Delete(file);
+            }
+        }
     }
 }

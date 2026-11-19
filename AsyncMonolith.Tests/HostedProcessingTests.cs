@@ -91,6 +91,20 @@ public sealed class HostedProcessingTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Consumer_can_write_to_the_database_and_chain_another_message()
+    {
+        await StartHost();
+
+        await Produce(new WritingConsumerMessage { Name = "chained" });
+
+        await WaitUntil(() => Task.FromResult(Invocations.GetInvocationCount(nameof(SingleConsumer)) == 1),
+            "the chained message is consumed");
+        (await Query(db => db.PoisonedMessages.CountAsync())).ShouldBe(0);
+        await WaitUntil(() => Query(db => db.ConsumerMessages.AnyAsync()).ContinueWith(t => !t.Result),
+            "the queue is empty");
+    }
+
+    [Fact]
     public async Task Messages_on_every_rail_are_consumed()
     {
         await StartHost();

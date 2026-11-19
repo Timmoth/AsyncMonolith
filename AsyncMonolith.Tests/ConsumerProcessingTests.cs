@@ -268,4 +268,53 @@ public class ConsumerProcessingTests
 
         host.Services.GetRequiredService<ConcurrencyProbe>().Max.ShouldBe(1);
     }
+
+    [Fact]
+    public async Task Consumer_that_writes_to_the_database_succeeds_on_sqlite()
+    {
+        // Each DbContext has its own connection, as in a real host. The batch must not hold the
+        // database's write lock while consumers run.
+        await using var host = await SqliteTestHost.Create(fileDatabase: true);
+        await host.Produce(new WritingConsumerMessage { Name = "follow-up" });
+
+        (await host.ConsumerProcessor.ProcessBatch(Ct)).ShouldBe(1);
+
+        (await host.PoisonedMessages()).ShouldBeEmpty();
+        (await host.ConsumerMessages()).ShouldHaveSingleItem().ConsumerType.ShouldBe(nameof(SingleConsumer));
+    }
+
+    [Fact]
+    public async Task Claimed_message_is_leased_so_other_processors_skip_it()
+    {
+        await using var host = await SqliteTestHost.Create();
+        await host.Produce(new TimeoutConsumerMessage { Delay = 0 });
+
+        // Simulate a processor that claimed the message and then crashed before finishing it.
+        var claimed = await host.ConsumerProcessor.ClaimBatch(Ct);
+        claimed.ShouldHaveSingleItem().Attempts.ShouldBe(1);
+
+        // While the lease (consumer timeout + grace period) is held, nobody else picks it up.
+        (await host.ConsumerProcessor.ProcessBatch(Ct)).ShouldBe(0);
+        host.Invocations.GetInvocationCount(nameof(TimeoutConsumer)).ShouldBe(0);
+
+        // Once the lease expires, the message is processed again and the crashed attempt counts.
+        host.Time.Advance(TimeSpan.FromSeconds(1 + ConsumerMessageProcessor<TestDbContext>.LeaseGracePeriodSeconds));
+        (await host.ConsumerProcessor.ProcessBatch(Ct)).ShouldBe(1);
+        host.Invocations.GetInvocationCount(nameof(TimeoutConsumer)).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Completing_a_message_whose_lease_was_taken_over_leaves_it_alone()
+    {
+        await using var host = await SqliteTestHost.Create();
+        await host.Produce(new SingleConsumerMessage { Name = "a" });
+        var claimed = (await host.ConsumerProcessor.ClaimBatch(Ct)).ShouldHaveSingleItem();
+
+        // Another processor re-claimed the message after our lease expired.
+        await host.Change(db => db.ConsumerMessages.Single().AvailableAfter = claimed.AvailableAfter + 100);
+
+        await host.ConsumerProcessor.Complete(claimed, success: true, Ct);
+
+        (await host.ConsumerMessages()).ShouldHaveSingleItem();
+    }
 }
