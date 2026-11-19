@@ -16,7 +16,8 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         var connectionString =
-            builder.Configuration.GetConnectionString("postgresdb");
+            builder.Configuration.GetConnectionString("postgresdb")
+            ?? throw new InvalidOperationException("Connection string 'postgresdb' is missing.");
         
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(connectionString));
@@ -24,7 +25,7 @@ public class Program
         builder.Services.AddHealthChecks()
             .AddNpgSql(connectionString,
                 name: "postgres",
-                tags: new[] { "ready" });
+                tags: ["ready"]);
 
         builder.Services.AddSingleton(TimeProvider.System);
 

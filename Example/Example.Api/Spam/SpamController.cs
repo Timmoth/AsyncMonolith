@@ -51,13 +51,13 @@ public class SpamController : ControllerBase
             });
         }
 
-        await _producerService.ProduceList(messages);
+        await _producerService.ProduceList(messages, cancellationToken: cancellationToken);
         SpamResultService.Start = _timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
 
         await _producerService.Produce(new SpamMessage
         {
             Last = true
-        }, 10);
+        }, 10, cancellationToken: cancellationToken);
 
         return Ok("Started.");
     }
