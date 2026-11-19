@@ -73,6 +73,31 @@ public sealed class ScheduleService<T> : IScheduleService where T : DbContext
         return id;
     }
 
+    /// <inheritdoc />
+    public async Task<string> EnsureSchedule<TK>(TK message, string chronExpression, string chronTimezone,
+        string tag, CancellationToken cancellationToken = default) where TK : IConsumerPayload
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tag);
+
+        var set = _dbContext.Set<ScheduledMessage>();
+        var existing = await set.Where(m => m.Tag == tag).OrderBy(m => m.Id).ToListAsync(cancellationToken);
+        if (existing.Count == 0)
+        {
+            return Schedule(message, chronExpression, chronTimezone, tag);
+        }
+
+        var schedule = existing[0];
+        set.RemoveRange(existing.Skip(1));
+
+        schedule.UpdatePayload(message);
+        if (schedule.ChronExpression != chronExpression || schedule.ChronTimezone != chronTimezone)
+        {
+            schedule.UpdateSchedule(chronExpression, chronTimezone, _timeProvider);
+        }
+
+        return schedule.Id;
+    }
+
     /// <summary>
     /// Deletes scheduled messages by tag.
     /// </summary>

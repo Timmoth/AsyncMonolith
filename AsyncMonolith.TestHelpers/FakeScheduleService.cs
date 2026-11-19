@@ -87,6 +87,16 @@ public sealed class FakeScheduleService : IScheduleService
     }
 
     /// <summary>
+    ///     Records the schedule, replacing any recorded schedule with the same tag.
+    /// </summary>
+    public Task<string> EnsureSchedule<TK>(TK message, string chronExpression, string chronTimezone, string tag,
+        CancellationToken cancellationToken = default) where TK : IConsumerPayload
+    {
+        CreatedScheduledMessages.RemoveAll(m => m.Tag == tag);
+        return Task.FromResult(Schedule(message, chronExpression, chronTimezone, tag));
+    }
+
+    /// <summary>
     /// Deletes scheduled messages by tag.
     /// </summary>
     /// <param name="tag">The tag of the scheduled messages to delete.</param>

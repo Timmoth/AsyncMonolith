@@ -45,3 +45,12 @@ public class FailedMessagesController(IPoisonedMessageService poisoned) : Contro
     [HttpDelete("{id}")] public Task<bool> Delete(string id) => poisoned.Delete(id);
 }
 ```
+
+## Queue statistics 📊
+
+`IQueueStatisticsService.Read()` returns a snapshot for health checks and dashboards:
+
+- `Available`: messages due now and waiting for a processor
+- `Waiting`: messages not yet due (delayed, waiting to retry, or being processed)
+- `OldestAvailableAgeSeconds`: how long the longest-waiting due message has been due. If this keeps growing, processors are stuck or falling behind.
+- `Poisoned` and `Schedules`: row counts

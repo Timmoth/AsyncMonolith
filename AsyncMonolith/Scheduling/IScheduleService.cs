@@ -20,6 +20,22 @@ public interface IScheduleService
         where TK : IConsumerPayload;
 
     /// <summary>
+    ///     Creates the schedule with this tag, or updates it if it already exists, so it can be called at every
+    ///     startup. If the expression and timezone are unchanged, the next occurrence is kept; otherwise it is
+    ///     recalculated. Extra schedules with the same tag are deleted. Changes are tracked, not saved: call
+    ///     SaveChanges on your DbContext.
+    /// </summary>
+    /// <typeparam name="TK">The type of the message payload.</typeparam>
+    /// <param name="message">The message payload.</param>
+    /// <param name="chronExpression">The cron expression, including seconds.</param>
+    /// <param name="chronTimezone">The timezone the expression is evaluated in.</param>
+    /// <param name="tag">The tag that identifies this schedule.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The id of the schedule.</returns>
+    public Task<string> EnsureSchedule<TK>(TK message, string chronExpression, string chronTimezone, string tag,
+        CancellationToken cancellationToken = default) where TK : IConsumerPayload;
+
+    /// <summary>
     ///     Deletes scheduled messages by tag.
     /// </summary>
     /// <param name="tag">The tag of the scheduled messages to delete.</param>

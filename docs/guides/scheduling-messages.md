@@ -12,3 +12,13 @@ To produce your message you'll need to inject a `IScheduleService`
    }, "0 0 12 * * MON", "UTC", "id:{id}");
  await _dbContext.SaveChangesAsync(cancellationToken);
 ```
+## Registering schedules at startup
+
+`Schedule` always inserts a new schedule, so calling it at every startup creates duplicates. Use `EnsureSchedule` with a tag instead. It creates the schedule the first time, and afterwards updates the payload. It only recalculates the next occurrence if the expression or timezone changed, and removes any duplicates with the same tag.
+
+```csharp
+await scheduleService.EnsureSchedule(new CleanupExpiredSessions(), "0 0 3 * * *", "Europe/London", tag: "cleanup-sessions");
+await dbContext.SaveChangesAsync();
+```
+
+Occurrences missed while the app was not running are not caught up: the schedule fires once and moves to its next occurrence.

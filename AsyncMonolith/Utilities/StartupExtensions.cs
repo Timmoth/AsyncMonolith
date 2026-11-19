@@ -98,6 +98,7 @@ public static class StartupExtensions
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<T>>();
         services.AddScoped<IPoisonedMessageService, PoisonedMessageService<T>>();
+        services.AddScoped<IQueueStatisticsService, QueueStatisticsService<T>>();
         services.AddScoped<DbContext>(sp => sp.GetRequiredService<T>());
 
         // One processor per rail. Rails are read when the host starts, after every module has

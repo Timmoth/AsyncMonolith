@@ -92,6 +92,7 @@ public static class SetupTestHelpers
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
         services.AddScoped<IScheduleService, ScheduleService<T>>();
         services.AddScoped<IPoisonedMessageService, PoisonedMessageService<T>>();
+        services.AddScoped<IQueueStatisticsService, QueueStatisticsService<T>>();
         return services;
     }
 }
