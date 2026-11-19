@@ -56,15 +56,15 @@ public static class TestConsumerMessageProcessor
     }
 
     /// <summary>
-    /// Processes the next consumer message of type T and V.
+    /// Processes the next consumer message of type T and TPayload.
     /// </summary>
     /// <typeparam name="T">The type of DbContext.</typeparam>
-    /// <typeparam name="V">The type of IConsumer.</typeparam>
+    /// <typeparam name="TPayload">The type of IConsumer.</typeparam>
     /// <param name="scope">The service scope.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The processed consumer message, or null if no message is available.</returns>
-    public static async Task<ConsumerMessage?> ProcessNext<T, V>(IServiceScope scope,
-        CancellationToken cancellationToken = default) where T : DbContext where V : IConsumer
+    public static async Task<ConsumerMessage?> ProcessNext<T, TPayload>(IServiceScope scope,
+        CancellationToken cancellationToken = default) where T : DbContext where TPayload : IConsumer
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
         var consumerMessageSet = dbContext.Set<ConsumerMessage>();
@@ -100,15 +100,15 @@ public static class TestConsumerMessageProcessor
     }
 
     /// <summary>
-    /// Processes the consumer message of type T and V with the given payload.
+    /// Processes the consumer message of type T and TPayload with the given payload.
     /// </summary>
     /// <typeparam name="T">The type of BaseConsumer.</typeparam>
-    /// <typeparam name="V">The type of IConsumerPayload.</typeparam>
+    /// <typeparam name="TPayload">The type of IConsumerPayload.</typeparam>
     /// <param name="scope">The service scope.</param>
     /// <param name="payload">The payload for the consumer message.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public static async Task Process<T, V>(IServiceScope scope, V payload,
-        CancellationToken cancellationToken = default) where T : BaseConsumer<V> where V : IConsumerPayload
+    public static async Task Process<T, TPayload>(IServiceScope scope, TPayload payload,
+        CancellationToken cancellationToken = default) where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
     {
         var consumerType = typeof(T);
 
@@ -130,7 +130,7 @@ public static class TestConsumerMessageProcessor
             Id = string.Empty,
             InsertId = string.Empty,
             Payload = JsonSerializer.Serialize(payload),
-            PayloadType = typeof(V).Name,
+            PayloadType = typeof(TPayload).Name,
             TraceId = null,
             SpanId = null,
             RailId = 0
