@@ -60,7 +60,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error scheduling next message");
+                _logger.ScheduleBatchFailed(ex);
             }
 
             if (delay >= 10)
@@ -110,7 +110,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
             await dbContext.SaveChangesAsync(cancellationToken);
             await dbContextTransaction.CommitAsync(cancellationToken);
             activity?.SetStatus(ActivityStatusCode.Ok);
-            _logger.LogInformation("Successfully scheduled message");
+            _logger.ScheduledMessagesProduced();
         }
         catch (Exception)
         {

@@ -32,14 +32,14 @@ public sealed class PostgreSqlScheduledMessageFetcher : IScheduledMessageFetcher
     /// <summary>
     /// Fetches scheduled messages from the database.
     /// </summary>
-    /// <param name="set">The <see cref="DbSet{TEntity}"/> of scheduled messages.</param>
+    /// <param name="scheduledMessageSet">The <see cref="DbSet{TEntity}"/> of scheduled messages.</param>
     /// <param name="currentTime">The current time.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a list of fetched scheduled messages.</returns>
-    public Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> set, long currentTime,
+    public Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> scheduledMessageSet, long currentTime,
         CancellationToken cancellationToken = default)
     {
-        return set
+        return scheduledMessageSet
             .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime),
                 new NpgsqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
             .ToListAsync(cancellationToken);

@@ -15,32 +15,32 @@ public sealed class ConsumerRegistry
     /// <summary>
     ///     Gets the dictionary that maps consumer names to their associated time out.
     /// </summary>
-    public readonly IReadOnlyDictionary<string, int> ConsumerTimeoutDictionary;
+    public IReadOnlyDictionary<string, int> ConsumerTimeoutDictionary { get; }
 
     /// <summary>
     ///     Gets the dictionary that maps consumer names to their associated number of attempts.
     /// </summary>
-    public readonly IReadOnlyDictionary<string, int> ConsumerAttemptsDictionary;
+    public IReadOnlyDictionary<string, int> ConsumerAttemptsDictionary { get; }
     
     /// <summary>
     ///     Gets the dictionary that maps consumer types to their associated rail id.
     /// </summary>
-    public readonly IReadOnlyDictionary<string, int> ConsumerRailIdDictionary;
+    public IReadOnlyDictionary<string, int> ConsumerRailIdDictionary { get; }
     
     /// <summary>
     ///     Gets the dictionary that maps consumer names to their associated app instance execution mode.
     /// </summary>
-    public readonly IReadOnlyDictionary<string, ConsumerInstanceExecutionMode> ConsumerExecutionModeDictionary;
+    public IReadOnlyDictionary<string, ConsumerInstanceExecutionMode> ConsumerExecutionModeDictionary { get; }
 
     /// <summary>
     ///     Gets the dictionary that maps consumer names to their associated types.
     /// </summary>
-    public readonly IReadOnlyDictionary<string, Type> ConsumerTypeDictionary;
+    public IReadOnlyDictionary<string, Type> ConsumerTypeDictionary { get; }
 
     /// <summary>
     ///     Gets the dictionary that maps payload types to the list of consumer names that can handle them.
     /// </summary>
-    public readonly IReadOnlyDictionary<string, List<string>> PayloadConsumerDictionary;
+    public IReadOnlyDictionary<string, List<string>> PayloadConsumerDictionary { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ConsumerRegistry" /> class.
@@ -82,7 +82,7 @@ public sealed class ConsumerRegistry
     {
         if (!PayloadConsumerDictionary.TryGetValue(payloadType, out var names))
         {
-            throw new Exception($"Failed to resolve consumers for payload: {payloadType}");
+            throw new InvalidOperationException($"Failed to resolve consumers for payload: {payloadType}");
         }
 
         return names;
@@ -98,7 +98,7 @@ public sealed class ConsumerRegistry
     {
         if (!ConsumerTypeDictionary.TryGetValue(consumer.ConsumerType, out var type))
         {
-            throw new Exception($"Couldn't resolve consumer type: '{consumer.ConsumerType}'");
+            throw new InvalidOperationException($"Couldn't resolve consumer type: '{consumer.ConsumerType}'");
         }
 
         return type;

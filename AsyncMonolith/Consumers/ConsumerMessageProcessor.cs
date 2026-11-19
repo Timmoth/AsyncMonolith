@@ -21,7 +21,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
 
-    private int _railId = 0;
+    private int _railId;
     /// <summary>
     ///     Initializes a new instance of the <see cref="ConsumerMessageProcessor{T}" /> class.
     /// </summary>
@@ -75,7 +75,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing consumer message batch.");
+                _logger.ConsumerBatchFailed(ex);
             }
 
             if (delay >= 10)
@@ -187,7 +187,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         return processedMessageCount;
     }
 
-    private Activity? StartActivity(ConsumerMessage message)
+    private static Activity? StartActivity(ConsumerMessage message)
     {
         if (string.IsNullOrEmpty(message.TraceId) || string.IsNullOrEmpty(message.SpanId))
         {
@@ -237,14 +237,14 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             if (scope.ServiceProvider.GetRequiredService(consumerType)
                 is not IConsumer consumer)
             {
-                throw new Exception($"Couldn't resolve consumer service of type: '{message.ConsumerType}'");
+                throw new InvalidOperationException($"Couldn't resolve consumer service of type: '{message.ConsumerType}'");
             }
 
             // Execute the consumer
             await consumer.Consume(message, timeoutCancellationToken.Token);
 
             activity?.SetStatus(ActivityStatusCode.Ok);
-            _logger.LogInformation("Successfully processed message for consumer: '{id}'", message.ConsumerType);
+            _logger.ConsumerMessageProcessed(message.ConsumerType);
             return (message, true);
         }
         catch (Exception ex)
@@ -252,7 +252,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             activity?.AddTag("exception.type", nameof(ex));
             activity?.AddTag("exception.message", ex.Message);
-            _logger.LogError(ex, "Failed to consume message on attempt {attempt}.", message.Attempts);
+            _logger.ConsumerMessageFailed(ex, message.Attempts);
         }
 
         return (message, false);

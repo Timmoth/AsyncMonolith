@@ -185,7 +185,7 @@ public static class StartupExtensions
 
             if (!consumerServiceDictionary.TryAdd(consumerType.Name, consumerType))
             {
-                throw new Exception($"Consumer: '{consumerType.Name}' already defined.");
+                throw new InvalidOperationException($"Consumer: '{consumerType.Name}' already defined.");
             }
 
             if (!payloadConsumerDictionary.TryGetValue(payloadType.Name, out var payloadConsumers))
@@ -202,7 +202,7 @@ public static class StartupExtensions
         {
             if (!payloadConsumerDictionary.ContainsKey(consumerPayload))
             {
-                throw new Exception($"No consumers exist for payload: '{consumerPayload}'");
+                throw new InvalidOperationException($"No consumers exist for payload: '{consumerPayload}'");
             }
         }
 

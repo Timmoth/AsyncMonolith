@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using AsyncMonolith.Consumers;
@@ -80,7 +81,7 @@ public sealed class MsSqlProducerService<T> : IProducerService where T : DbConte
                 sqlBuilder.Append(", ");
             }
 
-            sqlBuilder.Append(
+            sqlBuilder.Append(CultureInfo.InvariantCulture,
                 $@"(@id_{index}, @created_at, @available_after, 0, @consumer_type_{index}, @payload_type, @payload, @insert_id, @trace_id, @span_id, @rail_{index})");
 
             parameters.Add(new SqlParameter($"@id_{index}", _idGenerator.GenerateId()));
@@ -144,7 +145,7 @@ public sealed class MsSqlProducerService<T> : IProducerService where T : DbConte
                     sqlBuilder.Append(", ");
                 }
 
-                sqlBuilder.Append(
+                sqlBuilder.Append(CultureInfo.InvariantCulture,
                     $@"(@id_{i}_{index}, @created_at, @available_after, 0, @consumer_type_{i}_{index}, @payload_type_{i}, @payload_{i}, @insert_id_{i}, @trace_id, @span_id, @rail_{i}_{index})");
 
                 parameters.Add(new SqlParameter($"@id_{i}_{index}", _idGenerator.GenerateId()));
