@@ -12,6 +12,7 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="Shouldly" />
 		<PackageReference Include="Testcontainers" />
 		<PackageReference Include="Testcontainers.MariaDb" />
