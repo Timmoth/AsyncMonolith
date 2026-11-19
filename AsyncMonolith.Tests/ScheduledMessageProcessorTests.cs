@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Tests;
 
+[Trait("Category", "Integration")]
 public class ScheduledMessageProcessorTests : DbTestsBase
 {
     [Theory]

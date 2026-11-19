@@ -1,19 +1,43 @@
 name: Test
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
+    inputs:
+      integration:
+        description: Also run the integration tests (Testcontainers, slow)
+        type: boolean
+        default: false
 
 jobs:
-  build:
+  fast:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 8.0.x
+      uses: actions/checkout@v4
 
-    - name: Test
-      run: dotnet test AsyncMonolith.Tests --verbosity normal
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Fast tests
+      run: dotnet test AsyncMonolith.Tests --filter "Category!=Integration"
+
+  integration:
+    if: github.event_name == 'workflow_dispatch' && inputs.integration
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Integration tests
+      run: dotnet test AsyncMonolith.Tests --filter "Category=Integration"

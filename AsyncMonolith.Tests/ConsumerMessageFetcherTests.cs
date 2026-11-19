@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Tests;
 
+[Trait("Category", "Integration")]
 public class ConsumerMessageFetcherTests : DbTestsBase
 {
     [Theory]

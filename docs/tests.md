@@ -1,6 +1,18 @@
 ## AsyncMonolith.Tests
 
-- Some of the test rely on TestContainers to run against real databases, make sure you've got docker installed
+Tests are split into two groups:
+
+- **Fast tests** run in-process with no external services. Run them on every change:
+
+  ```bash
+  dotnet test AsyncMonolith.Tests --filter "Category!=Integration"
+  ```
+
+- **Integration tests** (`[Trait("Category", "Integration")]`) use Testcontainers to run against real databases, so they need Docker and are much slower. Run them before a release:
+
+  ```bash
+  dotnet test AsyncMonolith.Tests --filter "Category=Integration"
+  ```
 
 
 ## AsyncMonolith.TestHelpers

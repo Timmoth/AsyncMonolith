@@ -8,6 +8,7 @@ using Shouldly;
 
 namespace AsyncMonolith.Tests;
 
+[Trait("Category", "Integration")]
 public class ConsumerMessageProcessorTests : DbTestsBase
 {
     [Theory]
