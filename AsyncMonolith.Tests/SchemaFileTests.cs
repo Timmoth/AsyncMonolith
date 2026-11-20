@@ -71,4 +71,21 @@ public partial class SchemaFileTests
             }
         }
     }
+
+    [Theory]
+    [MemberData(nameof(SchemaFiles))]
+    public async Task Schema_file_creates_every_model_index(string file)
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await using var db = new TestDbContext(new DbContextOptionsBuilder<TestDbContext>().UseSqlite(connection).Options);
+        var sql = await File.ReadAllTextAsync(SchemaPath(file), TestContext.Current.CancellationToken);
+
+        foreach (var index in db.Model.GetEntityTypes().SelectMany(e => e.GetIndexes()))
+        {
+            var columns = string.Join(", ", index.Properties.Select(p => p.GetColumnName()));
+            var table = index.DeclaringEntityType.GetTableName();
+            sql.ShouldContain($"{index.GetDatabaseName()}", customMessage: $"{file} should create {index.GetDatabaseName()}");
+            sql.ShouldContain($"ON {table} ({columns})", customMessage: $"{file} should index {table} ({columns})");
+        }
+    }
 }

@@ -19,7 +19,7 @@ Make sure to check this table before updating the nuget package in your solution
 
 All packages now share one version and must be upgraded together. From 11.0.0 the major version follows [Semantic Versioning](https://semver.org) (it changes for breaking changes) rather than the .NET version. `AsyncMonolith.MySql` and `AsyncMonolith.MariaDb` are published as previews (`11.0.0-preview.1`) until Pomelo supports EF Core 10 and they run in the integration tests.
 
-**Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_11_0_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
+**Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_11_0_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. It also adds indexes for finding due messages (`rail_id, available_after`), due schedules (`available_after`), schedules by tag, and poisoned messages by age, which keep processing fast as the tables grow. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
 
 **Changes**
 - Cron expressions can have 5 fields (minute precision) as well as 6 (seconds first).

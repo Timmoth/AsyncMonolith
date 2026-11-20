@@ -42,18 +42,25 @@ internal static class AsyncMonolithModel
             entity.ToTable(options.TablePrefix + "consumer_messages", options.Schema);
             entity.HasKey(m => m.Id);
             entity.HasIndex(m => new { m.DeduplicationKey, m.ConsumerType }).IsUnique();
+            // Processors look for due messages on their rail.
+            entity.HasIndex(m => new { m.RailId, m.AvailableAfter });
         });
 
         modelBuilder.Entity<PoisonedMessage>(entity =>
         {
             entity.ToTable(options.TablePrefix + "poisoned_messages", options.Schema);
             entity.HasKey(m => m.Id);
+            // Listed newest first.
+            entity.HasIndex(m => m.CreatedAt);
         });
 
         modelBuilder.Entity<ScheduledMessage>(entity =>
         {
             entity.ToTable(options.TablePrefix + "scheduled_messages", options.Schema);
             entity.HasKey(m => m.Id);
+            // The scheduler looks for due schedules; EnsureSchedule and DeleteByTag look schedules up by tag.
+            entity.HasIndex(m => m.AvailableAfter);
+            entity.HasIndex(m => m.Tag);
         });
     }
 }

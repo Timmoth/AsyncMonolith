@@ -49,7 +49,7 @@ namespace Demo.Migrations
                         .HasColumnName("created_at")
                         .HasJsonPropertyName("created_at");
 
-                    b.Property<string>("InsertId")
+                    b.Property<string>("DeduplicationKey")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("insert_id")
@@ -89,10 +89,12 @@ namespace Demo.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InsertId", "ConsumerType")
+                    b.HasIndex("DeduplicationKey", "ConsumerType")
                         .IsUnique();
 
-                    b.ToTable("consumer_messages");
+                    b.HasIndex("RailId", "AvailableAfter");
+
+                    b.ToTable("consumer_messages", (string)null);
                 });
 
             modelBuilder.Entity("AsyncMonolith.Consumers.PoisonedMessage", b =>
@@ -123,7 +125,7 @@ namespace Demo.Migrations
                         .HasColumnName("created_at")
                         .HasJsonPropertyName("created_at");
 
-                    b.Property<string>("InsertId")
+                    b.Property<string>("DeduplicationKey")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("insert_id")
@@ -163,7 +165,9 @@ namespace Demo.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("poisoned_messages");
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("poisoned_messages", (string)null);
                 });
 
             modelBuilder.Entity("AsyncMonolith.Scheduling.ScheduledMessage", b =>
@@ -178,13 +182,13 @@ namespace Demo.Migrations
                         .HasColumnName("available_after")
                         .HasJsonPropertyName("available_after");
 
-                    b.Property<string>("ChronExpression")
+                    b.Property<string>("CronExpression")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("chron_expression")
                         .HasJsonPropertyName("chron_expression");
 
-                    b.Property<string>("ChronTimezone")
+                    b.Property<string>("CronTimeZone")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("chron_timezone")
@@ -209,7 +213,11 @@ namespace Demo.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("scheduled_messages");
+                    b.HasIndex("AvailableAfter");
+
+                    b.HasIndex("Tag");
+
+                    b.ToTable("scheduled_messages", (string)null);
                 });
 
             modelBuilder.Entity("Example.Api.Spam.SubmittedValue", b =>
