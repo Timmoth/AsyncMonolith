@@ -8,7 +8,7 @@ stored anywhere. The [release workflow](.github/workflows/release.yml) does the 
 
 - **nuget.org:** a trusted publishing policy for repository `Timmoth/AsyncMonolith`, workflow file `release.yml`,
   covering `AsyncMonolith*`. If the policy names an environment, it must be `release`.
-- **GitHub secret `NUGET_USER`:** the nuget.org profile name (not the email address) that owns the policy.
+- **nuget.org account:** the policy belongs to the `aptacode` profile, which the workflow names in its login step.
 - **GitHub environment `release`:** created on first use. Add required reviewers to it if releases should need an
   approval before publishing.
 - The old `NUGET_API_KEY` secret is no longer used and can be deleted.

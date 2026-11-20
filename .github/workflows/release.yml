@@ -6,8 +6,7 @@ name: Release
 # - Push a tag such as v11.0.0 to release. The tag must match <VersionPrefix> in Directory.Build.props.
 # - Run it manually ("Run workflow") for a dry run: everything except publishing.
 #
-# Needs the NUGET_USER secret (the nuget.org profile name that owns the trusted publishing policy for this
-# workflow file).
+# The nuget.org account that owns the trusted publishing policy for this workflow file is "aptacode".
 on:
   push:
     tags:
@@ -114,7 +113,7 @@ jobs:
         uses: NuGet/login@v1
         id: login
         with:
-          user: ${{ secrets.NUGET_USER }}
+          user: aptacode # nuget.org profile name that owns the trusted publishing policy
 
       - name: Push packages
         run: >-
