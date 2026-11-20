@@ -22,6 +22,9 @@ All packages now share one version and must be upgraded together.
 **Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_10_1_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
 
 **Changes**
+- Every database package now produces messages the same way: they are added to your `DbContext` and written on `SaveChanges`, in your transaction. The PostgreSQL, SQL Server, MySQL and MariaDB packages used to write immediately. A repeated insert id skips consumers that already have a pending message with it, on every database.
+- Several app instances can safely share the tables with any database package. Claims and schedule occurrences use conditional updates, so a message is processed by one processor at a time and a schedule fires once per occurrence.
+- Fetch order is deterministic (oldest first, then by id). See [Ordering](guides/consuming-messages.md#ordering) for what is and isn't guaranteed.
 - Consumers can write to the database on SQLite. Messages are claimed and leased in a short transaction, consumers run outside it, and each message is completed in its own short write. If the app stops mid-message, the message is retried once its consumer timeout plus 30 seconds has passed.
 - Retries back off exponentially from `AttemptDelay` up to the new `MaxAttemptDelay` setting (default 300 seconds).
 - The last error is stored on retried and poisoned messages.
@@ -32,6 +35,9 @@ All packages now share one version and must be upgraded together.
 - `AddAsyncMonolithConsumers` lets modules register their own consumers alongside the host's `Add*AsyncMonolith` call.
 
 **Breaking changes**
+- PostgreSQL, SQL Server, MySQL and MariaDB users: messages are no longer written until you call `SaveChanges`. If you produced messages without saving, call `SaveChangesAsync`.
+- `Add*AsyncMonolith` no longer registers `DbContext` as an alias for your context, and throws if called twice (modules use `AddAsyncMonolithConsumers`). Its services use `TryAdd`, so services you register first win.
+- Removed public types: `EfProducerService`, `PostgreSqlProducerService`, `MsSqlProducerService`, `MySqlProducerService`, `MariaDbProducerService` and the unused `ScheduledMessageProcessorFactory`. Resolve `IProducerService` instead.
 - `AsyncMonolith.TestHelpers` uses xunit v3, and `ConsumerTestBase.InitializeAsync`/`DisposeAsync` return `ValueTask`.
 - `IScheduleService` has a new member (`EnsureSchedule`), so custom implementations must add it.
 - Errors that were thrown as `System.Exception` are now `InvalidOperationException`.
