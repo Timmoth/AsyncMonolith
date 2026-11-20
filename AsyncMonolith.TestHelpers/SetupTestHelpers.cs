@@ -44,6 +44,7 @@ public static class SetupTestHelpers
     {
         AddBaseServices(services, configure);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
+        services.AddScoped<ProducerService<T>>();
         services.AddScoped<IProducerService, ProducerService<T>>();
         services.AddScoped<IScheduleService, ScheduleService<T>>();
         services.AddScoped<IPoisonedMessageService, PoisonedMessageService<T>>();

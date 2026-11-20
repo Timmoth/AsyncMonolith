@@ -149,7 +149,7 @@ Produce / schedule messages
     await _producerService.Produce(new ValueSubmitted()
     {
       Value = newValue
-    }, 10, $"user:{userId}");
+    }, TimeSpan.FromSeconds(10), $"user:{userId}");
 
     // Publish a message every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.
     _scheduleService.Schedule(new ValueSubmitted

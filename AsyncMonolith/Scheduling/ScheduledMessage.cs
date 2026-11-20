@@ -40,14 +40,14 @@ public class ScheduledMessage
     /// </summary>
     [JsonPropertyName("chron_expression")]
     [Column("chron_expression")]
-    public required string ChronExpression { get; set; }
+    public required string CronExpression { get; set; }
 
     /// <summary>
     ///     Gets or sets the cron timezone of the scheduled message.
     /// </summary>
     [JsonPropertyName("chron_timezone")]
     [Column("chron_timezone")]
-    public required string ChronTimezone { get; set; }
+    public required string CronTimeZone { get; set; }
 
     /// <summary>
     ///     Gets or sets the payload type of the scheduled message.
@@ -70,12 +70,12 @@ public class ScheduledMessage
     /// <returns>The next occurrence of the scheduled message in Unix timestamp format.</returns>
     public long GetNextOccurrence(TimeProvider timeProvider)
     {
-        var expression = CronExpression.Parse(ChronExpression, CronFormat.IncludeSeconds);
+        var expression = Cronos.CronExpression.Parse(CronExpression, Cronos.CronFormat.IncludeSeconds);
 
-        var timezone = TimeZoneInfo.FindSystemTimeZoneById(ChronTimezone);
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById(CronTimeZone);
         if (timezone == null)
         {
-            throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{ChronTimezone}'");
+            throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{CronTimeZone}'");
         }
 
         var next = expression.GetNextOccurrence(timeProvider.GetUtcNow(), timezone);
@@ -90,25 +90,25 @@ public class ScheduledMessage
     /// <summary>
     ///     Updates the schedule of the scheduled message.
     /// </summary>
-    /// <param name="chronExpression">The new cron expression.</param>
-    /// <param name="chronTimezone">The new cron timezone.</param>
+    /// <param name="cronExpression">The new cron expression.</param>
+    /// <param name="timeZone">The new cron timezone.</param>
     /// <param name="timeProvider">The time provider.</param>
-    public void UpdateSchedule(string chronExpression, string chronTimezone, TimeProvider timeProvider)
+    public void UpdateSchedule(string cronExpression, string timeZone, TimeProvider timeProvider)
     {
-        ChronExpression = chronExpression;
-        ChronTimezone = chronTimezone;
+        CronExpression = cronExpression;
+        CronTimeZone = timeZone;
         AvailableAfter = GetNextOccurrence(timeProvider);
     }
 
     /// <summary>
     ///     Updates the payload of the scheduled message.
     /// </summary>
-    /// <typeparam name="TK">The type of the payload.</typeparam>
+    /// <typeparam name="TPayload">The type of the payload.</typeparam>
     /// <param name="message">The payload message.</param>
-    public void UpdatePayload<TK>(TK message) where TK : IConsumerPayload
+    public void UpdatePayload<TPayload>(TPayload message) where TPayload : IConsumerPayload
     {
         var payload = JsonSerializer.Serialize(message);
         Payload = payload;
-        PayloadType = AsyncMonolithNames.ForPayload<TK>();
+        PayloadType = AsyncMonolithNames.ForPayload<TPayload>();
     }
 }

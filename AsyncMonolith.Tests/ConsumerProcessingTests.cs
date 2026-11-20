@@ -38,7 +38,7 @@ public class ConsumerProcessingTests
     public async Task Message_is_not_consumed_before_it_is_available()
     {
         await using var host = await SqliteTestHost.Create();
-        await host.Produce(new SingleConsumerMessage { Name = "later" }, host.Now + 60);
+        await host.Produce(new SingleConsumerMessage { Name = "later" }, TimeSpan.FromSeconds(60));
 
         (await host.ConsumerProcessor.ProcessBatch(Ct)).ShouldBe(0);
         host.Invocations.GetInvocationCount(nameof(SingleConsumer)).ShouldBe(0);
@@ -81,7 +81,7 @@ public class ConsumerProcessingTests
             s.MaxAttempts = 3;
             s.AttemptDelay = TimeSpan.FromSeconds(0);
         });
-        await host.Produce(new ExceptionConsumerMessage { Name = "boom" }, insertId: "insert-1");
+        await host.Produce(new ExceptionConsumerMessage { Name = "boom" }, deduplicationKey: "insert-1");
         var original = (await host.ConsumerMessages()).ShouldHaveSingleItem();
 
         for (var i = 0; i < 3; i++)
@@ -98,7 +98,7 @@ public class ConsumerProcessingTests
         poisoned.ConsumerType.ShouldBe(nameof(ExceptionConsumer));
         poisoned.PayloadType.ShouldBe(nameof(ExceptionConsumerMessage));
         poisoned.Payload.ShouldBe(original.Payload);
-        poisoned.InsertId.ShouldBe("insert-1");
+        poisoned.DeduplicationKey.ShouldBe("insert-1");
         poisoned.CreatedAt.ShouldBe(original.CreatedAt);
         poisoned.AvailableAfter.ShouldBe(original.AvailableAfter, "it records when the message last became due");
         poisoned.RailId.ShouldBe(original.RailId);
@@ -219,7 +219,7 @@ public class ConsumerProcessingTests
         RailId = 0,
         PayloadType = nameof(OrderedMessage),
         Payload = System.Text.Json.JsonSerializer.Serialize(new OrderedMessage { Name = name }),
-        InsertId = id,
+        DeduplicationKey = id,
         TraceId = null,
         SpanId = null
     };

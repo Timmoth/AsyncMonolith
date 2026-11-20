@@ -77,7 +77,7 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty,
+            DeduplicationKey = string.Empty,
             TraceId = null,
             SpanId = null,
             RailId = 0
@@ -104,7 +104,7 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty,
+            DeduplicationKey = string.Empty,
             TraceId = null,
             SpanId = null,
             RailId = 0
@@ -148,7 +148,7 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty,
+            DeduplicationKey = string.Empty,
             TraceId = null,
             SpanId = null,
             RailId = 0
@@ -175,7 +175,7 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty,
+            DeduplicationKey = string.Empty,
             TraceId = null,
             SpanId = null,
             RailId = 0

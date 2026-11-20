@@ -37,7 +37,7 @@ public class ConfigurationTests
         RailId = 0,
         PayloadType = "payload",
         Payload = "{}",
-        InsertId = "insert",
+        DeduplicationKey = "insert",
         TraceId = null,
         SpanId = null
     };
@@ -146,7 +146,7 @@ public class ConfigurationTests
         registry.ResolveConsumerTimeout(nameof(TimeoutConsumer)).ShouldBe(1);
         registry.ResolveConsumerMaxAttempts(MessageFor(nameof(ExceptionConsumer2Attempts))).ShouldBe(2);
         registry.ResolveConsumerExecutionMode(nameof(SequentialProbeConsumer))
-            .ShouldBe(ConsumerInstanceExecutionMode.Sequential);
+            .ShouldBe(ConsumerExecutionMode.Sequential);
         registry.ResolveConsumerRailId(nameof(RailConsumer2)).ShouldBe(2);
     }
 
@@ -162,7 +162,7 @@ public class ConfigurationTests
         registry.ResolveConsumerTimeout(nameof(ExceptionConsumer)).ShouldBe(42);
         registry.ResolveConsumerMaxAttempts(MessageFor(nameof(ExceptionConsumer))).ShouldBe(7);
         registry.ResolveConsumerExecutionMode(nameof(ExceptionConsumer))
-            .ShouldBe(ConsumerInstanceExecutionMode.Parallel);
+            .ShouldBe(ConsumerExecutionMode.Parallel);
         registry.ResolveConsumerRailId(nameof(ExceptionConsumer)).ShouldBe(0);
     }
 
@@ -193,7 +193,7 @@ public class ConfigurationTests
         registry.ResolveConsumerTimeout("UnknownConsumer").ShouldBe(42);
         registry.ResolveConsumerMaxAttempts(MessageFor("UnknownConsumer")).ShouldBe(7);
         registry.ResolveConsumerRailId("UnknownConsumer").ShouldBe(0);
-        registry.ResolveConsumerExecutionMode("UnknownConsumer").ShouldBe(ConsumerInstanceExecutionMode.Parallel);
+        registry.ResolveConsumerExecutionMode("UnknownConsumer").ShouldBe(ConsumerExecutionMode.Parallel);
     }
 
     [Fact]

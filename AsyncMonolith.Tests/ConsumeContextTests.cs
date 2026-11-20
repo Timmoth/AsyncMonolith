@@ -24,7 +24,7 @@ public class ConsumeContextTests
     {
         var (host, recorder) = await Host();
         await using var _ = host;
-        await host.Produce(new ContextMessage(), insertId: "order-42");
+        await host.Produce(new ContextMessage(), deduplicationKey: "order-42");
         var stored = (await host.ConsumerMessages()).ShouldHaveSingleItem();
 
         await host.ConsumerProcessor.ProcessBatch(Ct);
@@ -65,7 +65,7 @@ public class ConsumeContextTests
         await using var host = await SqliteTestHost.Create();
         await host.Produce(new MultiConsumerMessage { Name = "x" });
 
-        (await host.ConsumerMessages()).Select(m => m.InsertId).Distinct().ShouldHaveSingleItem();
+        (await host.ConsumerMessages()).Select(m => m.DeduplicationKey).Distinct().ShouldHaveSingleItem();
     }
 
     [Fact]

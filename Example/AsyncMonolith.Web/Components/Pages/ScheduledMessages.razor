@@ -38,7 +38,7 @@
                         <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-bold">@msg.PayloadType</span>
                     </td>
                     <td class="p-4 text-sm text-slate-500">@DateTimeOffset.FromUnixTimeSeconds(msg.AvailableAfter).ToString("HH:mm:ss")</td>
-                    <td class="p-4 text-sm text-slate-500">@msg.ChronExpression (@msg.ChronTimezone)</td>
+                    <td class="p-4 text-sm text-slate-500">@msg.CronExpression (@msg.CronTimeZone)</td>
                     <td class="p-4 text-right text-indigo-600 font-bold">
                         @(expandedIds.Contains(msg.Id) ? "−" : "+")
                     </td>

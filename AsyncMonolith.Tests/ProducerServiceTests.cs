@@ -52,15 +52,15 @@ public class ProducerServiceTests
             Name = "test-name"
         };
 
-        var delay = 100;
-        var insertId = "test-insert_id";
+        var delay = TimeSpan.FromSeconds(100);
+        var deduplicationKey = "test-insert_id";
         var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
         using var activity = GetActivity();
         Activity.Current = activity;
 
         // When
-        await producer.Produce(consumerMessage, delay, insertId, cancellationToken: TestContext.Current.CancellationToken);
+        await producer.Produce(consumerMessage, delay, deduplicationKey, cancellationToken: TestContext.Current.CancellationToken);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Then
@@ -69,13 +69,13 @@ public class ProducerServiceTests
             var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var message =
                 await postDbContext.AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(consumerMessage);
-            message.AvailableAfter.ShouldBe(delay);
+            message.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 100);
             message.Attempts.ShouldBe(0);
             message.Id.ShouldBe("fake-id-0");
             message.ConsumerType = nameof(SingleConsumer);
             message.PayloadType = nameof(SingleConsumerMessage);
             message.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage));
-            message.InsertId.ShouldBe(insertId);
+            message.DeduplicationKey.ShouldBe(deduplicationKey);
             message.TraceId.ShouldBe(activity?.TraceId.ToString());
             message.SpanId.ShouldBe(activity?.SpanId.ToString());
         }
@@ -91,15 +91,15 @@ public class ProducerServiceTests
             Name = "test-name"
         };
 
-        var delay = 100;
-        var insertId = "test-insert_id";
+        var delay = TimeSpan.FromSeconds(100);
+        var deduplicationKey = "test-insert_id";
         var producer = serviceProvider.GetRequiredService<IProducerService>();
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
         using var activity = GetActivity();
         Activity.Current = activity;
 
         // When
-        await producer.Produce(consumerMessage, delay, insertId, cancellationToken: TestContext.Current.CancellationToken);
+        await producer.Produce(consumerMessage, delay, deduplicationKey, cancellationToken: TestContext.Current.CancellationToken);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Then
@@ -108,25 +108,25 @@ public class ProducerServiceTests
             var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var message1 =
                 await postDbContext.AssertSingleConsumerMessage<MultiConsumer1, MultiConsumerMessage>(consumerMessage);
-            message1.AvailableAfter.ShouldBe(delay);
+            message1.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 100);
             message1.Attempts.ShouldBe(0);
             message1.Id.ShouldBe("fake-id-0");
             message1.ConsumerType = nameof(MultiConsumer1);
             message1.PayloadType = nameof(MultiConsumerMessage);
             message1.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage));
-            message1.InsertId.ShouldBe(insertId);
+            message1.DeduplicationKey.ShouldBe(deduplicationKey);
             message1.TraceId.ShouldBe(activity?.TraceId.ToString());
             message1.SpanId.ShouldBe(activity?.SpanId.ToString());
 
             var message2 =
                 await postDbContext.AssertSingleConsumerMessage<MultiConsumer2, MultiConsumerMessage>(consumerMessage);
-            message2.AvailableAfter.ShouldBe(delay);
+            message2.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 100);
             message2.Attempts.ShouldBe(0);
             message2.Id.ShouldBe("fake-id-1");
             message2.ConsumerType = nameof(MultiConsumer2);
             message2.PayloadType = nameof(MultiConsumerMessage);
             message2.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage));
-            message2.InsertId.ShouldBe(insertId);
+            message2.DeduplicationKey.ShouldBe(deduplicationKey);
             message2.TraceId.ShouldBe(activity?.TraceId.ToString());
             message2.SpanId.ShouldBe(activity?.SpanId.ToString());
         }
@@ -163,7 +163,7 @@ public class ProducerServiceTests
             message.ConsumerType = nameof(SingleConsumer);
             message.PayloadType = nameof(SingleConsumerMessage);
             message.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage));
-            message.InsertId.ShouldBe("fake-id-0");
+            message.DeduplicationKey.ShouldBe("fake-id-0");
             message.TraceId.ShouldBe(activity?.TraceId.ToString());
             message.SpanId.ShouldBe(activity?.SpanId.ToString());
         }
@@ -185,8 +185,8 @@ public class ProducerServiceTests
             Id = "test-id",
             Tag = "test-tag",
             AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
-            ChronExpression = "* * * * *",
-            ChronTimezone = "",
+            CronExpression = "* * * * *",
+            CronTimeZone = "",
             PayloadType = nameof(SingleConsumerMessage),
             Payload = expectedPayload
         };
@@ -197,7 +197,7 @@ public class ProducerServiceTests
         Activity.Current = activity;
 
         // When
-        producer.Produce(scheduledMessage);
+        serviceProvider.GetRequiredService<ProducerService<TestDbContext>>().ProduceScheduled(scheduledMessage);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Then
@@ -208,7 +208,7 @@ public class ProducerServiceTests
                 await postDbContext.AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(consumerMessage);
             message.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds());
             message.Attempts.ShouldBe(0);
-            message.InsertId.ShouldBe("fake-id-0");
+            message.DeduplicationKey.ShouldBe("fake-id-0");
             message.Id.ShouldBe("fake-id-1");
             message.ConsumerType = nameof(SingleConsumer);
             message.PayloadType = nameof(SingleConsumerMessage);
@@ -234,8 +234,8 @@ public class ProducerServiceTests
             Id = "test-id",
             Tag = "test-tag",
             AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
-            ChronExpression = "* * * * *",
-            ChronTimezone = "UTC",
+            CronExpression = "* * * * *",
+            CronTimeZone = "UTC",
             PayloadType = nameof(MultiConsumerMessage),
             Payload = payload
         };
@@ -244,7 +244,7 @@ public class ProducerServiceTests
         var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
 
         // When
-        producer.Produce(scheduledMessage);
+        serviceProvider.GetRequiredService<ProducerService<TestDbContext>>().ProduceScheduled(scheduledMessage);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Then
@@ -258,7 +258,7 @@ public class ProducerServiceTests
                 await postDbContext.AssertSingleConsumerMessage<MultiConsumer1, MultiConsumerMessage>(consumerMessage);
             message1.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds());
             message1.Attempts.ShouldBe(0);
-            message1.InsertId.ShouldBe("fake-id-0");
+            message1.DeduplicationKey.ShouldBe("fake-id-0");
             message1.Id.ShouldBe("fake-id-1");
             message1.ConsumerType = nameof(MultiConsumer1);
             message1.PayloadType = nameof(MultiConsumerMessage);
@@ -269,7 +269,7 @@ public class ProducerServiceTests
                 await postDbContext.AssertSingleConsumerMessage<MultiConsumer2, MultiConsumerMessage>(consumerMessage);
             message2.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds());
             message2.Attempts.ShouldBe(0);
-            message2.InsertId.ShouldBe("fake-id-0");
+            message2.DeduplicationKey.ShouldBe("fake-id-0");
             message2.Id.ShouldBe("fake-id-2");
             message2.ConsumerType = nameof(MultiConsumer2);
             message2.PayloadType = nameof(MultiConsumerMessage);

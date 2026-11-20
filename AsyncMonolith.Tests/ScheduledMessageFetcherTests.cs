@@ -29,8 +29,8 @@ public class ScheduledMessageFetcherTests : DbTestsBase
                 dbContext.ScheduledMessages.Add(new ScheduledMessage
                 {
                     AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
-                    ChronExpression = "",
-                    ChronTimezone = "",
+                    CronExpression = "",
+                    CronTimeZone = "",
                     Id = idGenerator.GenerateId(),
                     Payload = "",
                     PayloadType = "",

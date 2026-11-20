@@ -30,7 +30,7 @@ public sealed class ConsumerRegistry
     /// <summary>
     ///     Gets the dictionary that maps consumer names to their associated app instance execution mode.
     /// </summary>
-    public IReadOnlyDictionary<string, ConsumerInstanceExecutionMode> ConsumerExecutionModeDictionary { get; }
+    public IReadOnlyDictionary<string, ConsumerExecutionMode> ConsumerExecutionModeDictionary { get; }
 
     /// <summary>
     ///     Gets the dictionary that maps consumer names to their associated types.
@@ -60,7 +60,7 @@ public sealed class ConsumerRegistry
         IReadOnlyDictionary<string, int> consumerTimeoutDictionary,
         IReadOnlyDictionary<string, int> consumerAttemptsDictionary, 
         IReadOnlyDictionary<string, int> consumerRailIdDictionary, 
-        IReadOnlyDictionary<string, ConsumerInstanceExecutionMode> consumerExecutionModeDictionary, 
+        IReadOnlyDictionary<string, ConsumerExecutionMode> consumerExecutionModeDictionary, 
         AsyncMonolithOptions settings)
     {
         ConsumerTypeDictionary = consumerTypeDictionary;
@@ -175,9 +175,9 @@ public sealed class ConsumerRegistry
     /// </summary>
     /// <param name="consumerType"></param>
     /// <returns></returns>
-    public ConsumerInstanceExecutionMode ResolveConsumerExecutionMode(string consumerType)
+    public ConsumerExecutionMode ResolveConsumerExecutionMode(string consumerType)
     {
-        return ConsumerExecutionModeDictionary.GetValueOrDefault(consumerType, ConsumerInstanceExecutionMode.Parallel);
+        return ConsumerExecutionModeDictionary.GetValueOrDefault(consumerType, ConsumerExecutionMode.Parallel);
     }
 
     /// <summary>

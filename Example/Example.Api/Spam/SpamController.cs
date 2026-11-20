@@ -57,7 +57,7 @@ public class SpamController : ControllerBase
         await _producerService.Produce(new SpamMessage
         {
             Last = true
-        }, 10, cancellationToken: cancellationToken);
+        }, cancellationToken: cancellationToken);
 
         return Ok("Started.");
     }

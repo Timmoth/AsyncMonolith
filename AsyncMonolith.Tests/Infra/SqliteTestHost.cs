@@ -93,12 +93,12 @@ public sealed class SqliteTestHost : IAsyncDisposable
     }
 
     /// <summary>Produces a message in its own scope and saves it.</summary>
-    public async Task Produce<T>(T payload, long? availableAfter = null, string? insertId = null)
+    public async Task Produce<T>(T payload, TimeSpan? delay = null, string? deduplicationKey = null)
         where T : IConsumerPayload
     {
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<IProducerService>()
-            .Produce(payload, availableAfter, insertId);
+            .Produce(payload, delay, deduplicationKey);
         await scope.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync();
     }
 

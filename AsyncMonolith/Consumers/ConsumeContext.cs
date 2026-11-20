@@ -38,7 +38,7 @@ public sealed record ConsumeContext
     internal static ConsumeContext For(ConsumerMessage message, int maxAttempts) => new()
     {
         MessageId = message.Id,
-        DeduplicationKey = message.InsertId,
+        DeduplicationKey = message.DeduplicationKey,
         Attempt = Math.Max(message.Attempts, 1),
         MaxAttempts = maxAttempts,
         CreatedAt = DateTimeOffset.FromUnixTimeSeconds(message.CreatedAt),

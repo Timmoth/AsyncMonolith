@@ -65,7 +65,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 await producer.Produce(new SingleConsumerMessage
                 {
                     Name = "test-name"
-                }, FakeTime.GetUtcNow().ToUnixTimeSeconds() + 100, cancellationToken: TestContext.Current.CancellationToken);
+                }, TimeSpan.FromSeconds(100), cancellationToken: TestContext.Current.CancellationToken);
 
                 await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }

@@ -35,6 +35,8 @@ All packages now share one version and must be upgraded together. From 11.0.0 th
 - `AddAsyncMonolithConsumers` lets modules register their own consumers alongside the host's `Add*AsyncMonolith` call.
 
 **Breaking changes**
+- `IProducerService.Produce` takes a `TimeSpan? delay` or a `DateTimeOffset availableAt` instead of a Unix-seconds `long availableAfter`, and `insertId` is renamed `deduplicationKey` (still stored in `insert_id`). `ProduceList` takes an `IEnumerable<T>`. `Produce(ScheduledMessage)` is no longer on the interface.
+- Renamed: `ChronExpression`/`ChronTimezone` → `CronExpression`/`CronTimeZone` (columns unchanged), `InsertId` → `DeduplicationKey` (column unchanged), `ConsumerInstanceExecutionMode` → `ConsumerExecutionMode`, and `IScheduleService` parameters to `cronExpression`/`timeZone`. No migration is needed for these.
 - `AsyncMonolithSettings` is now `AsyncMonolithOptions`, configured through the standard options pattern and validated when the host starts (an `OptionsValidationException` instead of an `ArgumentException` at registration). Times are `TimeSpan`s, and some names changed: `ProcessorBatchSize` → `BatchSize`, `ProcessorMaxDelay` (ms) → `IdlePollInterval`, `ProcessorMinDelay` (ms) → `BusyPollInterval`. `AsyncMonolithSettings.Default` is gone; use `new AsyncMonolithOptions()`.
 - `Add*AsyncMonolith` returns an `AsyncMonolithBuilder` (for `.BindConfiguration(...)` and `.AddConsumers(...)`) instead of `IServiceCollection`, and the obsolete overloads taking an `Assembly` are removed. The TestHelpers setup methods take `Action<AsyncMonolithOptions>`.
 - `[ConsumerTimeout]`'s `Duration` property is now `Seconds`.

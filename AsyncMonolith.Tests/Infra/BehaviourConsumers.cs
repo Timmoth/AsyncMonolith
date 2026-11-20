@@ -87,7 +87,7 @@ public class ParallelProbeMessage : IConsumerPayload
 {
 }
 
-[ConsumerExecutionMode(ConsumerInstanceExecutionMode.Parallel)]
+[ConsumerExecutionMode(ConsumerExecutionMode.Parallel)]
 public class ParallelProbeConsumer(ConcurrencyProbe probe) : IConsumer<ParallelProbeMessage>
 {
     public Task Consume(ParallelProbeMessage payload, ConsumeContext context, CancellationToken cancellationToken) =>
@@ -98,7 +98,7 @@ public class SequentialProbeMessage : IConsumerPayload
 {
 }
 
-[ConsumerExecutionMode(ConsumerInstanceExecutionMode.Sequential)]
+[ConsumerExecutionMode(ConsumerExecutionMode.Sequential)]
 public class SequentialProbeConsumer(ConcurrencyProbe probe) : IConsumer<SequentialProbeMessage>
 {
     public Task Consume(SequentialProbeMessage payload, ConsumeContext context, CancellationToken cancellationToken) =>

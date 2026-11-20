@@ -32,41 +32,41 @@ public sealed class ScheduleService<T> : IScheduleService where T : DbContext
     /// <summary>
     /// Schedules a message.
     /// </summary>
-    /// <typeparam name="TK">The type of the message.</typeparam>
+    /// <typeparam name="TPayload">The type of the message.</typeparam>
     /// <param name="message">The message to schedule.</param>
-    /// <param name="chronExpression">The cron expression for scheduling.</param>
-    /// <param name="chronTimezone">The timezone for scheduling.</param>
+    /// <param name="cronExpression">The cron expression for scheduling.</param>
+    /// <param name="timeZone">The timezone for scheduling.</param>
     /// <param name="tag">The optional tag for the scheduled message.</param>
     /// <returns>The ID of the scheduled message.</returns>
-    public string Schedule<TK>(TK message, string chronExpression, string chronTimezone, string? tag = null)
-        where TK : IConsumerPayload
+    public string Schedule<TPayload>(TPayload message, string cronExpression, string timeZone, string? tag = null)
+        where TPayload : IConsumerPayload
     {
         var payload = JsonSerializer.Serialize(message);
         var id = _idGenerator.GenerateId();
 
-        var expression = CronExpression.Parse(chronExpression, CronFormat.IncludeSeconds);
+        var expression = Cronos.CronExpression.Parse(cronExpression, Cronos.CronFormat.IncludeSeconds);
 
-        var timezone = TimeZoneInfo.FindSystemTimeZoneById(chronTimezone);
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
         if (timezone == null)
         {
-            throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{chronTimezone}'");
+            throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{timeZone}'");
         }
 
         var next = expression.GetNextOccurrence(_timeProvider.GetUtcNow(), timezone);
         if (next == null)
         {
             throw new InvalidOperationException(
-                $"Couldn't determine next scheduled message occurrence for chron expression: '{chronExpression}', timezone: '{chronTimezone}'");
+                $"Couldn't determine next scheduled message occurrence for chron expression: '{cronExpression}', timezone: '{timeZone}'");
         }
 
         _dbContext.Set<ScheduledMessage>().Add(new ScheduledMessage
         {
             Id = id,
-            PayloadType = AsyncMonolithNames.ForPayload<TK>(),
+            PayloadType = AsyncMonolithNames.ForPayload<TPayload>(),
             AvailableAfter = next.Value.ToUnixTimeSeconds(),
             Tag = tag,
-            ChronExpression = chronExpression,
-            ChronTimezone = chronTimezone,
+            CronExpression = cronExpression,
+            CronTimeZone = timeZone,
             Payload = payload
         });
 
@@ -74,8 +74,8 @@ public sealed class ScheduleService<T> : IScheduleService where T : DbContext
     }
 
     /// <inheritdoc />
-    public async Task<string> EnsureSchedule<TK>(TK message, string chronExpression, string chronTimezone,
-        string tag, CancellationToken cancellationToken = default) where TK : IConsumerPayload
+    public async Task<string> EnsureSchedule<TPayload>(TPayload message, string cronExpression, string timeZone,
+        string tag, CancellationToken cancellationToken = default) where TPayload : IConsumerPayload
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tag);
 
@@ -83,16 +83,16 @@ public sealed class ScheduleService<T> : IScheduleService where T : DbContext
         var existing = await set.Where(m => m.Tag == tag).OrderBy(m => m.Id).ToListAsync(cancellationToken);
         if (existing.Count == 0)
         {
-            return Schedule(message, chronExpression, chronTimezone, tag);
+            return Schedule(message, cronExpression, timeZone, tag);
         }
 
         var schedule = existing[0];
         set.RemoveRange(existing.Skip(1));
 
         schedule.UpdatePayload(message);
-        if (schedule.ChronExpression != chronExpression || schedule.ChronTimezone != chronTimezone)
+        if (schedule.CronExpression != cronExpression || schedule.CronTimeZone != timeZone)
         {
-            schedule.UpdateSchedule(chronExpression, chronTimezone, _timeProvider);
+            schedule.UpdateSchedule(cronExpression, timeZone, _timeProvider);
         }
 
         return schedule.Id;

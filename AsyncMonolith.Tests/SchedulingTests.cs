@@ -25,8 +25,8 @@ public class SchedulingTests
         Id = "id",
         Tag = null,
         AvailableAfter = 0,
-        ChronExpression = cron,
-        ChronTimezone = timezone,
+        CronExpression = cron,
+        CronTimeZone = timezone,
         PayloadType = nameof(SingleConsumerMessage),
         Payload = "{}"
     };
@@ -71,8 +71,8 @@ public class SchedulingTests
 
         message.UpdateSchedule("0 30 10 * * *", "UTC", Clock());
 
-        message.ChronExpression.ShouldBe("0 30 10 * * *");
-        message.ChronTimezone.ShouldBe("UTC");
+        message.CronExpression.ShouldBe("0 30 10 * * *");
+        message.CronTimeZone.ShouldBe("UTC");
         message.AvailableAfter.ShouldBe(Utc("2020-08-31T10:30:00Z"));
     }
 
@@ -97,8 +97,8 @@ public class SchedulingTests
         var stored = (await host.ScheduledMessages()).ShouldHaveSingleItem();
         stored.Id.ShouldBe(id);
         stored.Tag.ShouldBe("reports");
-        stored.ChronExpression.ShouldBe("0 0 9 * * *");
-        stored.ChronTimezone.ShouldBe("UTC");
+        stored.CronExpression.ShouldBe("0 0 9 * * *");
+        stored.CronTimeZone.ShouldBe("UTC");
         stored.PayloadType.ShouldBe(nameof(SingleConsumerMessage));
         JsonSerializer.Deserialize<SingleConsumerMessage>(stored.Payload)!.Name.ShouldBe("daily");
         stored.AvailableAfter.ShouldBe(Utc("2020-09-01T09:00:00Z"));
@@ -199,7 +199,7 @@ public class SchedulingTests
         var produced = await host.ConsumerMessages();
         produced.Select(m => m.ConsumerType).Order()
             .ShouldBe([nameof(MultiConsumer1), nameof(MultiConsumer2)]);
-        produced.Select(m => m.InsertId).Distinct().ShouldHaveSingleItem();
+        produced.Select(m => m.DeduplicationKey).Distinct().ShouldHaveSingleItem();
     }
 
     [Fact]

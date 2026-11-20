@@ -56,7 +56,7 @@ Producing and scheduling messages
   await _producerService.Produce(new UserDeleted()
   {
     Id = id
-  }, 60);
+  }, TimeSpan.FromSeconds(60));
   
  // Publish 'CacheRefreshScheduled' every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.
  _scheduleService.Schedule(new CacheRefreshScheduled

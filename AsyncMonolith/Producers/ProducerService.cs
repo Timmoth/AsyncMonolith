@@ -33,54 +33,84 @@ internal sealed class ProducerService<T> : IProducerService where T : DbContext
         _idGenerator = idGenerator;
     }
 
-    public async Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null,
+    public Task Produce<TPayload>(TPayload payload, TimeSpan? delay = null, string? deduplicationKey = null,
         CancellationToken cancellationToken = default)
-        where TK : IConsumerPayload
+        where TPayload : IConsumerPayload =>
+        Produce(payload, AvailableAfter(delay), deduplicationKey, cancellationToken);
+
+    public Task Produce<TPayload>(TPayload payload, DateTimeOffset availableAt, string? deduplicationKey = null,
+        CancellationToken cancellationToken = default)
+        where TPayload : IConsumerPayload =>
+        Produce(payload, ToStoredTime(availableAt), deduplicationKey, cancellationToken);
+
+    public Task ProduceList<TPayload>(IEnumerable<TPayload> payloads, TimeSpan? delay = null,
+        CancellationToken cancellationToken = default) where TPayload : IConsumerPayload
     {
-        var payloadType = AsyncMonolithNames.ForPayload<TK>();
+        ArgumentNullException.ThrowIfNull(payloads);
+        var payloadType = AsyncMonolithNames.ForPayload<TPayload>();
         var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
-
-        if (insertId is not null)
+        var availableAfter = AvailableAfter(delay);
+        foreach (var payload in payloads)
         {
-            var pending = await PendingConsumers(insertId, consumers, cancellationToken);
-            consumers = consumers.Where(c => !pending.Contains(c)).ToList();
-        }
-
-        Add(payloadType, JsonSerializer.Serialize(message), consumers, availableAfter,
-            insertId ?? _idGenerator.GenerateId(), Activity.Current);
-    }
-
-    public Task ProduceList<TK>(List<TK> messages, long? availableAfter = null,
-        CancellationToken cancellationToken = default) where TK : IConsumerPayload
-    {
-        var payloadType = AsyncMonolithNames.ForPayload<TK>();
-        var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
-        foreach (var message in messages)
-        {
-            Add(payloadType, JsonSerializer.Serialize(message), consumers, availableAfter, _idGenerator.GenerateId(),
+            Add(payloadType, JsonSerializer.Serialize(payload), consumers, availableAfter, _idGenerator.GenerateId(),
                 Activity.Current);
         }
 
         return Task.CompletedTask;
     }
 
-    public void Produce(ScheduledMessage message)
+    /// <summary>Produces the message for a due schedule. Used by the scheduled message processor.</summary>
+    internal void ProduceScheduled(ScheduledMessage message)
     {
         Add(message.PayloadType, message.Payload, _consumerRegistry.ResolvePayloadConsumerTypes(message.PayloadType),
             null, _idGenerator.GenerateId(), null);
     }
 
-    private async Task<HashSet<string>> PendingConsumers(string insertId, IReadOnlyList<string> consumers,
+    private async Task Produce<TPayload>(TPayload payload, long availableAfter, string? deduplicationKey,
+        CancellationToken cancellationToken) where TPayload : IConsumerPayload
+    {
+        var payloadType = AsyncMonolithNames.ForPayload<TPayload>();
+        var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
+
+        if (deduplicationKey is not null)
+        {
+            var pending = await PendingConsumers(deduplicationKey, consumers, cancellationToken);
+            consumers = consumers.Where(c => !pending.Contains(c)).ToList();
+        }
+
+        Add(payloadType, JsonSerializer.Serialize(payload), consumers, availableAfter,
+            deduplicationKey ?? _idGenerator.GenerateId(), Activity.Current);
+    }
+
+    private long AvailableAfter(TimeSpan? delay)
+    {
+        if (delay < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(delay), delay, "The delay must not be negative.");
+        }
+
+        return ToStoredTime(_timeProvider.GetUtcNow() + (delay ?? TimeSpan.Zero));
+    }
+
+    // Stored times are whole seconds. A future time is rounded up, so a message is never consumed before it was
+    // asked to be; a time that has already passed is stored as now, so the message is available straight away.
+    private long ToStoredTime(DateTimeOffset time)
+    {
+        var now = _timeProvider.GetUtcNow();
+        return time <= now ? now.ToUnixTimeSeconds() : (time.ToUnixTimeMilliseconds() + 999) / 1000;
+    }
+
+    private async Task<HashSet<string>> PendingConsumers(string deduplicationKey, IReadOnlyList<string> consumers,
         CancellationToken cancellationToken)
     {
         var set = _dbContext.Set<ConsumerMessage>();
         var pending = set.Local
-            .Where(m => m.InsertId == insertId && consumers.Contains(m.ConsumerType))
+            .Where(m => m.DeduplicationKey == deduplicationKey && consumers.Contains(m.ConsumerType))
             .Select(m => m.ConsumerType)
             .ToHashSet();
 
         var saved = await set.AsNoTracking()
-            .Where(m => m.InsertId == insertId && consumers.Contains(m.ConsumerType))
+            .Where(m => m.DeduplicationKey == deduplicationKey && consumers.Contains(m.ConsumerType))
             .Select(m => m.ConsumerType)
             .ToListAsync(cancellationToken);
         pending.UnionWith(saved);
@@ -88,7 +118,7 @@ internal sealed class ProducerService<T> : IProducerService where T : DbContext
     }
 
     private void Add(string payloadType, string payload, IEnumerable<string> consumers, long? availableAfter,
-        string insertId, Activity? activity)
+        string deduplicationKey, Activity? activity)
     {
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         var set = _dbContext.Set<ConsumerMessage>();
@@ -104,7 +134,7 @@ internal sealed class ProducerService<T> : IProducerService where T : DbContext
                 RailId = _consumerRegistry.ResolveConsumerRailId(consumer),
                 PayloadType = payloadType,
                 Payload = payload,
-                InsertId = insertId,
+                DeduplicationKey = deduplicationKey,
                 TraceId = activity?.TraceId.ToString(),
                 SpanId = activity?.SpanId.ToString()
             });

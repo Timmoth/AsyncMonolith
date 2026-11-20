@@ -73,7 +73,7 @@ public sealed class ConsumerMessage
     /// </summary>
     [JsonPropertyName("insert_id")]
     [Column("insert_id")]
-    public required string InsertId { get; set; }
+    public required string DeduplicationKey { get; set; }
 
     /// <summary>
     ///     Gets or sets the trace Id of the activity that produced the consumer message.

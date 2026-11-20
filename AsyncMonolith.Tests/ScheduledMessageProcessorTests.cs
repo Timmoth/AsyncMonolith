@@ -56,7 +56,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
                         consumerMessage, "fake-id-2");
                 message1.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds());
                 message1.Attempts.ShouldBe(0);
-                message1.InsertId.ShouldBe("fake-id-1");
+                message1.DeduplicationKey.ShouldBe("fake-id-1");
                 message1.Id.ShouldBe("fake-id-2");
                 message1.ConsumerType = nameof(MultiConsumer1);
                 message1.PayloadType = nameof(MultiConsumerMessage);
@@ -67,7 +67,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
                         consumerMessage, "fake-id-3");
                 message2.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds());
                 message2.Attempts.ShouldBe(0);
-                message2.InsertId.ShouldBe("fake-id-1");
+                message2.DeduplicationKey.ShouldBe("fake-id-1");
                 message2.Id.ShouldBe("fake-id-3");
                 message2.ConsumerType = nameof(MultiConsumer2);
                 message2.PayloadType = nameof(MultiConsumerMessage);

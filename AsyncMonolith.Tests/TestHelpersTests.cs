@@ -29,7 +29,7 @@ public class TestHelpersTests
         using var scope = FakeServices().CreateScope();
         var producer = (FakeProducerService)scope.ServiceProvider.GetRequiredService<IProducerService>();
 
-        await producer.Produce(new MultiConsumerMessage { Name = "x" }, insertId: "insert", cancellationToken: Ct);
+        await producer.Produce(new MultiConsumerMessage { Name = "x" }, deduplicationKey: "insert", cancellationToken: Ct);
         await producer.ProduceList([new RailConsumerMessage()], cancellationToken: Ct);
 
         producer.CreatedConsumerMessages.Select(m => m.ConsumerType).Order().ShouldBe([
@@ -37,7 +37,7 @@ public class TestHelpersTests
             nameof(RailConsumer0), nameof(RailConsumer1), nameof(RailConsumer2)
         ]);
         producer.CreatedConsumerMessages.Where(m => m.PayloadType == nameof(MultiConsumerMessage))
-            .ShouldAllBe(m => m.InsertId == "insert");
+            .ShouldAllBe(m => m.DeduplicationKey == "insert");
         producer.CreatedConsumerMessages.Single(m => m.ConsumerType == nameof(RailConsumer2)).RailId.ShouldBe(2);
     }
 

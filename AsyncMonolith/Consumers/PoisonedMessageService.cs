@@ -110,7 +110,7 @@ public sealed class PoisonedMessageService<T> : IPoisonedMessageService where T 
             RailId = poisoned.RailId,
             PayloadType = poisoned.PayloadType,
             Payload = poisoned.Payload,
-            InsertId = poisoned.InsertId,
+            DeduplicationKey = poisoned.DeduplicationKey,
             TraceId = poisoned.TraceId,
             SpanId = poisoned.SpanId,
             LastError = poisoned.LastError

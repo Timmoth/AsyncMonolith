@@ -22,7 +22,7 @@ public static class StartupExtensions
     public static ModelBuilder ConfigureAsyncMonolith(this ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ConsumerMessage>()
-            .HasIndex(e => new { e.InsertId, e.ConsumerType })
+            .HasIndex(e => new { e.DeduplicationKey, e.ConsumerType })
             .IsUnique();
 
         return modelBuilder;
@@ -59,6 +59,7 @@ public static class StartupExtensions
         // TryAdd, so a host can register its own implementation before or instead of these.
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IAsyncMonolithIdGenerator, AsyncMonolithIdGenerator>();
+        services.TryAddScoped<ProducerService<T>>();
         services.TryAddScoped<IProducerService, ProducerService<T>>();
         services.TryAddScoped<IScheduleService, ScheduleService<T>>();
         services.TryAddScoped<IPoisonedMessageService, PoisonedMessageService<T>>();
@@ -145,7 +146,7 @@ public static class StartupExtensions
         var payloadConsumerDictionary = new Dictionary<string, List<string>>();
         var consumerTimeoutDictionary = new Dictionary<string, int>();
         var consumerAttemptsDictionary = new Dictionary<string, int>();
-        var consumerExecutionModeDictionary = new Dictionary<string, ConsumerInstanceExecutionMode>();
+        var consumerExecutionModeDictionary = new Dictionary<string, ConsumerExecutionMode>();
         var payloadTypeDictionary = new Dictionary<string, Type>();
 
         var consumerRailIdDictionary = new Dictionary<string, int>();
@@ -185,7 +186,7 @@ public static class StartupExtensions
 
             consumerAttemptsDictionary[consumerName] = maxAttempts;
 
-            var consumerExecutionMode = ConsumerInstanceExecutionMode.Parallel;
+            var consumerExecutionMode = ConsumerExecutionMode.Parallel;
             attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerExecutionModeAttribute));
             if (attribute is ConsumerExecutionModeAttribute executionModeAttribute)
             {

@@ -46,6 +46,7 @@ public static class TestServiceHelpers
         
         services.InternalRegisterAsyncMonolithConsumers(settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
+        services.AddScoped<ProducerService<TestDbContext>>();
         services.AddScoped<IProducerService, ProducerService<TestDbContext>>();
         services.AddScoped<IScheduleService, ScheduleService<TestDbContext>>();
         services.AddScoped<IPoisonedMessageService, PoisonedMessageService<TestDbContext>>();

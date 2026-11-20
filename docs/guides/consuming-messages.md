@@ -37,7 +37,7 @@ Messages are taken roughly oldest first, but **delivery order is not guaranteed*
 
 - `created_at` is stored in whole seconds. Messages created in the same second are taken in `id` order, and ids are random, so their order is effectively arbitrary.
 - A failed message is retried later, after messages that were created after it.
-- Messages in a batch run in parallel by default. `[ConsumerExecutionMode(ConsumerInstanceExecutionMode.Sequential)]` only runs one consumer's messages one at a time **within a batch on one processor**. It doesn't order them across batches, retries, rails or app instances.
+- Messages in a batch run in parallel by default. `[ConsumerExecutionMode(ConsumerExecutionMode.Sequential)]` only runs one consumer's messages one at a time **within a batch on one processor**. It doesn't order them across batches, retries, rails or app instances.
 
 Design consumers so the order of messages doesn't matter, for example by checking the current state of the data rather than relying on earlier messages having run.
 

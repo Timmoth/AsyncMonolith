@@ -116,7 +116,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             var group = consumerMessageGroup.ToList();
             var executionMode = _consumerRegistry.ResolveConsumerExecutionMode(consumerMessageGroup.Key);
 
-            if (executionMode == ConsumerInstanceExecutionMode.Parallel)
+            if (executionMode == ConsumerExecutionMode.Parallel)
             {
                 // Parallel: all messages in the group are processed concurrently
                 tasks.Add(Task.WhenAll(group.Select(m => ProcessAndComplete(m, cancellationToken)))
@@ -241,7 +241,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             CreatedAt = message.CreatedAt,
             Payload = message.Payload,
             PayloadType = message.PayloadType,
-            InsertId = message.InsertId,
+            DeduplicationKey = message.DeduplicationKey,
             TraceId = message.TraceId,
             SpanId = message.SpanId,
             RailId = message.RailId,

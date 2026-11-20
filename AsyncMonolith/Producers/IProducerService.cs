@@ -1,40 +1,47 @@
-﻿using AsyncMonolith.Consumers;
-using AsyncMonolith.Scheduling;
+using AsyncMonolith.Consumers;
 
 namespace AsyncMonolith.Producers;
 
 /// <summary>
-///     Interface for producing messages.
+///     Produces messages for consumers. Messages are added to your DbContext and written when you call
+///     SaveChanges, in the same transaction as your other changes.
 /// </summary>
 public interface IProducerService
 {
     /// <summary>
-    ///     Produces a single message
+    ///     Produces a message for every consumer of <typeparamref name="TPayload" />.
     /// </summary>
-    /// <typeparam name="TK">The type of the message.</typeparam>
-    /// <param name="message">The message to produce.</param>
-    /// <param name="availableAfter">The time in seconds after which the message should be available for consumption.</param>
-    /// <param name="insertId">The insert ID for the message.</param>
-    /// <param name="cancellationToken">Cancellation Token</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null, 
+    /// <param name="payload">The payload.</param>
+    /// <param name="delay">How long to wait before the message is consumed. Null means straight away.</param>
+    /// <param name="deduplicationKey">
+    ///     Skips consumers that already have a pending message with this key. Leave null to always produce.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task Produce<TPayload>(TPayload payload, TimeSpan? delay = null, string? deduplicationKey = null,
         CancellationToken cancellationToken = default)
-        where TK : IConsumerPayload;
+        where TPayload : IConsumerPayload;
 
     /// <summary>
-    ///     Produces a list of messages of type TK.
+    ///     Produces a message for every consumer of <typeparamref name="TPayload" />, to be consumed at or after
+    ///     <paramref name="availableAt" />.
     /// </summary>
-    /// <typeparam name="TK">The type of the messages.</typeparam>
-    /// <param name="messages">The list of messages to produce.</param>
-    /// <param name="availableAfter">The time in seconds after which the messages should be available for consumption.</param>
-    /// <param name="cancellationToken">Cancellation Token</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public Task ProduceList<TK>(List<TK> messages, long? availableAfter = null,
-        CancellationToken cancellationToken = default) where TK : IConsumerPayload;
+    /// <param name="payload">The payload.</param>
+    /// <param name="availableAt">The earliest time the message is consumed.</param>
+    /// <param name="deduplicationKey">
+    ///     Skips consumers that already have a pending message with this key. Leave null to always produce.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task Produce<TPayload>(TPayload payload, DateTimeOffset availableAt, string? deduplicationKey = null,
+        CancellationToken cancellationToken = default)
+        where TPayload : IConsumerPayload;
 
     /// <summary>
-    ///     Produces a scheduled message.
+    ///     Produces a message per payload for every consumer of <typeparamref name="TPayload" />.
     /// </summary>
-    /// <param name="message">The scheduled message to produce.</param>
-    public void Produce(ScheduledMessage message);
+    /// <param name="payloads">The payloads.</param>
+    /// <param name="delay">How long to wait before the messages are consumed. Null means straight away.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task ProduceList<TPayload>(IEnumerable<TPayload> payloads, TimeSpan? delay = null,
+        CancellationToken cancellationToken = default)
+        where TPayload : IConsumerPayload;
 }

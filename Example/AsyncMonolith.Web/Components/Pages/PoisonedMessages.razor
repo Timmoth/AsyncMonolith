@@ -38,7 +38,7 @@
                     <td class="p-4 text-center font-bold @(msg.Attempts > 0 ? "text-red-500" : "text-slate-400")">@msg.Attempts</td>
                     <td class="p-4 text-sm text-slate-500">@DateTimeOffset.FromUnixTimeSeconds(msg.AvailableAfter).ToString("HH:mm:ss")</td>
                     <td class="p-4 text-sm text-slate-500">@msg.RailId</td>
-                    <td class="p-4 text-sm text-slate-500">@msg.InsertId</td>
+                    <td class="p-4 text-sm text-slate-500">@msg.DeduplicationKey</td>
                     <td class="p-4 text-right text-red-600 font-bold">
                         @(expandedIds.Contains(msg.Id) ? "−" : "+")
                     </td>

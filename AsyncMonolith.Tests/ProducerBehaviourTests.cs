@@ -26,7 +26,7 @@ public class ProducerBehaviourTests
         messages.ShouldAllBe(m => m.PayloadType == nameof(MultiConsumerMessage));
         messages.ShouldAllBe(m => m.Attempts == 0);
         messages.ShouldAllBe(m => m.CreatedAt == host.Now && m.AvailableAfter == host.Now);
-        messages.Select(m => m.InsertId).Distinct().ShouldHaveSingleItem();
+        messages.Select(m => m.DeduplicationKey).Distinct().ShouldHaveSingleItem();
         messages.Select(m => m.Id).Distinct().Count().ShouldBe(2);
         JsonSerializer.Deserialize<MultiConsumerMessage>(messages[0].Payload)!.Name.ShouldBe("hello");
     }
@@ -36,11 +36,65 @@ public class ProducerBehaviourTests
     {
         await using var host = await SqliteTestHost.Create();
 
-        await host.Produce(new SingleConsumerMessage { Name = "x" }, host.Now + 300, "my-insert-id");
+        await host.Produce(new SingleConsumerMessage { Name = "x" }, TimeSpan.FromSeconds(300), "my-insert-id");
 
         var message = (await host.ConsumerMessages()).ShouldHaveSingleItem();
         message.AvailableAfter.ShouldBe(host.Now + 300);
-        message.InsertId.ShouldBe("my-insert-id");
+        message.DeduplicationKey.ShouldBe("my-insert-id");
+    }
+
+    [Fact]
+    public async Task A_delay_is_rounded_up_to_whole_seconds()
+    {
+        await using var host = await SqliteTestHost.Create();
+        host.Time.Advance(TimeSpan.FromMilliseconds(400));
+
+        await host.Produce(new SingleConsumerMessage { Name = "x" }, TimeSpan.FromSeconds(1));
+
+        // 10:00:00.400 + 1s = 10:00:01.400, never consumed before then, so stored as 10:00:02
+        (await host.ConsumerMessages()).ShouldHaveSingleItem().AvailableAfter.ShouldBe(host.Now + 2);
+    }
+
+    [Fact]
+    public async Task No_delay_is_available_straight_away_even_mid_second()
+    {
+        await using var host = await SqliteTestHost.Create();
+        host.Time.Advance(TimeSpan.FromMilliseconds(400));
+
+        await host.Produce(new SingleConsumerMessage { Name = "x" });
+
+        (await host.ConsumerMessages()).ShouldHaveSingleItem().AvailableAfter.ShouldBe(host.Now);
+        (await host.ConsumerProcessor.ProcessBatch(Ct)).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Produce_at_a_time_waits_until_then_and_a_past_time_means_now()
+    {
+        await using var host = await SqliteTestHost.Create();
+
+        using (var scope = host.Services.CreateScope())
+        {
+            var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
+            await producer.Produce(new OrderedMessage { Name = "future" }, host.Time.GetUtcNow().AddMinutes(5),
+                cancellationToken: Ct);
+            await producer.Produce(new OrderedMessage { Name = "past" }, host.Time.GetUtcNow().AddDays(-1),
+                cancellationToken: Ct);
+            await scope.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct);
+        }
+
+        var messages = await host.ConsumerMessages();
+        messages.Single(m => m.Payload.Contains("future", StringComparison.Ordinal)).AvailableAfter
+            .ShouldBe(host.Now + 300);
+        messages.Single(m => m.Payload.Contains("past", StringComparison.Ordinal)).AvailableAfter.ShouldBe(host.Now);
+    }
+
+    [Fact]
+    public async Task A_negative_delay_is_rejected()
+    {
+        await using var host = await SqliteTestHost.Create();
+
+        await Should.ThrowAsync<ArgumentOutOfRangeException>(() =>
+            host.Produce(new SingleConsumerMessage { Name = "x" }, TimeSpan.FromSeconds(-1)));
     }
 
     [Fact]
@@ -61,9 +115,9 @@ public class ProducerBehaviourTests
     public async Task Producing_an_insert_id_that_is_already_pending_is_skipped()
     {
         await using var host = await SqliteTestHost.Create();
-        await host.Produce(new SingleConsumerMessage { Name = "first" }, insertId: "dedupe-key");
+        await host.Produce(new SingleConsumerMessage { Name = "first" }, deduplicationKey: "dedupe-key");
 
-        await host.Produce(new SingleConsumerMessage { Name = "second" }, insertId: "dedupe-key");
+        await host.Produce(new SingleConsumerMessage { Name = "second" }, deduplicationKey: "dedupe-key");
 
         JsonSerializer.Deserialize<SingleConsumerMessage>((await host.ConsumerMessages()).ShouldHaveSingleItem().Payload)!
             .Name.ShouldBe("first");
@@ -77,8 +131,8 @@ public class ProducerBehaviourTests
         using (var scope = host.Services.CreateScope())
         {
             var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
-            await producer.Produce(new MultiConsumerMessage { Name = "first" }, insertId: "dedupe-key", cancellationToken: Ct);
-            await producer.Produce(new MultiConsumerMessage { Name = "second" }, insertId: "dedupe-key", cancellationToken: Ct);
+            await producer.Produce(new MultiConsumerMessage { Name = "first" }, deduplicationKey: "dedupe-key", cancellationToken: Ct);
+            await producer.Produce(new MultiConsumerMessage { Name = "second" }, deduplicationKey: "dedupe-key", cancellationToken: Ct);
             await scope.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct);
         }
 
@@ -90,12 +144,12 @@ public class ProducerBehaviourTests
     public async Task Only_consumers_that_already_have_the_insert_id_pending_are_skipped()
     {
         await using var host = await SqliteTestHost.Create();
-        await host.Produce(new MultiConsumerMessage { Name = "first" }, insertId: "dedupe-key");
+        await host.Produce(new MultiConsumerMessage { Name = "first" }, deduplicationKey: "dedupe-key");
         // MultiConsumer1 has processed its message; MultiConsumer2's is still pending.
         await host.Change(db => db.ConsumerMessages.Remove(
             db.ConsumerMessages.Single(m => m.ConsumerType == nameof(MultiConsumer1))));
 
-        await host.Produce(new MultiConsumerMessage { Name = "second" }, insertId: "dedupe-key");
+        await host.Produce(new MultiConsumerMessage { Name = "second" }, deduplicationKey: "dedupe-key");
 
         var messages = await host.ConsumerMessages();
         messages.Single(m => m.ConsumerType == nameof(MultiConsumer1)).Payload.ShouldContain("second");
@@ -106,10 +160,10 @@ public class ProducerBehaviourTests
     public async Task An_insert_id_can_be_produced_again_once_its_messages_are_consumed()
     {
         await using var host = await SqliteTestHost.Create();
-        await host.Produce(new SingleConsumerMessage { Name = "first" }, insertId: "dedupe-key");
+        await host.Produce(new SingleConsumerMessage { Name = "first" }, deduplicationKey: "dedupe-key");
         await host.ConsumerProcessor.ProcessBatch(Ct);
 
-        await host.Produce(new SingleConsumerMessage { Name = "again" }, insertId: "dedupe-key");
+        await host.Produce(new SingleConsumerMessage { Name = "again" }, deduplicationKey: "dedupe-key");
 
         (await host.ConsumerMessages()).ShouldHaveSingleItem().Payload.ShouldContain("again");
     }
@@ -123,9 +177,9 @@ public class ProducerBehaviourTests
 
         // Both check before either has saved
         await first.ServiceProvider.GetRequiredService<IProducerService>()
-            .Produce(new SingleConsumerMessage { Name = "first" }, insertId: "dedupe-key", cancellationToken: Ct);
+            .Produce(new SingleConsumerMessage { Name = "first" }, deduplicationKey: "dedupe-key", cancellationToken: Ct);
         await second.ServiceProvider.GetRequiredService<IProducerService>()
-            .Produce(new SingleConsumerMessage { Name = "second" }, insertId: "dedupe-key", cancellationToken: Ct);
+            .Produce(new SingleConsumerMessage { Name = "second" }, deduplicationKey: "dedupe-key", cancellationToken: Ct);
 
         await first.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct);
         await Should.ThrowAsync<DbUpdateException>(() =>
@@ -147,8 +201,8 @@ public class ProducerBehaviourTests
 
         var messages = await host.ConsumerMessages();
         messages.Count.ShouldBe(4);
-        messages.GroupBy(m => m.InsertId).ShouldAllBe(g => g.Count() == 2);
-        messages.Select(m => m.InsertId).Distinct().Count().ShouldBe(2);
+        messages.GroupBy(m => m.DeduplicationKey).ShouldAllBe(g => g.Count() == 2);
+        messages.Select(m => m.DeduplicationKey).Distinct().Count().ShouldBe(2);
     }
 
     [Fact]

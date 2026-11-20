@@ -52,12 +52,12 @@ public class ProducerServiceDbTests : DbTestsBase
         using var activity = GetActivity();
         Activity.Current = activity;
 
-        await Produce(services, p => p.Produce(payload, 10, cancellationToken: Ct));
+        await Produce(services, p => p.Produce(payload, TimeSpan.FromSeconds(10), cancellationToken: Ct));
 
         using var scope = services.CreateScope();
         var message = await scope.ServiceProvider.GetRequiredService<TestDbContext>()
             .AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(payload);
-        message.AvailableAfter.ShouldBe(10);
+        message.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 10);
         message.Attempts.ShouldBe(0);
         message.Payload.ShouldBe(JsonSerializer.Serialize(payload));
         message.TraceId.ShouldBe(activity?.TraceId.ToString());
@@ -82,22 +82,22 @@ public class ProducerServiceDbTests : DbTestsBase
     public Task ProduceList_writes_one_message_per_payload(DbType dbType) => Run(dbType, async services =>
     {
         await Produce(services, p => p.ProduceList(
-            [new SingleConsumerMessage { Name = "a" }, new SingleConsumerMessage { Name = "b" }], 10,
+            [new SingleConsumerMessage { Name = "a" }, new SingleConsumerMessage { Name = "b" }], TimeSpan.FromSeconds(10),
             cancellationToken: Ct));
 
         var messages = await Messages(services);
         messages.Count.ShouldBe(2);
-        messages.Select(m => m.InsertId).Distinct().Count().ShouldBe(2);
-        messages.ShouldAllBe(m => m.AvailableAfter == 10);
+        messages.Select(m => m.DeduplicationKey).Distinct().Count().ShouldBe(2);
+        messages.ShouldAllBe(m => m.AvailableAfter == FakeTime.GetUtcNow().ToUnixTimeSeconds() + 10);
     });
 
     [Theory]
     [MemberData(nameof(GetTestDbTypes))]
     public Task Produce_skips_an_insert_id_that_is_already_pending(DbType dbType) => Run(dbType, async services =>
     {
-        await Produce(services, p => p.Produce(new SingleConsumerMessage { Name = "first" }, insertId: "key",
+        await Produce(services, p => p.Produce(new SingleConsumerMessage { Name = "first" }, deduplicationKey: "key",
             cancellationToken: Ct));
-        await Produce(services, p => p.Produce(new SingleConsumerMessage { Name = "second" }, insertId: "key",
+        await Produce(services, p => p.Produce(new SingleConsumerMessage { Name = "second" }, deduplicationKey: "key",
             cancellationToken: Ct));
 
         (await Messages(services)).ShouldHaveSingleItem().Payload.ShouldContain("first");
@@ -110,9 +110,9 @@ public class ProducerServiceDbTests : DbTestsBase
         using var first = services.CreateScope();
         using var second = services.CreateScope();
         await first.ServiceProvider.GetRequiredService<IProducerService>()
-            .Produce(new SingleConsumerMessage { Name = "first" }, insertId: "key", cancellationToken: Ct);
+            .Produce(new SingleConsumerMessage { Name = "first" }, deduplicationKey: "key", cancellationToken: Ct);
         await second.ServiceProvider.GetRequiredService<IProducerService>()
-            .Produce(new SingleConsumerMessage { Name = "second" }, insertId: "key", cancellationToken: Ct);
+            .Produce(new SingleConsumerMessage { Name = "second" }, deduplicationKey: "key", cancellationToken: Ct);
 
         await first.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct);
         await Should.ThrowAsync<DbUpdateException>(() =>

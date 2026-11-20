@@ -85,7 +85,7 @@ public class EnsureScheduleAndStatisticsTests
 
         await Ensure(host, "a", "0 30 10 * * *", timezone: "Europe/London");
         var schedule = (await host.ScheduledMessages()).ShouldHaveSingleItem();
-        schedule.ChronTimezone.ShouldBe("Europe/London");
+        schedule.CronTimeZone.ShouldBe("Europe/London");
         schedule.AvailableAfter.ShouldBe(Utc("2020-09-01T09:30:00Z"));
     }
 
@@ -139,12 +139,12 @@ public class EnsureScheduleAndStatisticsTests
         await host.Produce(new SingleConsumerMessage { Name = "due-first" });
         host.Time.Advance(TimeSpan.FromSeconds(30));
         await host.Produce(new SingleConsumerMessage { Name = "due-second" });
-        await host.Produce(new SingleConsumerMessage { Name = "later" }, host.Now + 600);
+        await host.Produce(new SingleConsumerMessage { Name = "later" }, TimeSpan.FromSeconds(600));
         await host.Schedule(new SingleConsumerMessage { Name = "s" }, "0 0 9 * * *");
         await host.Change(db => db.PoisonedMessages.Add(new PoisonedMessage
         {
             Id = "p", CreatedAt = 0, AvailableAfter = 0, Attempts = 1, ConsumerType = "c", RailId = 0,
-            PayloadType = "p", Payload = "{}", InsertId = "i", TraceId = null, SpanId = null
+            PayloadType = "p", Payload = "{}", DeduplicationKey = "i", TraceId = null, SpanId = null
         }));
         host.Time.Advance(TimeSpan.FromSeconds(15));
 

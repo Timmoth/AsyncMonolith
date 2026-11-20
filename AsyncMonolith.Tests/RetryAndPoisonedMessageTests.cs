@@ -161,7 +161,7 @@ public class RetryAndPoisonedMessageTests
         requeued.Attempts.ShouldBe(0);
         requeued.AvailableAfter.ShouldBe(host.Now);
         requeued.Payload.ShouldBe(poisoned.Payload);
-        requeued.InsertId.ShouldBe(poisoned.InsertId);
+        requeued.DeduplicationKey.ShouldBe(poisoned.DeduplicationKey);
         requeued.LastError.ShouldBe(poisoned.LastError);
 
         // It is processed again (and, since this consumer always fails, poisoned again)

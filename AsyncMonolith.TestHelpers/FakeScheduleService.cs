@@ -43,43 +43,43 @@ public sealed class FakeScheduleService : IScheduleService
     /// <summary>
     /// Schedules a message for future execution.
     /// </summary>
-    /// <typeparam name="TK">The type of the message payload.</typeparam>
+    /// <typeparam name="TPayload">The type of the message payload.</typeparam>
     /// <param name="message">The message to schedule.</param>
-    /// <param name="chronExpression">The cron expression for scheduling the message.</param>
-    /// <param name="chronTimezone">The timezone for scheduling the message.</param>
+    /// <param name="cronExpression">The cron expression for scheduling the message.</param>
+    /// <param name="timeZone">The timezone for scheduling the message.</param>
     /// <param name="tag">The optional tag for the scheduled message.</param>
     /// <returns>The ID of the scheduled message.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the cron expression or timezone is invalid.</exception>
-    public string Schedule<TK>(TK message, string chronExpression, string chronTimezone, string? tag = null)
-        where TK : IConsumerPayload
+    public string Schedule<TPayload>(TPayload message, string cronExpression, string timeZone, string? tag = null)
+        where TPayload : IConsumerPayload
     {
         var payload = JsonSerializer.Serialize(message);
         var id = _fakeIdGenerator.GenerateId();
 
-        var expression = CronExpression.Parse(chronExpression, CronFormat.IncludeSeconds);
+        var expression = Cronos.CronExpression.Parse(cronExpression, Cronos.CronFormat.IncludeSeconds);
 
-        var timezone = TimeZoneInfo.FindSystemTimeZoneById(chronTimezone);
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
         if (timezone == null)
         {
             throw new InvalidOperationException(
-                $"Couldn't determine scheduled message timezone: '{chronTimezone}'");
+                $"Couldn't determine scheduled message timezone: '{timeZone}'");
         }
 
         var next = expression.GetNextOccurrence(_timeProvider.GetUtcNow(), timezone);
         if (next == null)
         {
             throw new InvalidOperationException(
-                $"Couldn't determine next scheduled message occurrence for cron expression: '{chronExpression}', timezone: '{chronTimezone}'");
+                $"Couldn't determine next scheduled message occurrence for cron expression: '{cronExpression}', timezone: '{timeZone}'");
         }
 
         CreatedScheduledMessages.Add(new ScheduledMessage
         {
             Id = id,
-            PayloadType = AsyncMonolithNames.ForPayload<TK>(),
+            PayloadType = AsyncMonolithNames.ForPayload<TPayload>(),
             AvailableAfter = next.Value.ToUnixTimeSeconds(),
             Tag = tag,
-            ChronExpression = chronExpression,
-            ChronTimezone = chronTimezone,
+            CronExpression = cronExpression,
+            CronTimeZone = timeZone,
             Payload = payload
         });
 
@@ -89,11 +89,11 @@ public sealed class FakeScheduleService : IScheduleService
     /// <summary>
     ///     Records the schedule, replacing any recorded schedule with the same tag.
     /// </summary>
-    public Task<string> EnsureSchedule<TK>(TK message, string chronExpression, string chronTimezone, string tag,
-        CancellationToken cancellationToken = default) where TK : IConsumerPayload
+    public Task<string> EnsureSchedule<TPayload>(TPayload message, string cronExpression, string timeZone, string tag,
+        CancellationToken cancellationToken = default) where TPayload : IConsumerPayload
     {
         CreatedScheduledMessages.RemoveAll(m => m.Tag == tag);
-        return Task.FromResult(Schedule(message, chronExpression, chronTimezone, tag));
+        return Task.FromResult(Schedule(message, cronExpression, timeZone, tag));
     }
 
     /// <summary>

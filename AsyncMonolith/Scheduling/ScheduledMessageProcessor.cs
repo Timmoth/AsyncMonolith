@@ -79,7 +79,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
-        var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
+        var producer = scope.ServiceProvider.GetRequiredService<ProducerService<T>>();
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         var processedScheduledMessageCount = 0;
         await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -113,7 +113,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
                     continue;
                 }
 
-                producer.Produce(message);
+                producer.ProduceScheduled(message);
                 processedScheduledMessageCount++;
             }
 
