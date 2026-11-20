@@ -15,7 +15,7 @@ public sealed class MariaDbConsumerMessageFetcher : IConsumerMessageFetcher
                     SELECT * 
                     FROM consumer_messages 
                     WHERE available_after <= @currentTime AND rail_id = @railId
-                    ORDER BY created_at 
+                    ORDER BY created_at, id 
                     LIMIT @batchSize 
                     FOR UPDATE SKIP LOCKED";
 

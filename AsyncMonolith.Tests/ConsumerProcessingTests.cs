@@ -186,6 +186,45 @@ public class ConsumerProcessingTests
     }
 
     [Fact]
+    public async Task Messages_created_in_the_same_second_are_taken_in_id_order()
+    {
+        await using var host = await SqliteTestHost.Create(s => s.ProcessorBatchSize = 1);
+        await host.Produce(new OrderedMessage { Name = "first" });
+        await host.Produce(new OrderedMessage { Name = "second" });
+        // Swap the ids so that id order differs from insertion order.
+        var ids = (await host.ConsumerMessages()).Select(m => m.Id).ToList();
+        await host.Change(db =>
+        {
+            db.ConsumerMessages.RemoveRange(db.ConsumerMessages);
+        });
+        await host.Change(db =>
+        {
+            db.ConsumerMessages.Add(Message(ids[1], "first", host.Now));
+            db.ConsumerMessages.Add(Message(ids[0], "second", host.Now));
+        });
+
+        await host.ConsumerProcessor.ProcessBatch(Ct);
+        await host.ConsumerProcessor.ProcessBatch(Ct);
+
+        host.Invocations.Order.ShouldBe(["OrderedConsumer:second", "OrderedConsumer:first"]);
+    }
+
+    private static ConsumerMessage Message(string id, string name, long now) => new()
+    {
+        Id = id,
+        CreatedAt = now,
+        AvailableAfter = now,
+        Attempts = 0,
+        ConsumerType = nameof(OrderedConsumer),
+        RailId = 0,
+        PayloadType = nameof(OrderedMessage),
+        Payload = System.Text.Json.JsonSerializer.Serialize(new OrderedMessage { Name = name }),
+        InsertId = id,
+        TraceId = null,
+        SpanId = null
+    };
+
+    [Fact]
     public async Task Each_consumer_of_a_payload_succeeds_or_fails_independently()
     {
         await using var host = await SqliteTestHost.Create();

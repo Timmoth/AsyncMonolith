@@ -15,7 +15,7 @@ public sealed class MsSqlConsumerMessageFetcher : IConsumerMessageFetcher
                 SELECT TOP (@batchSize) * 
                 FROM consumer_messages WITH (ROWLOCK, READPAST)
                 WHERE available_after <= @currentTime AND rail_id = @railId
-                ORDER BY created_at";
+                ORDER BY created_at, id";
 
     private readonly IOptions<AsyncMonolithSettings> _options;
 

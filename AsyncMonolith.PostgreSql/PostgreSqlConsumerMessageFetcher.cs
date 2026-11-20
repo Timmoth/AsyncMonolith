@@ -15,7 +15,7 @@ public sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
                     SELECT * 
                     FROM consumer_messages 
                     WHERE available_after <= @currentTime AND rail_id = @railId
-                    ORDER BY created_at 
+                    ORDER BY created_at, id 
                     FOR UPDATE SKIP LOCKED 
                     LIMIT @batchSize";
 

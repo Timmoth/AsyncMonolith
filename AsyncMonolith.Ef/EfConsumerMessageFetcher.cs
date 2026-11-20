@@ -34,7 +34,7 @@ public sealed class EfConsumerMessageFetcher : IConsumerMessageFetcher
     {
         return consumerSet
             .Where(m => m.AvailableAfter <= currentTime && m.RailId == railId)
-            .OrderBy(m => m.CreatedAt)
+            .OrderBy(m => m.CreatedAt).ThenBy(m => m.Id)
             .Take(_options.Value.ProcessorBatchSize)
             .ToListAsync(cancellationToken);
     }

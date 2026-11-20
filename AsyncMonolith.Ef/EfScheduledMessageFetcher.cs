@@ -32,7 +32,7 @@ public sealed class EfScheduledMessageFetcher : IScheduledMessageFetcher
         CancellationToken cancellationToken = default)
     {
         return scheduledMessageSet.Where(m => m.AvailableAfter <= currentTime)
-            .OrderBy(m => m.AvailableAfter)
+            .OrderBy(m => m.AvailableAfter).ThenBy(m => m.Id)
             .Take(_options.Value.ProcessorBatchSize)
             .ToListAsync(cancellationToken);
     }
