@@ -10,7 +10,6 @@ namespace AsyncMonolith.Scheduling;
 /// <summary>
 ///     Represents a scheduled message.
 /// </summary>
-[Table("scheduled_messages")]
 public class ScheduledMessage
 {
     /// <summary>

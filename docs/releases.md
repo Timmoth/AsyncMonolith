@@ -22,6 +22,7 @@ All packages now share one version and must be upgraded together. From 11.0.0 th
 **Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_11_0_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
 
 **Changes**
+- Tables can live in their own schema or have a prefix: `modelBuilder.ConfigureAsyncMonolith(o => { o.Schema = "jobs"; o.TablePrefix = "jobs_"; })`. The database packages' SQL follows the mapping.
 - Every database package now produces messages the same way: they are added to your `DbContext` and written on `SaveChanges`, in your transaction. The PostgreSQL, SQL Server, MySQL and MariaDB packages used to write immediately. A repeated insert id skips consumers that already have a pending message with it, on every database.
 - Several app instances can safely share the tables with any database package. Claims and schedule occurrences use conditional updates, so a message is processed by one processor at a time and a schedule fires once per occurrence.
 - Fetch order is deterministic (oldest first, then by id). See [Ordering](guides/consuming-messages.md#ordering) for what is and isn't guaranteed.
@@ -35,6 +36,8 @@ All packages now share one version and must be upgraded together. From 11.0.0 th
 - `AddAsyncMonolithConsumers` lets modules register their own consumers alongside the host's `Add*AsyncMonolith` call.
 
 **Breaking changes**
+- `ConfigureAsyncMonolith()` now maps all three tables (previously only an index), so DbSet properties for them are optional. It takes an optional schema and table prefix. The `[Table]` attributes on the entities are removed; call `ConfigureAsyncMonolith()` in `OnModelCreating` if you weren't already.
+- `IPoisonedMessageService.List` returns `PoisonedMessageInfo` records with `DateTimeOffset` times instead of `PoisonedMessage` entities.
 - Implementation types are now internal: `ConsumerRegistry`, the processors and processor factory, the fetchers and their interfaces, `ScheduleService`, `PoisonedMessageService`, `QueueStatisticsService`, `AsyncMonolithIdGenerator`, `AsyncMonolithInstrumentation.ActivitySource` (the source name constants stay public), and `ScheduledMessage.GetNextOccurrence`/`UpdateSchedule`/`UpdatePayload`. Use the service interfaces instead. `FakeProducerService` is created by `AddFakeAsyncMonolithBaseServices`.
 - `IProducerService.Produce` takes a `TimeSpan? delay` or a `DateTimeOffset availableAt` instead of a Unix-seconds `long availableAfter`, and `insertId` is renamed `deduplicationKey` (still stored in `insert_id`). `ProduceList` takes an `IEnumerable<T>`. `Produce(ScheduledMessage)` is no longer on the interface.
 - Renamed: `ChronExpression`/`ChronTimezone` → `CronExpression`/`CronTimeZone` (columns unchanged), `InsertId` → `DeduplicationKey` (column unchanged), `ConsumerInstanceExecutionMode` → `ConsumerExecutionMode`, and `IScheduleService` parameters to `cronExpression`/`timeZone`. No migration is needed for these.

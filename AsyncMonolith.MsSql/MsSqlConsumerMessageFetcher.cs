@@ -1,4 +1,5 @@
-﻿using AsyncMonolith.Consumers;
+﻿using System.Globalization;
+using AsyncMonolith.Consumers;
 using AsyncMonolith.Utilities;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ internal sealed class MsSqlConsumerMessageFetcher : IConsumerMessageFetcher
 {
     private const string MsSql = @"
                 SELECT TOP (@batchSize) * 
-                FROM consumer_messages WITH (ROWLOCK, READPAST)
+                FROM {table} WITH (ROWLOCK, READPAST)
                 WHERE available_after <= @currentTime AND rail_id = @railId
                 ORDER BY created_at, id";
 
@@ -40,7 +41,7 @@ internal sealed class MsSqlConsumerMessageFetcher : IConsumerMessageFetcher
         CancellationToken cancellationToken = default)
     {
         return consumerSet
-            .FromSqlRaw(MsSql, new SqlParameter("@currentTime", currentTime),
+            .FromSqlRaw(MsSql.Replace("{table}", AsyncMonolithTables.Name(consumerSet), StringComparison.Ordinal), new SqlParameter("@currentTime", currentTime),
                 new SqlParameter("@railId", railId),
                 new SqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);

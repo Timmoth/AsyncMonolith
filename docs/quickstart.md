@@ -27,17 +27,20 @@ Setup your DbContext
         {
         }
 
-        // Add Db Sets
-        public DbSet<ConsumerMessage> ConsumerMessages { get; set; } = default!;
-        public DbSet<PoisonedMessage> PoisonedMessages { get; set; } = default!;
-        public DbSet<ScheduledMessage> ScheduledMessages { get; set; } = default!;
+        // Map AsyncMonolith's tables. DbSet properties for them are optional.
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.ConfigureAsyncMonolith();
 
-        // Configure the ModelBuilder
-		protected override void OnModelCreating(ModelBuilder modelBuilder)
-		{
-			modelBuilder.ConfigureAsyncMonolith();
-			base.OnModelCreating(modelBuilder);
-		}
+            // Or keep them apart from your own tables:
+            // modelBuilder.ConfigureAsyncMonolith(o =>
+            // {
+            //     o.Schema = "jobs";        // databases that support schemas
+            //     o.TablePrefix = "jobs_";  // jobs_consumer_messages, ...
+            // });
+
+            base.OnModelCreating(modelBuilder);
+        }
     }
 ```
 

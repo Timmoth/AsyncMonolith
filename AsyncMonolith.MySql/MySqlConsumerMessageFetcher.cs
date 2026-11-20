@@ -1,4 +1,5 @@
-﻿using AsyncMonolith.Consumers;
+﻿using System.Globalization;
+using AsyncMonolith.Consumers;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -13,7 +14,7 @@ internal sealed class MySqlConsumerMessageFetcher : IConsumerMessageFetcher
 {
     private const string MySql = @"
                     SELECT * 
-                    FROM consumer_messages 
+                    FROM {table} 
                     WHERE available_after <= @currentTime AND rail_id = @railId
                     ORDER BY created_at, id 
                     LIMIT @batchSize 
@@ -42,7 +43,7 @@ internal sealed class MySqlConsumerMessageFetcher : IConsumerMessageFetcher
         CancellationToken cancellationToken = default)
     {
         return consumerSet
-            .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime),
+            .FromSqlRaw(MySql.Replace("{table}", AsyncMonolithTables.Name(consumerSet), StringComparison.Ordinal), new MySqlParameter("@currentTime", currentTime),
                 new MySqlParameter("@railId", railId),
                 new MySqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);

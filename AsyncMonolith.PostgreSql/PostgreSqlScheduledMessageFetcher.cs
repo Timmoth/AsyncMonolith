@@ -1,4 +1,5 @@
-﻿using AsyncMonolith.Scheduling;
+﻿using System.Globalization;
+using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -13,7 +14,7 @@ internal sealed class PostgreSqlScheduledMessageFetcher : IScheduledMessageFetch
 {
     private const string PgSql = @"
                     SELECT * 
-                    FROM scheduled_messages 
+                    FROM {table} 
                     WHERE available_after <= @currentTime 
                     FOR UPDATE SKIP LOCKED 
                     LIMIT @batchSize";
@@ -40,7 +41,7 @@ internal sealed class PostgreSqlScheduledMessageFetcher : IScheduledMessageFetch
         CancellationToken cancellationToken = default)
     {
         return scheduledMessageSet
-            .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime),
+            .FromSqlRaw(PgSql.Replace("{table}", AsyncMonolithTables.Name(scheduledMessageSet), StringComparison.Ordinal), new NpgsqlParameter("@currentTime", currentTime),
                 new NpgsqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);
     }

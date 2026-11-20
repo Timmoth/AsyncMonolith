@@ -7,7 +7,6 @@ namespace AsyncMonolith.Consumers;
 /// <summary>
 ///     Consumer Message model
 /// </summary>
-[Table("consumer_messages")]
 public sealed class ConsumerMessage
 {
     /// <summary>

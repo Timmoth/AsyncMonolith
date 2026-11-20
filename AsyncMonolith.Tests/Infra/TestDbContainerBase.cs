@@ -6,7 +6,7 @@ namespace AsyncMonolith.Tests.Infra;
 public abstract class TestDbContainerBase : IAsyncLifetime
 {
     protected IContainer DbContainer { get; set; } = default!;
-    protected string ConnectionString { get; set; } = default!;
+    public string ConnectionString { get; protected set; } = default!;
     public DbType DbType => GetDbType();
 
     public async ValueTask InitializeAsync()

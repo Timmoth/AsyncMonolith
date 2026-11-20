@@ -12,7 +12,7 @@ public interface IPoisonedMessageService
     Task<int> Count(CancellationToken cancellationToken = default);
 
     /// <summary>Lists poisoned messages, most recently created first.</summary>
-    Task<IReadOnlyList<PoisonedMessage>> List(int skip = 0, int take = 50,
+    Task<IReadOnlyList<PoisonedMessageInfo>> List(int skip = 0, int take = 50,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -28,6 +28,42 @@ public interface IPoisonedMessageService
     /// <summary>Deletes a poisoned message.</summary>
     /// <returns>False if no poisoned message has that id.</returns>
     Task<bool> Delete(string id, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+///     A poisoned message, as returned by <see cref="IPoisonedMessageService.List" />.
+/// </summary>
+public sealed record PoisonedMessageInfo
+{
+    /// <summary>The message id.</summary>
+    public required string Id { get; init; }
+
+    /// <summary>The stored name of the consumer that failed.</summary>
+    public required string ConsumerName { get; init; }
+
+    /// <summary>The stored name of the payload.</summary>
+    public required string PayloadName { get; init; }
+
+    /// <summary>The payload as JSON.</summary>
+    public required string Payload { get; init; }
+
+    /// <summary>The deduplication key the message was produced with (or the generated one).</summary>
+    public required string DeduplicationKey { get; init; }
+
+    /// <summary>How many attempts were made.</summary>
+    public required int Attempts { get; init; }
+
+    /// <summary>When the message was produced.</summary>
+    public required DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>When the message last became due before its final attempt.</summary>
+    public required DateTimeOffset LastDueAt { get; init; }
+
+    /// <summary>The error from the final attempt, if one was recorded.</summary>
+    public string? LastError { get; init; }
+
+    /// <summary>The trace id of the activity that produced the message, if any.</summary>
+    public string? TraceId { get; init; }
 }
 
 /// <summary>
@@ -51,7 +87,7 @@ internal sealed class PoisonedMessageService<T> : IPoisonedMessageService where 
         _dbContext.Set<PoisonedMessage>().CountAsync(cancellationToken);
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<PoisonedMessage>> List(int skip = 0, int take = 50,
+    public async Task<IReadOnlyList<PoisonedMessageInfo>> List(int skip = 0, int take = 50,
         CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(skip);
@@ -63,6 +99,19 @@ internal sealed class PoisonedMessageService<T> : IPoisonedMessageService where 
             .ThenBy(m => m.Id)
             .Skip(skip)
             .Take(take)
+            .Select(m => new PoisonedMessageInfo
+            {
+                Id = m.Id,
+                ConsumerName = m.ConsumerType,
+                PayloadName = m.PayloadType,
+                Payload = m.Payload,
+                DeduplicationKey = m.DeduplicationKey,
+                Attempts = m.Attempts,
+                CreatedAt = DateTimeOffset.FromUnixTimeSeconds(m.CreatedAt),
+                LastDueAt = DateTimeOffset.FromUnixTimeSeconds(m.AvailableAfter),
+                LastError = m.LastError,
+                TraceId = m.TraceId
+            })
             .ToListAsync(cancellationToken);
     }
 

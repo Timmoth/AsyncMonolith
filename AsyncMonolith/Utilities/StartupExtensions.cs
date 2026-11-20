@@ -15,16 +15,18 @@ namespace AsyncMonolith.Utilities;
 public static class StartupExtensions
 {
     /// <summary>
-    /// Configures the AsyncMonolith model.
+    ///     Maps AsyncMonolith's tables (consumer_messages, poisoned_messages and scheduled_messages). Call it in
+    ///     your DbContext's OnModelCreating. You don't need DbSet properties for them.
     /// </summary>
     /// <param name="modelBuilder">The model builder.</param>
-    /// <returns>A reference to this instance after the operation has completed.</returns>
-    public static ModelBuilder ConfigureAsyncMonolith(this ModelBuilder modelBuilder)
+    /// <param name="configure">Optionally sets the schema and a table name prefix.</param>
+    /// <returns>The model builder.</returns>
+    public static ModelBuilder ConfigureAsyncMonolith(this ModelBuilder modelBuilder,
+        Action<AsyncMonolithModelOptions>? configure = null)
     {
-        modelBuilder.Entity<ConsumerMessage>()
-            .HasIndex(e => new { e.DeduplicationKey, e.ConsumerType })
-            .IsUnique();
-
+        var options = new AsyncMonolithModelOptions();
+        configure?.Invoke(options);
+        AsyncMonolithModel.Configure(modelBuilder, options);
         return modelBuilder;
     }
 

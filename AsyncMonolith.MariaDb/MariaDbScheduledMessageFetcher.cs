@@ -1,4 +1,5 @@
-﻿using AsyncMonolith.Scheduling;
+﻿using System.Globalization;
+using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -13,7 +14,7 @@ internal sealed class MariaDbScheduledMessageFetcher : IScheduledMessageFetcher
 {
     private const string MariaDb = @"
                     SELECT * 
-                    FROM scheduled_messages 
+                    FROM {table} 
                     WHERE available_after <= @currentTime 
                     LIMIT @batchSize 
                     FOR UPDATE SKIP LOCKED";
@@ -40,7 +41,7 @@ internal sealed class MariaDbScheduledMessageFetcher : IScheduledMessageFetcher
         CancellationToken cancellationToken = default)
     {
         return scheduledMessageSet
-            .FromSqlRaw(MariaDb, new MySqlParameter("@currentTime", currentTime),
+            .FromSqlRaw(MariaDb.Replace("{table}", AsyncMonolithTables.Name(scheduledMessageSet), StringComparison.Ordinal), new MySqlParameter("@currentTime", currentTime),
                 new MySqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);
     }

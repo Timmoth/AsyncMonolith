@@ -1,4 +1,5 @@
-﻿using AsyncMonolith.Consumers;
+﻿using System.Globalization;
+using AsyncMonolith.Consumers;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -13,7 +14,7 @@ internal sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
 {
     private const string PgSql = @"
                     SELECT * 
-                    FROM consumer_messages 
+                    FROM {table} 
                     WHERE available_after <= @currentTime AND rail_id = @railId
                     ORDER BY created_at, id 
                     FOR UPDATE SKIP LOCKED 
@@ -42,7 +43,7 @@ internal sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
         CancellationToken cancellationToken = default)
     {
         return consumerSet
-            .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime),
+            .FromSqlRaw(PgSql.Replace("{table}", AsyncMonolithTables.Name(consumerSet), StringComparison.Ordinal), new NpgsqlParameter("@currentTime", currentTime),
                 new NpgsqlParameter("@railId", railId),
                 new NpgsqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);

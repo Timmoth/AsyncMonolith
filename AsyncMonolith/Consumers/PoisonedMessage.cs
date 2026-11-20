@@ -7,7 +7,6 @@ namespace AsyncMonolith.Consumers;
 /// <summary>
 /// Poisoned message model
 /// </summary>
-[Table("poisoned_messages")]
 public sealed class PoisonedMessage
 {
     /// <summary>

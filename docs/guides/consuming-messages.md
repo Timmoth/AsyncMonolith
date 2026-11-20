@@ -53,7 +53,7 @@ Design consumers so the order of messages doesn't matter, for example by checkin
 ```csharp
 public class FailedMessagesController(IPoisonedMessageService poisoned) : ControllerBase
 {
-    [HttpGet] public Task<IReadOnlyList<PoisonedMessage>> List() => poisoned.List(skip: 0, take: 50);
+    [HttpGet] public Task<IReadOnlyList<PoisonedMessageInfo>> List() => poisoned.List(skip: 0, take: 50);
     [HttpPost("{id}/retry")] public Task<bool> Retry(string id) => poisoned.Retry(id);
     [HttpDelete("{id}")] public Task<bool> Delete(string id) => poisoned.Delete(id);
 }
