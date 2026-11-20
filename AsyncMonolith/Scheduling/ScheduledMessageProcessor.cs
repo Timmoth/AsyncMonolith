@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using AsyncMonolith.Consumers;
+using System.Diagnostics;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -13,13 +14,14 @@ namespace AsyncMonolith.Scheduling;
 ///     Represents a background service for processing scheduled messages.
 /// </summary>
 /// <typeparam name="T">The type of the database context.</typeparam>
-public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
+internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
 {
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
     private readonly IScheduledMessageFetcher _messageFetcher;
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
+    private readonly AsyncMonolithMetrics _metrics;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ScheduledMessageProcessor{T}" /> class.
@@ -29,15 +31,17 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     /// <param name="options">The options.</param>
     /// <param name="scopeFactory">The service scope factory.</param>
     /// <param name="messageFetcher">The scheduled message fetcher.</param>
+    /// <param name="metrics">The metrics.</param>
     public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger,
-        TimeProvider timeProvider, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory,
-        IScheduledMessageFetcher messageFetcher)
+        TimeProvider timeProvider, IOptions<AsyncMonolithOptions> options, IServiceScopeFactory scopeFactory,
+        IScheduledMessageFetcher messageFetcher, AsyncMonolithMetrics metrics)
     {
         _logger = logger;
         _timeProvider = timeProvider;
         _options = options;
         _scopeFactory = scopeFactory;
         _messageFetcher = messageFetcher;
+        _metrics = metrics;
     }
 
     /// <summary>
@@ -46,40 +50,82 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     /// <param name="stoppingToken">The cancellation token to stop the execution.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var consecutiveFailures = 0;
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = _options.Value.ProcessorMaxDelay;
+            var processed = 0;
             try
             {
-                var processedScheduledMessages = await ProcessBatch(stoppingToken);
-
-                if (processedScheduledMessages >= _options.Value.ProcessorBatchSize)
-                {
-                    delay = _options.Value.ProcessorMinDelay;
-                }
+                processed = await ProcessBatch(stoppingToken);
+                await CleanUpIfDue(stoppingToken);
+                consecutiveFailures = 0;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error scheduling next message");
+                // Back off while batches keep failing (for example while the database is unavailable).
+                consecutiveFailures++;
+                _logger.ScheduleBatchFailed(ex);
             }
 
-            if (delay >= 10)
+            var delay = ProcessorPolling.NextDelay(_options.Value, processed, consecutiveFailures);
+            if (delay > TimeSpan.Zero)
             {
-                await Task.Delay(delay, stoppingToken);
+                try
+                {
+                    await Task.Delay(delay, _timeProvider, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             }
         }
     }
 
+    /// <summary>How often expired poisoned messages are deleted, when retention is set.</summary>
+    internal static readonly TimeSpan CleanupInterval = TimeSpan.FromHours(1);
+
+    private DateTimeOffset _nextCleanup = DateTimeOffset.MinValue;
+
     /// <summary>
-    ///     Processes a batch of scheduled messages.
+    ///     Deletes poisoned messages older than <see cref="AsyncMonolithOptions.PoisonedMessageRetention" />, at most
+    ///     once per <see cref="CleanupInterval" />.
+    /// </summary>
+    /// <returns>The number deleted, or 0 when retention is off or a cleanup ran recently.</returns>
+    internal async Task<int> CleanUpIfDue(CancellationToken cancellationToken)
+    {
+        var now = _timeProvider.GetUtcNow();
+        if (_options.Value.PoisonedMessageRetention is not { } retention || now < _nextCleanup)
+        {
+            return 0;
+        }
+
+        _nextCleanup = now + CleanupInterval;
+        var cutoff = (now - retention).ToUnixTimeSeconds();
+        using var scope = _scopeFactory.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<T>().Set<PoisonedMessage>()
+            .Where(m => m.AvailableAfter < cutoff)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    /// <summary>How long to wait before checking a schedule that couldn't be evaluated again.</summary>
+    internal const int InvalidScheduleRetrySeconds = 3600;
+
+    /// <summary>
+    ///     Processes a batch of scheduled messages. A schedule that fails is logged and moved on; it never stops
+    ///     the others.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The number of processed scheduled messages.</returns>
+    /// <returns>The number of messages produced.</returns>
     internal async Task<int> ProcessBatch(CancellationToken cancellationToken = default)
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<T>();
-        var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
+        var producer = scope.ServiceProvider.GetRequiredService<ProducerService<T>>();
         var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
         var processedScheduledMessageCount = 0;
         await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -102,15 +148,55 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
 
             foreach (var message in messages)
             {
-                producer.Produce(message);
-                message.AvailableAfter = message.GetNextOccurrence(_timeProvider);
-                processedScheduledMessageCount++;
+                // A schedule that can't be evaluated (bad cron expression or time zone, or no future occurrence)
+                // is checked again in an hour instead of blocking every other schedule in the batch.
+                var dueAt = message.AvailableAfter;
+                long next;
+                Exception? invalid = null;
+                try
+                {
+                    next = message.GetNextOccurrence(_timeProvider);
+                }
+                catch (Exception ex) when (ex is FormatException or InvalidOperationException or ArgumentException
+                                               or TimeZoneNotFoundException or InvalidTimeZoneException)
+                {
+                    invalid = ex;
+                    next = currentTime + InvalidScheduleRetrySeconds;
+                }
+
+                // Move the schedule on only if no other processor has already done so for this occurrence.
+                var updated = await set
+                    .Where(m => m.Id == message.Id && m.AvailableAfter == dueAt)
+                    .ExecuteUpdateAsync(s => s.SetProperty(m => m.AvailableAfter, next), cancellationToken);
+                if (updated == 0)
+                {
+                    continue;
+                }
+
+                if (invalid is not null)
+                {
+                    _logger.ScheduleInvalid(invalid, message.Id, message.Tag);
+                    continue;
+                }
+
+                try
+                {
+                    producer.ProduceScheduled(message);
+                    processedScheduledMessageCount++;
+                    _metrics.SchedulesFired.Add(1, new KeyValuePair<string, object?>("payload_type", message.PayloadType));
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // No registered consumers for the payload (for example a module was removed): skip this
+                    // occurrence, keep the schedule.
+                    _logger.ScheduledOccurrenceSkipped(ex, message.Id, message.PayloadType);
+                }
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
             await dbContextTransaction.CommitAsync(cancellationToken);
             activity?.SetStatus(ActivityStatusCode.Ok);
-            _logger.LogInformation("Successfully scheduled message");
+            _logger.ScheduledMessagesProduced();
         }
         catch (Exception)
         {

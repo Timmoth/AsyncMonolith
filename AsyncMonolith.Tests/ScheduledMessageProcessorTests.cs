@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Tests;
 
+[Trait("Category", "Integration")]
 public class ScheduledMessageProcessorTests : DbTestsBase
 {
     [Theory]
@@ -33,7 +34,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
 
                 scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", "test-tag");
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // When
@@ -47,7 +48,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var postDbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var messages = await postDbContext.ConsumerMessages.ToListAsync();
+                var messages = await postDbContext.ConsumerMessages.ToListAsync(TestContext.Current.CancellationToken);
                 messages.Count.ShouldBe(2);
 
                 var message1 =
@@ -55,7 +56,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
                         consumerMessage, "fake-id-2");
                 message1.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds());
                 message1.Attempts.ShouldBe(0);
-                message1.InsertId.ShouldBe("fake-id-1");
+                message1.DeduplicationKey.ShouldBe("fake-id-1");
                 message1.Id.ShouldBe("fake-id-2");
                 message1.ConsumerType = nameof(MultiConsumer1);
                 message1.PayloadType = nameof(MultiConsumerMessage);
@@ -66,7 +67,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
                         consumerMessage, "fake-id-3");
                 message2.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds());
                 message2.Attempts.ShouldBe(0);
-                message2.InsertId.ShouldBe("fake-id-1");
+                message2.DeduplicationKey.ShouldBe("fake-id-1");
                 message2.Id.ShouldBe("fake-id-3");
                 message2.ConsumerType = nameof(MultiConsumer2);
                 message2.PayloadType = nameof(MultiConsumerMessage);
@@ -101,7 +102,7 @@ public class ScheduledMessageProcessorTests : DbTestsBase
 
                 scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", "test-tag");
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             FakeTime.SetUtcNow(FakeTime.GetUtcNow().AddSeconds(100));

@@ -38,9 +38,9 @@ await _dbContext.SaveChangesAsync();
 ```
 
 ```csharp
-public class SendOrderCancelledEmail : BaseConsumer<OrderCancelled>
+public class SendOrderCancelledEmail : IConsumer<OrderCancelled>
 {
-    public override Task Consume(OrderCancelled message, CancellationToken cancellationToken)
+    public Task Consume(OrderCancelled message, ConsumeContext context, CancellationToken cancellationToken)
     {
         ...
         // Send order cancelled email

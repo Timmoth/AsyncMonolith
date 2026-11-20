@@ -3,6 +3,7 @@ using AsyncMonolith.Consumers;
 using AsyncMonolith.Utilities;
 using Cronos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AsyncMonolith.Scheduling;
 
@@ -10,11 +11,12 @@ namespace AsyncMonolith.Scheduling;
 /// Service for scheduling messages.
 /// </summary>
 /// <typeparam name="T">The type of DbContext.</typeparam>
-public sealed class ScheduleService<T> : IScheduleService where T : DbContext
+internal sealed class ScheduleService<T> : IScheduleService where T : DbContext
 {
     private readonly T _dbContext;
     private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ScheduleService{T}" /> class.
@@ -22,9 +24,12 @@ public sealed class ScheduleService<T> : IScheduleService where T : DbContext
     /// <param name="timeProvider">The time provider.</param>
     /// <param name="dbContext">The DbContext.</param>
     /// <param name="idGenerator">The ID generator.</param>
-    public ScheduleService(TimeProvider timeProvider, T dbContext, IAsyncMonolithIdGenerator idGenerator)
+    /// <param name="options">The AsyncMonolith options.</param>
+    public ScheduleService(TimeProvider timeProvider, T dbContext, IAsyncMonolithIdGenerator idGenerator,
+        IOptions<AsyncMonolithOptions> options)
     {
         _timeProvider = timeProvider;
+        _options = options;
         _dbContext = dbContext;
         _idGenerator = idGenerator;
     }
@@ -32,45 +37,63 @@ public sealed class ScheduleService<T> : IScheduleService where T : DbContext
     /// <summary>
     /// Schedules a message.
     /// </summary>
-    /// <typeparam name="TK">The type of the message.</typeparam>
+    /// <typeparam name="TPayload">The type of the message.</typeparam>
     /// <param name="message">The message to schedule.</param>
-    /// <param name="chronExpression">The cron expression for scheduling.</param>
-    /// <param name="chronTimezone">The timezone for scheduling.</param>
+    /// <param name="cronExpression">The cron expression for scheduling.</param>
+    /// <param name="timeZone">The timezone for scheduling.</param>
     /// <param name="tag">The optional tag for the scheduled message.</param>
     /// <returns>The ID of the scheduled message.</returns>
-    public string Schedule<TK>(TK message, string chronExpression, string chronTimezone, string? tag = null)
-        where TK : IConsumerPayload
+    public string Schedule<TPayload>(TPayload message, string cronExpression, string timeZone, string? tag = null)
+        where TPayload : IConsumerPayload
     {
-        var payload = JsonSerializer.Serialize(message);
+        var payload = JsonSerializer.Serialize(message, _options.Value.SerializerOptions);
         var id = _idGenerator.GenerateId();
 
-        var expression = CronExpression.Parse(chronExpression, CronFormat.IncludeSeconds);
+        var expression = Cron.Parse(cronExpression);
 
-        var timezone = TimeZoneInfo.FindSystemTimeZoneById(chronTimezone);
-        if (timezone == null)
-        {
-            throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{chronTimezone}'");
-        }
-
-        var next = expression.GetNextOccurrence(_timeProvider.GetUtcNow(), timezone);
-        if (next == null)
-        {
-            throw new InvalidOperationException(
-                $"Couldn't determine next scheduled message occurrence for chron expression: '{chronExpression}', timezone: '{chronTimezone}'");
-        }
+        // Throws TimeZoneNotFoundException for an unknown time zone.
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
+        var next = expression.GetNextOccurrence(_timeProvider.GetUtcNow(), timezone) ??
+                   throw new InvalidOperationException(
+                       $"The cron expression '{cronExpression}' never occurs after now in time zone '{timeZone}'.");
 
         _dbContext.Set<ScheduledMessage>().Add(new ScheduledMessage
         {
             Id = id,
-            PayloadType = typeof(TK).Name,
-            AvailableAfter = next.Value.ToUnixTimeSeconds(),
+            PayloadType = AsyncMonolithNames.ForPayload<TPayload>(),
+            AvailableAfter = next.ToUnixTimeSeconds(),
             Tag = tag,
-            ChronExpression = chronExpression,
-            ChronTimezone = chronTimezone,
+            CronExpression = cronExpression,
+            CronTimeZone = timeZone,
             Payload = payload
         });
 
         return id;
+    }
+
+    /// <inheritdoc />
+    public async Task<string> EnsureSchedule<TPayload>(TPayload message, string cronExpression, string timeZone,
+        string tag, CancellationToken cancellationToken = default) where TPayload : IConsumerPayload
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tag);
+
+        var set = _dbContext.Set<ScheduledMessage>();
+        var existing = await set.Where(m => m.Tag == tag).OrderBy(m => m.Id).ToListAsync(cancellationToken);
+        if (existing.Count == 0)
+        {
+            return Schedule(message, cronExpression, timeZone, tag);
+        }
+
+        var schedule = existing[0];
+        set.RemoveRange(existing.Skip(1));
+
+        schedule.UpdatePayload(message, _options.Value.SerializerOptions);
+        if (schedule.CronExpression != cronExpression || schedule.CronTimeZone != timeZone)
+        {
+            schedule.UpdateSchedule(cronExpression, timeZone, _timeProvider);
+        }
+
+        return schedule.Id;
     }
 
     /// <summary>

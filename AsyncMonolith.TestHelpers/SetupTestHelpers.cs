@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Diagnostics.Metrics;
+using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
@@ -13,83 +15,53 @@ namespace AsyncMonolith.TestHelpers;
 public static class SetupTestHelpers
 {
     /// <summary>
-    /// Adds fake implementations of AsyncMonolith base services for testing purposes.
+    ///     Registers fake producer and schedule services, which record what is produced and scheduled without a
+    ///     database, plus the consumers. No background processors are registered.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="settings">The action used to configure the settings.</param>
+    /// <param name="configure">Sets options and the assemblies to scan for consumers.</param>
+    /// <returns>The service collection.</returns>
     public static IServiceCollection AddFakeAsyncMonolithBaseServices(
         this IServiceCollection services,
-        Action<AsyncMonolithSettings> settings) =>
-        AddFakeAsyncMonolithBaseServices(services, settings, AsyncMonolithSettings.Default);
-
-    /// <summary>
-    /// Adds fake implementations of AsyncMonolith base services for testing purposes.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="assembly">The assembly containing the consumers.</param>
-    /// <param name="settings">Optional AsyncMonolith settings.</param>
-    [Obsolete("This method is obsolete. Use the method that accepts an Action<AsyncMonolithSettings> instead.")]
-    public static IServiceCollection AddFakeAsyncMonolithBaseServices(
-        this IServiceCollection services,
-        Assembly assembly,
-        AsyncMonolithSettings? settings = null) =>
-        AddFakeAsyncMonolithBaseServices(
-            services,
-            configuration => configuration.RegisterTypesFromAssembly(assembly),
-            settings ?? AsyncMonolithSettings.Default);
-
-    /// <summary>
-    /// Adds real implementations of AsyncMonolith base services for production use.
-    /// </summary>
-    /// <typeparam name="T">The DbContext type.</typeparam>
-    /// <param name="services">The service collection.</param>
-    /// <param name="settings">The action used to configure the settings.</param>
-    public static IServiceCollection AddRealAsyncMonolithBaseServices<T>(
-        this IServiceCollection services,
-        Action<AsyncMonolithSettings> settings) where T : DbContext =>
-        AddRealAsyncMonolithBaseServices<T>(services, settings, AsyncMonolithSettings.Default);
-
-    /// <summary>
-    /// Adds real implementations of AsyncMonolith base services for production use.
-    /// </summary>
-    /// <typeparam name="T">The DbContext type.</typeparam>
-    /// <param name="services">The service collection.</param>
-    /// <param name="assembly">The assembly containing the consumers.</param>
-    /// <param name="settings">Optional AsyncMonolith settings.</param>
-    [Obsolete("This method is obsolete. Use the method that accepts an Action<AsyncMonolithSettings> instead.")]
-    public static IServiceCollection AddRealAsyncMonolithBaseServices<T>(
-        this IServiceCollection services,
-        Assembly assembly,
-        AsyncMonolithSettings? settings = null) where T : DbContext =>
-        AddRealAsyncMonolithBaseServices<T>(
-            services,
-            configuration => configuration.RegisterTypesFromAssembly(assembly),
-            settings ?? AsyncMonolithSettings.Default);
-
-    private static IServiceCollection AddFakeAsyncMonolithBaseServices(
-        this IServiceCollection services,
-        Action<AsyncMonolithSettings> configuration,
-        AsyncMonolithSettings settings)
+        Action<AsyncMonolithOptions> configure)
     {
-        configuration(settings);
-        services.InternalConfigureAsyncMonolithSettings(settings);
-        services.InternalRegisterAsyncMonolithConsumers(settings);
+        AddBaseServices(services, configure);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
         services.AddScoped<IScheduleService, FakeScheduleService>();
-        services.AddScoped<IProducerService, FakeProducerService>();
+        services.AddScoped(sp => new FakeProducerService(sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<ConsumerRegistry>(), sp.GetRequiredService<IAsyncMonolithIdGenerator>()));
+        services.AddScoped<IProducerService>(sp => sp.GetRequiredService<FakeProducerService>());
         return services;
     }
 
-    private static IServiceCollection AddRealAsyncMonolithBaseServices<T>(
+    /// <summary>
+    ///     Registers the real database-backed services and the consumers, but no background processors, so tests can
+    ///     process messages themselves with <see cref="TestConsumerMessageProcessor" />.
+    /// </summary>
+    /// <typeparam name="T">The DbContext containing the AsyncMonolith tables.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">Sets options and the assemblies to scan for consumers.</param>
+    /// <returns>The service collection.</returns>
+    public static IServiceCollection AddRealAsyncMonolithBaseServices<T>(
         this IServiceCollection services,
-        Action<AsyncMonolithSettings> configuration,
-        AsyncMonolithSettings settings) where T : DbContext
+        Action<AsyncMonolithOptions> configure) where T : DbContext
     {
-        configuration(settings);
-        services.InternalConfigureAsyncMonolithSettings(settings);
-        services.InternalRegisterAsyncMonolithConsumers(settings);
+        AddBaseServices(services, configure);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
+        services.AddScoped<ProducerService<T>>();
+        services.AddScoped<IProducerService, ProducerService<T>>();
         services.AddScoped<IScheduleService, ScheduleService<T>>();
+        services.AddScoped<IPoisonedMessageService, PoisonedMessageService<T>>();
+        services.AddScoped<IQueueStatisticsService, QueueStatisticsService<T>>();
         return services;
+    }
+
+    private static void AddBaseServices(IServiceCollection services, Action<AsyncMonolithOptions> configure)
+    {
+        services.InternalConfigureAsyncMonolithOptions(configure);
+        services.TryAddSingleton(sp => new AsyncMonolithMetrics(sp.GetService<IMeterFactory>()));
+        var registration = new AsyncMonolithOptions();
+        configure(registration);
+        services.InternalRegisterAsyncMonolithConsumers(registration);
     }
 }

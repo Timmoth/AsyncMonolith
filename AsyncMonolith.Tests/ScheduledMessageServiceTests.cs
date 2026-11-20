@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Tests;
 
+[Trait("Category", "Integration")]
 public class ScheduledMessageServiceTests : DbTestsBase
 {
     [Theory]
@@ -29,7 +30,7 @@ public class ScheduledMessageServiceTests : DbTestsBase
 
             // When
             scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC", tag);
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // Then
             using var scope = serviceProvider.CreateScope();
@@ -71,17 +72,17 @@ public class ScheduledMessageServiceTests : DbTestsBase
             var tag = "test-tag";
             scheduledMessageService.Schedule(consumerMessage1, "* * * * * *", "UTC", tag);
             scheduledMessageService.Schedule(consumerMessage2, "* * * * * *", "UTC", tag);
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // When
             await scheduledMessageService.DeleteByTag("test-tag", CancellationToken.None);
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // Then
             using var scope = serviceProvider.CreateScope();
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-                var count = await postDbContext.ScheduledMessages.CountAsync();
+                var count = await postDbContext.ScheduledMessages.CountAsync(TestContext.Current.CancellationToken);
                 count.ShouldBe(0);
             }
         }
@@ -108,17 +109,17 @@ public class ScheduledMessageServiceTests : DbTestsBase
             var scheduledMessageService = serviceProvider.GetRequiredService<IScheduleService>();
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var id = scheduledMessageService.Schedule(consumerMessage, "* * * * * *", "UTC");
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // When
             await scheduledMessageService.DeleteById(id, CancellationToken.None);
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // Then
             using var scope = serviceProvider.CreateScope();
             {
                 var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-                var count = await postDbContext.ScheduledMessages.CountAsync();
+                var count = await postDbContext.ScheduledMessages.CountAsync(TestContext.Current.CancellationToken);
                 count.ShouldBe(0);
             }
         }

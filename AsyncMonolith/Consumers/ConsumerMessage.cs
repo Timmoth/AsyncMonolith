@@ -7,7 +7,6 @@ namespace AsyncMonolith.Consumers;
 /// <summary>
 ///     Consumer Message model
 /// </summary>
-[Table("consumer_messages")]
 public sealed class ConsumerMessage
 {
     /// <summary>
@@ -73,7 +72,7 @@ public sealed class ConsumerMessage
     /// </summary>
     [JsonPropertyName("insert_id")]
     [Column("insert_id")]
-    public required string InsertId { get; set; }
+    public required string DeduplicationKey { get; set; }
 
     /// <summary>
     ///     Gets or sets the trace Id of the activity that produced the consumer message.
@@ -88,4 +87,11 @@ public sealed class ConsumerMessage
     [JsonPropertyName("span_id")]
     [Column("span_id")]
     public required string? SpanId { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the error from the most recent failed attempt, if any.
+    /// </summary>
+    [JsonPropertyName("last_error")]
+    [Column("last_error")]
+    public string? LastError { get; set; }
 }

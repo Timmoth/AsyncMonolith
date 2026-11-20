@@ -8,6 +8,7 @@ using Shouldly;
 
 namespace AsyncMonolith.Tests;
 
+[Trait("Category", "Integration")]
 public class ConsumerMessageProcessorTests : DbTestsBase
 {
     [Theory]
@@ -27,9 +28,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 await producer.Produce(new SingleConsumerMessage
                 {
                     Name = "test-name"
-                });
+                }, cancellationToken: TestContext.Current.CancellationToken);
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // When
@@ -64,9 +65,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 await producer.Produce(new SingleConsumerMessage
                 {
                     Name = "test-name"
-                }, FakeTime.GetUtcNow().ToUnixTimeSeconds() + 100);
+                }, TimeSpan.FromSeconds(100), cancellationToken: TestContext.Current.CancellationToken);
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             var processor = serviceProvider.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
@@ -103,9 +104,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
-                await producer.Produce(consumerMessage);
+                await producer.Produce(consumerMessage, cancellationToken: TestContext.Current.CancellationToken);
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // When
@@ -147,9 +148,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
-                await producer.Produce(consumerMessage);
+                await producer.Produce(consumerMessage, cancellationToken: TestContext.Current.CancellationToken);
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // When
@@ -191,9 +192,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
                 var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
 
-                await producer.Produce(consumerMessage);
+                await producer.Produce(consumerMessage, cancellationToken: TestContext.Current.CancellationToken);
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // When
@@ -235,12 +236,12 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 await producer.Produce(new ExceptionConsumerMessage
                 {
                     Name = "test-name"
-                });
+                }, cancellationToken: TestContext.Current.CancellationToken);
 
-                await dbContext.SaveChangesAsync();
-                message = await dbContext.ConsumerMessages.SingleAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                message = await dbContext.ConsumerMessages.SingleAsync(TestContext.Current.CancellationToken);
                 message.Attempts = 10;
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // When
@@ -252,9 +253,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var consumerMessageExists = await dbContext.ConsumerMessages.AnyAsync();
+                var consumerMessageExists = await dbContext.ConsumerMessages.AnyAsync(TestContext.Current.CancellationToken);
                 consumerMessageExists.ShouldBeFalse();
-                var poisonedMessage = await dbContext.PoisonedMessages.SingleAsync();
+                var poisonedMessage = await dbContext.PoisonedMessages.SingleAsync(TestContext.Current.CancellationToken);
                 poisonedMessage.Id.ShouldBe(message.Id);
                 poisonedMessage.AvailableAfter.ShouldBe(message.AvailableAfter);
                 poisonedMessage.ConsumerType.ShouldBe(message.ConsumerType);
@@ -288,12 +289,12 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 await producer.Produce(new ExceptionConsumer2AttemptsMessage
                 {
                     Name = "test-name"
-                });
+                }, cancellationToken: TestContext.Current.CancellationToken);
 
-                await dbContext.SaveChangesAsync();
-                message = await dbContext.ConsumerMessages.SingleAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+                message = await dbContext.ConsumerMessages.SingleAsync(TestContext.Current.CancellationToken);
                 message.Attempts = 1;
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // When
@@ -305,9 +306,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var consumerMessageExists = await dbContext.ConsumerMessages.AnyAsync();
+                var consumerMessageExists = await dbContext.ConsumerMessages.AnyAsync(TestContext.Current.CancellationToken);
                 consumerMessageExists.ShouldBeFalse();
-                var poisonedMessage = await dbContext.PoisonedMessages.SingleAsync();
+                var poisonedMessage = await dbContext.PoisonedMessages.SingleAsync(TestContext.Current.CancellationToken);
                 poisonedMessage.Id.ShouldBe(message.Id);
                 poisonedMessage.AvailableAfter.ShouldBe(message.AvailableAfter);
                 poisonedMessage.ConsumerType.ShouldBe(message.ConsumerType);
@@ -340,9 +341,9 @@ public class ConsumerMessageProcessorTests : DbTestsBase
                 await producer.Produce(new SingleConsumerMessage
                 {
                     Name = "test-name"
-                });
+                }, cancellationToken: TestContext.Current.CancellationToken);
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // When
@@ -356,7 +357,7 @@ public class ConsumerMessageProcessorTests : DbTestsBase
             using (var scope = serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var remaining = await dbContext.ConsumerMessages.CountAsync();
+                var remaining = await dbContext.ConsumerMessages.CountAsync(TestContext.Current.CancellationToken);
                 remaining.ShouldBe(0);
             }
         }

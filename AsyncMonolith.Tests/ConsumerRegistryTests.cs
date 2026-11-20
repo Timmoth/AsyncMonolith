@@ -8,10 +8,10 @@ namespace AsyncMonolith.Tests;
 
 public class ConsumerRegistryTests
 {
-    private ServiceProvider Setup()
+    private static ServiceProvider Setup()
     {
         var services = new ServiceCollection();
-        services.AddTestServices(DbType.Ef, AsyncMonolithSettings.Default);
+        services.AddTestServices(DbType.Ef, new AsyncMonolithOptions());
         services.AddInMemoryDb();
 
         return services.BuildServiceProvider();
@@ -77,7 +77,7 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty,
+            DeduplicationKey = string.Empty,
             TraceId = null,
             SpanId = null,
             RailId = 0
@@ -104,7 +104,7 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty,
+            DeduplicationKey = string.Empty,
             TraceId = null,
             SpanId = null,
             RailId = 0
@@ -126,8 +126,8 @@ public class ConsumerRegistryTests
 
         // Then
         consumerIds.Count.ShouldBe(2);
-        Assert.Single(consumerIds.Where(c => c == nameof(MultiConsumer1)));
-        Assert.Single(consumerIds.Where(c => c == nameof(MultiConsumer2)));
+        Assert.Single(consumerIds, c => c == nameof(MultiConsumer1));
+        Assert.Single(consumerIds, c => c == nameof(MultiConsumer2));
     }
 
 
@@ -148,7 +148,7 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty,
+            DeduplicationKey = string.Empty,
             TraceId = null,
             SpanId = null,
             RailId = 0
@@ -175,7 +175,7 @@ public class ConsumerRegistryTests
             PayloadType = default!,
             Payload = default!,
             Attempts = default,
-            InsertId = string.Empty,
+            DeduplicationKey = string.Empty,
             TraceId = null,
             SpanId = null,
             RailId = 0

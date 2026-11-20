@@ -10,7 +10,6 @@ namespace AsyncMonolith.Scheduling;
 /// <summary>
 ///     Represents a scheduled message.
 /// </summary>
-[Table("scheduled_messages")]
 public class ScheduledMessage
 {
     /// <summary>
@@ -40,14 +39,14 @@ public class ScheduledMessage
     /// </summary>
     [JsonPropertyName("chron_expression")]
     [Column("chron_expression")]
-    public required string ChronExpression { get; set; }
+    public required string CronExpression { get; set; }
 
     /// <summary>
     ///     Gets or sets the cron timezone of the scheduled message.
     /// </summary>
     [JsonPropertyName("chron_timezone")]
     [Column("chron_timezone")]
-    public required string ChronTimezone { get; set; }
+    public required string CronTimeZone { get; set; }
 
     /// <summary>
     ///     Gets or sets the payload type of the scheduled message.
@@ -68,47 +67,41 @@ public class ScheduledMessage
     /// </summary>
     /// <param name="timeProvider">The time provider.</param>
     /// <returns>The next occurrence of the scheduled message in Unix timestamp format.</returns>
-    public long GetNextOccurrence(TimeProvider timeProvider)
+    internal long GetNextOccurrence(TimeProvider timeProvider)
     {
-        var expression = CronExpression.Parse(ChronExpression, CronFormat.IncludeSeconds);
+        var expression = Cron.Parse(CronExpression);
 
-        var timezone = TimeZoneInfo.FindSystemTimeZoneById(ChronTimezone);
-        if (timezone == null)
-        {
-            throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{ChronTimezone}'");
-        }
-
-        var next = expression.GetNextOccurrence(timeProvider.GetUtcNow(), timezone);
-        if (next == null)
-        {
-            throw new InvalidOperationException("Couldn't determine next scheduled message occurrence");
-        }
-
-        return next.Value.ToUnixTimeSeconds();
+        // Throws TimeZoneNotFoundException for an unknown time zone.
+        var timezone = TimeZoneInfo.FindSystemTimeZoneById(CronTimeZone);
+        var next = expression.GetNextOccurrence(timeProvider.GetUtcNow(), timezone) ??
+                   throw new InvalidOperationException(
+                       $"The cron expression '{CronExpression}' never occurs after now in time zone '{CronTimeZone}'.");
+        return next.ToUnixTimeSeconds();
     }
 
     /// <summary>
     ///     Updates the schedule of the scheduled message.
     /// </summary>
-    /// <param name="chronExpression">The new cron expression.</param>
-    /// <param name="chronTimezone">The new cron timezone.</param>
+    /// <param name="cronExpression">The new cron expression.</param>
+    /// <param name="timeZone">The new cron timezone.</param>
     /// <param name="timeProvider">The time provider.</param>
-    public void UpdateSchedule(string chronExpression, string chronTimezone, TimeProvider timeProvider)
+    internal void UpdateSchedule(string cronExpression, string timeZone, TimeProvider timeProvider)
     {
-        ChronExpression = chronExpression;
-        ChronTimezone = chronTimezone;
+        CronExpression = cronExpression;
+        CronTimeZone = timeZone;
         AvailableAfter = GetNextOccurrence(timeProvider);
     }
 
     /// <summary>
     ///     Updates the payload of the scheduled message.
     /// </summary>
-    /// <typeparam name="TK">The type of the payload.</typeparam>
+    /// <typeparam name="TPayload">The type of the payload.</typeparam>
     /// <param name="message">The payload message.</param>
-    public void UpdatePayload<TK>(TK message) where TK : IConsumerPayload
+    /// <param name="serializerOptions">The JSON serializer options, or null for the defaults.</param>
+    internal void UpdatePayload<TPayload>(TPayload message, JsonSerializerOptions? serializerOptions = null) where TPayload : IConsumerPayload
     {
-        var payload = JsonSerializer.Serialize(message);
+        var payload = JsonSerializer.Serialize(message, serializerOptions);
         Payload = payload;
-        PayloadType = typeof(TK).Name;
+        PayloadType = AsyncMonolithNames.ForPayload<TPayload>();
     }
 }

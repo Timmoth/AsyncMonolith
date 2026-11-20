@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Tests;
 
+[Trait("Category", "Integration")]
 public class ScheduledMessageFetcherTests : DbTestsBase
 {
     [Theory]
@@ -17,19 +18,19 @@ public class ScheduledMessageFetcherTests : DbTestsBase
         try
         {
             // Given
-            var settings = AsyncMonolithSettings.Default;
+            var settings = new AsyncMonolithOptions();
             var serviceProvider = await Setup(dbContainer, settings);
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var fetcher = serviceProvider.GetRequiredService<IScheduledMessageFetcher>();
             var idGenerator = serviceProvider.GetRequiredService<IAsyncMonolithIdGenerator>();
 
-            for (var i = 0; i < 2 * settings.ProcessorBatchSize; i++)
+            for (var i = 0; i < 2 * settings.BatchSize; i++)
             {
                 dbContext.ScheduledMessages.Add(new ScheduledMessage
                 {
                     AvailableAfter = FakeTime.GetUtcNow().ToUnixTimeSeconds(),
-                    ChronExpression = "",
-                    ChronTimezone = "",
+                    CronExpression = "",
+                    CronTimeZone = "",
                     Id = idGenerator.GenerateId(),
                     Payload = "",
                     PayloadType = "",
@@ -37,14 +38,14 @@ public class ScheduledMessageFetcherTests : DbTestsBase
                 });
             }
 
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // When
             var dbMessages = await fetcher.Fetch(dbContext.ScheduledMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(),
                 CancellationToken.None);
 
             // Then
-            dbMessages.Count.ShouldBe(settings.ProcessorBatchSize);
+            dbMessages.Count.ShouldBe(settings.BatchSize);
         }
         finally
         {

@@ -28,7 +28,7 @@ public class ValueController : ControllerBase
         await _producerService.Produce(new ValueSubmitted
         {
             Value = newValue
-        });
+        }, cancellationToken: cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(sum + newValue);

@@ -10,7 +10,7 @@ public sealed class ConsumerExecutionModeAttribute : Attribute
     /// Initializes a new instance of the <see cref="ConsumerExecutionModeAttribute"/> class with the specified execution mode.
     /// </summary>
     /// <param name="executionMode">Determines if multiple consumers of the same type can be executed concurrently on the same processor instance.</param>
-    public ConsumerExecutionModeAttribute(ConsumerInstanceExecutionMode executionMode)
+    public ConsumerExecutionModeAttribute(ConsumerExecutionMode executionMode)
     {
         ExecutionMode = executionMode;
     }
@@ -18,5 +18,5 @@ public sealed class ConsumerExecutionModeAttribute : Attribute
     /// <summary>
     /// Determines if multiple consumers of the same type can be executed concurrently on the same processor instance.
     /// </summary>
-    public ConsumerInstanceExecutionMode ExecutionMode { get; }
+    public ConsumerExecutionMode ExecutionMode { get; }
 }

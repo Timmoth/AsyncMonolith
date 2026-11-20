@@ -60,9 +60,9 @@ await _dbContext.SaveChangesAsync();
 ```
 
 ```csharp
-public class CreateShipment : BaseConsumer<OrderCreated>
+public class CreateShipment : IConsumer<OrderCreated>
 {
-    public override Task Consume(OrderCreated message, CancellationToken cancellationToken)
+    public Task Consume(OrderCreated message, ConsumeContext context, CancellationToken cancellationToken)
     {
         ...
         // Create Order

@@ -1,13 +1,29 @@
 ## AsyncMonolith.Tests
 
-- Some of the test rely on TestContainers to run against real databases, make sure you've got docker installed
+Tests are split into two groups:
+
+- **Fast tests** run in-process with no external services. Run them on every change:
+
+  ```bash
+  dotnet test --project AsyncMonolith.Tests --filter-not-trait "Category=Integration"
+  ```
+
+- **Integration tests** (`[Trait("Category", "Integration")]`) use Testcontainers to run against real databases, so they need Docker and are much slower. Run them before a release:
+
+  ```bash
+  dotnet test --project AsyncMonolith.Tests --filter-trait "Category=Integration"
+  ```
+
+On Apple Silicon, SQL Server runs under emulation and needs about 2 GB per container. If SQL Server containers exit with code 114, give Docker more memory or run the tests one class at a time with `--parallel none` (about 9 minutes for the whole suite).
+
+Add `--coverage --coverage-output-format cobertura` to either command for a coverage report. CI uploads one for each run as an artifact.
 
 
 ## AsyncMonolith.TestHelpers
 
 [![NuGet](https://img.shields.io/nuget/v/AsyncMonolith.TestHelpers)](https://www.nuget.org/packages/AsyncMonolith.TestHelpers)
 
-Install the TestHelpers package to help with unit / integration tests.
+Install the TestHelpers package to help with unit / integration tests. It targets xunit v3 (`xunit.v3`).
 
 ### FakeIdGenerator
 
@@ -55,8 +71,8 @@ public class CancelShipmentTests : ConsumerTestBase
             }
         );
 
-        services.AddRealAsyncMonolithBaseServices<ApplicationDbContext>(settings =>
-            settings.RegisterTypesFromAssemblyContaining<Program>());
+        services.AddRealAsyncMonolithBaseServices<ApplicationDbContext>(options =>
+            options.RegisterTypesFromAssemblyContaining<Program>());
         return Task.CompletedTask;
     }
 

@@ -1,0 +1,31 @@
+<Project>
+  <!-- Metadata for the published packages (the projects with GeneratePackageOnBuild). -->
+  <PropertyGroup Condition="'$(GeneratePackageOnBuild)' == 'true'">
+    <Authors>Tim Jones</Authors>
+    <Company>Aptacode</Company>
+    <Copyright>Copyright (c) Tim Jones</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://timmoth.github.io/AsyncMonolith/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>monolith;messaging;outbox;transactional-outbox;scheduling;background-jobs;efcore</PackageTags>
+    <PackageIcon>logo.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>https://github.com/Timmoth/AsyncMonolith/blob/main/docs/releases.md</PackageReleaseNotes>
+
+    <!-- SourceLink (built into the SDK), symbols and reproducible builds -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- Once 11.0.0 is published, set PackageValidationBaselineVersion to the last release to catch breaking changes. -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(GeneratePackageOnBuild)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)AsyncMonolith/logo.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)PACKAGE.md" Pack="true" PackagePath="README.md" Visible="false" />
+  </ItemGroup>
+</Project>

@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
-using Xunit.Abstractions;
 using Xunit;
 
 namespace AsyncMonolith.TestHelpers
@@ -37,7 +36,7 @@ namespace AsyncMonolith.TestHelpers
                 b.AddXUnit(TestOutput);
             });
 
-            FakeTime = new FakeTimeProvider(DateTimeOffset.Parse("2020-08-31T10:00:00.0000000Z"));
+            FakeTime = new FakeTimeProvider(DateTimeOffset.Parse("2020-08-31T10:00:00.0000000Z", CultureInfo.InvariantCulture));
             services.AddSingleton<TimeProvider>(FakeTime);
             await Setup(services);
 
@@ -69,7 +68,7 @@ namespace AsyncMonolith.TestHelpers
         /// Initializes the test asynchronously.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public virtual async Task InitializeAsync()
+        public virtual async ValueTask InitializeAsync()
         {
             _startTime = DateTime.Now;
             TestOutput.WriteLine($"[Lifecycle] Initialise {_startTime.ToString(CultureInfo.InvariantCulture)}");
@@ -80,24 +79,25 @@ namespace AsyncMonolith.TestHelpers
         /// Disposes the test asynchronously.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public virtual Task DisposeAsync()
+        public virtual ValueTask DisposeAsync()
         {
             TestOutput.WriteLine($"[Lifecycle] Dispose ({(DateTime.Now - _startTime).TotalSeconds}s)");
-            return Task.CompletedTask;
+            GC.SuppressFinalize(this);
+            return ValueTask.CompletedTask;
         }
 
         /// <summary>
         /// Processes the consumer message.
         /// </summary>
         /// <typeparam name="T">The type of the consumer.</typeparam>
-        /// <typeparam name="V">The type of the payload.</typeparam>
+        /// <typeparam name="TPayload">The type of the payload.</typeparam>
         /// <param name="payload">The payload.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        protected async Task Process<T, V>(V payload, CancellationToken cancellationToken = default) where T : BaseConsumer<V> where V : IConsumerPayload
+        protected async Task Process<T, TPayload>(TPayload payload, CancellationToken cancellationToken = default) where T : IConsumer<TPayload> where TPayload : IConsumerPayload
         {
             using var scope = Services.CreateScope();
-            await TestConsumerMessageProcessor.Process<T, V>(scope, payload, cancellationToken);
+            await TestConsumerMessageProcessor.Process<T, TPayload>(scope, payload, cancellationToken);
         }
     }
 }

@@ -2,7 +2,7 @@ using AsyncMonolith.Consumers;
 
 namespace Example.Api.Spam;
 
-public class SpamMessageConsumer : BaseConsumer<SpamMessage>
+public class SpamMessageConsumer : IConsumer<SpamMessage>
 {
     private readonly TimeProvider _timeProvider;
 
@@ -11,7 +11,7 @@ public class SpamMessageConsumer : BaseConsumer<SpamMessage>
         _timeProvider = timeProvider;
     }
 
-    public override Task Consume(SpamMessage message, CancellationToken cancellationToken)
+    public Task Consume(SpamMessage message, ConsumeContext context, CancellationToken cancellationToken)
     {
         if (message.Last)
         {

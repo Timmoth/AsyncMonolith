@@ -3,292 +3,119 @@ using System.Text.Json;
 using AsyncMonolith.Producers;
 using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
-using Shouldly;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 
 namespace AsyncMonolith.Tests;
 
+/// <summary>
+///     The producer against each real database: the same outbox and deduplication behaviour everywhere.
+/// </summary>
+[Trait("Category", "Integration")]
 public class ProducerServiceDbTests : DbTestsBase
 {
-    [Theory]
-    [MemberData(nameof(GetTestDbTypesWithoutEf))]
-    public async Task Producer_Inserts_ConsumerMessage(DbType dbType)
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
+    private async Task Run(DbType dbType, Func<ServiceProvider, Task> test)
     {
         var dbContainer = GetTestDbContainer(dbType);
-
         try
         {
-            // Given
-            var serviceProvider = await Setup(dbContainer);
-            var producer = serviceProvider.GetRequiredService<IProducerService>();
-
-            var delay = 10;
-            var consumerMessage = new SingleConsumerMessage
-            {
-                Name = "test-name"
-            };
-            using var activity = GetActivity();
-            Activity.Current = activity;
-
-            // When
-            await producer.Produce(consumerMessage, delay);
-
-            // Then
-            using var scope = serviceProvider.CreateScope();
-            {
-                var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-                var message =
-                    await postDbContext.AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(
-                        consumerMessage);
-                message.AvailableAfter.ShouldBe(delay);
-                message.Attempts.ShouldBe(0);
-                message.InsertId.ShouldBe("fake-id-0");
-                message.Id.ShouldBe("fake-id-1");
-                message.ConsumerType = nameof(SingleConsumer);
-                message.PayloadType = nameof(SingleConsumerMessage);
-                message.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage));
-                message.TraceId.ShouldBe(activity?.TraceId.ToString());
-                message.SpanId.ShouldBe(activity?.SpanId.ToString());
-            }
+            await test(await Setup(dbContainer));
         }
         finally
         {
             await dbContainer.DisposeAsync();
         }
+    }
+
+    private static async Task Produce(ServiceProvider services, Func<IProducerService, Task> produce)
+    {
+        using var scope = services.CreateScope();
+        await produce(scope.ServiceProvider.GetRequiredService<IProducerService>());
+        await scope.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct);
+    }
+
+    private static async Task<List<Consumers.ConsumerMessage>> Messages(ServiceProvider services)
+    {
+        using var scope = services.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<TestDbContext>().ConsumerMessages
+            .OrderBy(m => m.Id).ToListAsync(Ct);
     }
 
     [Theory]
-    [MemberData(nameof(GetTestDbTypesWithoutEf))]
-    public async Task Producer_Inserts_List_Of_ConsumerMessages(DbType dbType)
+    [MemberData(nameof(GetTestDbTypes))]
+    public Task Produce_writes_the_message_when_the_caller_saves(DbType dbType) => Run(dbType, async services =>
     {
-        var dbContainer = GetTestDbContainer(dbType);
+        var payload = new SingleConsumerMessage { Name = "test-name" };
+        using var activity = GetActivity();
+        Activity.Current = activity;
 
-        try
-        {
-            // Given
-            var serviceProvider = await Setup(dbContainer);
-            var producer = serviceProvider.GetRequiredService<IProducerService>();
+        await Produce(services, p => p.Produce(payload, TimeSpan.FromSeconds(10), cancellationToken: Ct));
 
-            var delay = 10;
-            var consumerMessage1 = new SingleConsumerMessage
-            {
-                Name = "test-name"
-            };
-            var consumerMessage2 = new SingleConsumerMessage
-            {
-                Name = "test-name-2"
-            };
-            var insertMessages = new List<SingleConsumerMessage>
-            {
-                consumerMessage1,
-                consumerMessage2
-            };
-            using var activity = GetActivity();
-            Activity.Current = activity;
-
-            // When
-            await producer.ProduceList(insertMessages, delay);
-
-            // Then
-            using var scope = serviceProvider.CreateScope();
-            {
-                var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-                var messages = await postDbContext.ConsumerMessages.ToListAsync();
-                messages.Count.ShouldBe(2);
-
-                var message1 =
-                    await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
-                        consumerMessage1, "fake-id-1");
-                message1.AvailableAfter.ShouldBe(delay);
-                message1.Attempts.ShouldBe(0);
-                message1.InsertId.ShouldBe("fake-id-0");
-                message1.Id.ShouldBe("fake-id-1");
-                message1.ConsumerType = nameof(SingleConsumer);
-                message1.PayloadType = nameof(SingleConsumerMessage);
-                message1.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage1));
-                message1.TraceId.ShouldBe(activity?.TraceId.ToString());
-                message1.SpanId.ShouldBe(activity?.SpanId.ToString());
-
-                var message2 =
-                    await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
-                        consumerMessage2, "fake-id-3");
-                message2.AvailableAfter.ShouldBe(delay);
-                message2.Attempts.ShouldBe(0);
-                message2.InsertId.ShouldBe("fake-id-2");
-                message2.Id.ShouldBe("fake-id-3");
-                message2.ConsumerType = nameof(SingleConsumer);
-                message2.PayloadType = nameof(SingleConsumerMessage);
-                message2.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage2));
-                message2.TraceId.ShouldBe(activity?.TraceId.ToString());
-                message2.SpanId.ShouldBe(activity?.SpanId.ToString());
-            }
-        }
-        finally
-        {
-            await dbContainer.DisposeAsync();
-        }
-    }
-
-    [Fact]
-    public async Task Ef_Producer_Inserts_List_Of_ConsumerMessages()
-    {
-        var dbContainer = GetTestDbContainer(DbType.Ef);
-
-        try
-        {
-            // Given
-            var serviceProvider = await Setup(dbContainer);
-            var scope = serviceProvider.CreateScope();
-            var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
-
-            var delay = 10;
-            var consumerMessage1 = new SingleConsumerMessage
-            {
-                Name = "test-name"
-            };
-            var consumerMessage2 = new SingleConsumerMessage
-            {
-                Name = "test-name-2"
-            };
-            var insertMessages = new List<SingleConsumerMessage>
-            {
-                consumerMessage1,
-                consumerMessage2
-            };
-            using var activity = GetActivity();
-            Activity.Current = activity;
-
-            // When
-            await producer.ProduceList(insertMessages, delay);
-            await dbContext.SaveChangesAsync();
-
-            // Then
-            using var postScope = serviceProvider.CreateScope();
-            {
-                var postDbContext = postScope.ServiceProvider.GetRequiredService<TestDbContext>();
-                var messages = await postDbContext.ConsumerMessages.ToListAsync();
-                messages.Count.ShouldBe(2);
-
-                var message1 =
-                    await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
-                        consumerMessage1, "fake-id-1");
-                message1.AvailableAfter.ShouldBe(delay);
-                message1.Attempts.ShouldBe(0);
-                message1.InsertId.ShouldBe("fake-id-0");
-                message1.Id.ShouldBe("fake-id-1");
-                message1.ConsumerType = nameof(SingleConsumer);
-                message1.PayloadType = nameof(SingleConsumerMessage);
-                message1.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage1));
-                message1.TraceId.ShouldBe(activity?.TraceId.ToString());
-                message1.SpanId.ShouldBe(activity?.SpanId.ToString());
-                var message2 =
-                    await postDbContext.AssertSingleConsumerMessageById<SingleConsumer, SingleConsumerMessage>(
-                        consumerMessage2, "fake-id-3");
-                message2.AvailableAfter.ShouldBe(delay);
-                message2.Attempts.ShouldBe(0);
-                message2.InsertId.ShouldBe("fake-id-2");
-                message2.Id.ShouldBe("fake-id-3");
-                message2.ConsumerType = nameof(SingleConsumer);
-                message2.PayloadType = nameof(SingleConsumerMessage);
-                message2.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage2));
-                message2.TraceId.ShouldBe(activity?.TraceId.ToString());
-                message2.SpanId.ShouldBe(activity?.SpanId.ToString());
-            }
-        }
-        finally
-        {
-            await dbContainer.DisposeAsync();
-        }
-    }
+        using var scope = services.CreateScope();
+        var message = await scope.ServiceProvider.GetRequiredService<TestDbContext>()
+            .AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(payload);
+        message.AvailableAfter.ShouldBe(FakeTime.GetUtcNow().ToUnixTimeSeconds() + 10);
+        message.Attempts.ShouldBe(0);
+        message.Payload.ShouldBe(JsonSerializer.Serialize(payload));
+        message.TraceId.ShouldBe(activity?.TraceId.ToString());
+        message.SpanId.ShouldBe(activity?.SpanId.ToString());
+    });
 
     [Theory]
-    [MemberData(nameof(GetTestDbTypesWithoutEf))]
-    public async Task Producer_Does_Not_Insert_Duplicate_ConsumerMessage(DbType dbType)
+    [MemberData(nameof(GetTestDbTypes))]
+    public Task Produce_writes_nothing_until_the_caller_saves(DbType dbType) => Run(dbType, async services =>
     {
-        var dbContainer = GetTestDbContainer(dbType);
-
-        try
+        using (var scope = services.CreateScope())
         {
-            // Given
-            var serviceProvider = await Setup(dbContainer);
-            var producer = serviceProvider.GetRequiredService<IProducerService>();
-
-            var delay = 10;
-            var insertId = "test-insert_id";
-            var consumerMessage = new SingleConsumerMessage
-            {
-                Name = "test-name"
-            };
-            using var activity = GetActivity();
-            Activity.Current = activity;
-
-            await producer.Produce(consumerMessage, delay, insertId);
-
-            // When
-            await producer.Produce(new SingleConsumerMessage
-            {
-                Name = "test-name-2"
-            }, delay, insertId);
-
-            // Then
-            using var scope = serviceProvider.CreateScope();
-            {
-                var postDbContext = serviceProvider.GetRequiredService<TestDbContext>();
-                var message =
-                    await postDbContext.AssertSingleConsumerMessage<SingleConsumer, SingleConsumerMessage>(
-                        consumerMessage);
-                message.AvailableAfter.ShouldBe(delay);
-                message.Attempts.ShouldBe(0);
-                message.Id.ShouldBe("fake-id-0");
-                message.ConsumerType = nameof(SingleConsumer);
-                message.PayloadType = nameof(SingleConsumerMessage);
-                message.Payload.ShouldBe(JsonSerializer.Serialize(consumerMessage));
-                message.InsertId.ShouldBe(insertId);
-                message.TraceId.ShouldBe(activity?.TraceId.ToString());
-                message.SpanId.ShouldBe(activity?.SpanId.ToString());
-            }
+            await scope.ServiceProvider.GetRequiredService<IProducerService>()
+                .Produce(new SingleConsumerMessage { Name = "unsaved" }, cancellationToken: Ct);
         }
-        finally
-        {
-            await dbContainer.DisposeAsync();
-        }
-    }
+
+        (await Messages(services)).ShouldBeEmpty();
+    });
 
     [Theory]
-    [InlineData(DbType.Ef)]
-    public async Task EF_Producer_Throws_Exception_On_Duplicate_ConsumerMessage(DbType dbType)
+    [MemberData(nameof(GetTestDbTypes))]
+    public Task ProduceList_writes_one_message_per_payload(DbType dbType) => Run(dbType, async services =>
     {
-        var dbContainer = GetTestDbContainer(dbType);
+        await Produce(services, p => p.ProduceList(
+            [new SingleConsumerMessage { Name = "a" }, new SingleConsumerMessage { Name = "b" }], TimeSpan.FromSeconds(10),
+            cancellationToken: Ct));
 
-        try
-        {
-            // Given
-            var serviceProvider = await Setup(dbContainer);
-            var scope = serviceProvider.CreateScope();
-            var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
-            var dbContext = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+        var messages = await Messages(services);
+        messages.Count.ShouldBe(2);
+        messages.Select(m => m.DeduplicationKey).Distinct().Count().ShouldBe(2);
+        messages.ShouldAllBe(m => m.AvailableAfter == FakeTime.GetUtcNow().ToUnixTimeSeconds() + 10);
+    });
 
-            var delay = 10;
-            var insertId = "test-insert_id";
-            var consumerMessage = new SingleConsumerMessage
-            {
-                Name = "test-name"
-            };
-            await producer.Produce(consumerMessage, 10, insertId);
+    [Theory]
+    [MemberData(nameof(GetTestDbTypes))]
+    public Task Produce_skips_an_insert_id_that_is_already_pending(DbType dbType) => Run(dbType, async services =>
+    {
+        await Produce(services, p => p.Produce(new SingleConsumerMessage { Name = "first" }, deduplicationKey: "key",
+            cancellationToken: Ct));
+        await Produce(services, p => p.Produce(new SingleConsumerMessage { Name = "second" }, deduplicationKey: "key",
+            cancellationToken: Ct));
 
-            // When
-            await producer.Produce(new SingleConsumerMessage
-            {
-                Name = "test-name-2"
-            }, delay, insertId);
+        (await Messages(services)).ShouldHaveSingleItem().Payload.ShouldContain("first");
+    });
 
-            await Assert.ThrowsAsync<DbUpdateException>(async () => { await dbContext.SaveChangesAsync(); });
-        }
-        finally
-        {
-            await dbContainer.DisposeAsync();
-        }
-    }
+    [Theory]
+    [MemberData(nameof(GetTestDbTypes))]
+    public Task Racing_producers_are_stopped_by_the_unique_index(DbType dbType) => Run(dbType, async services =>
+    {
+        using var first = services.CreateScope();
+        using var second = services.CreateScope();
+        await first.ServiceProvider.GetRequiredService<IProducerService>()
+            .Produce(new SingleConsumerMessage { Name = "first" }, deduplicationKey: "key", cancellationToken: Ct);
+        await second.ServiceProvider.GetRequiredService<IProducerService>()
+            .Produce(new SingleConsumerMessage { Name = "second" }, deduplicationKey: "key", cancellationToken: Ct);
+
+        await first.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct);
+        await Should.ThrowAsync<DbUpdateException>(() =>
+            second.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct));
+    });
 }

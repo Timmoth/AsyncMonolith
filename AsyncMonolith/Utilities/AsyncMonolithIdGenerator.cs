@@ -17,7 +17,7 @@ public interface IAsyncMonolithIdGenerator
 /// <summary>
 ///     Represents an implementation of the <see cref="IAsyncMonolithIdGenerator" /> interface.
 /// </summary>
-public sealed class AsyncMonolithIdGenerator : IAsyncMonolithIdGenerator
+internal sealed class AsyncMonolithIdGenerator : IAsyncMonolithIdGenerator
 {
     private const string ValidIdCharacters = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private const int Length = 12;

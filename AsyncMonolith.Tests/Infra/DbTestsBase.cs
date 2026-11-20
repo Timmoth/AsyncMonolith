@@ -9,10 +9,10 @@ namespace AsyncMonolith.Tests.Infra;
 
 public abstract class DbTestsBase
 {
-    protected FakeTimeProvider FakeTime = default!;
-    protected TestConsumerInvocations TestConsumerInvocations = default!;
+    protected FakeTimeProvider FakeTime { get; private set; } = default!;
+    protected TestConsumerInvocations TestConsumerInvocations { get; private set; } = default!;
 
-    protected async Task<ServiceProvider> Setup(TestDbContainerBase dbContainer, AsyncMonolithSettings? settings = null)
+    protected async Task<ServiceProvider> Setup(TestDbContainerBase dbContainer, AsyncMonolithOptions? settings = null)
     {
         await dbContainer.InitializeAsync();
 
@@ -21,7 +21,7 @@ public abstract class DbTestsBase
         dbContainer.AddDb(services);
 
         var (fakeTime, invocations) =
-            services.AddTestServices(dbContainer.DbType, settings ?? AsyncMonolithSettings.Default);
+            services.AddTestServices(dbContainer.DbType, settings ?? new AsyncMonolithOptions());
         TestConsumerInvocations = invocations;
         FakeTime = fakeTime;
 
@@ -39,7 +39,7 @@ public abstract class DbTestsBase
         return serviceProvider;
     }
 
-    public Activity? GetActivity()
+    public static Activity? GetActivity()
     {
         var activitySource = new ActivitySource("AsyncMonolith.Tests");
         var listener = new ActivityListener
@@ -57,28 +57,28 @@ public abstract class DbTestsBase
     }
     public static IEnumerable<object[]> GetTestDbContainers()
     {
-       // yield return new object[] { new MySqlTestDbContainer() };
+       yield return new object[] { new MySqlTestDbContainer() };
         yield return new object[] { new MsSqlTestDbContainer() };
         yield return new object[] { new PostgreSqlTestDbContainer() };
         yield return new object[] { new EfTestDbContainer() };
-       // yield return new object[] { new MariaDbTestDbContainer() };
+       yield return new object[] { new MariaDbTestDbContainer() };
     }
     
     public static IEnumerable<object[]> GetTestDbTypes()
     {
-        // yield return new object[] { DbType.MySql };
+        yield return new object[] { DbType.MySql };
         yield return new object[] { DbType.Ef };
         yield return new object[] { DbType.MsSql };
         yield return new object[] { DbType.PostgreSql };
-        // yield return new object[] { DbType.MariaDb };
+        yield return new object[] { DbType.MariaDb };
     }
     
     public static IEnumerable<object[]> GetTestDbTypesWithoutEf()
     {
-        // yield return new object[] { DbType.MySql };
+        yield return new object[] { DbType.MySql };
         yield return new object[] { DbType.MsSql };
         yield return new object[] { DbType.PostgreSql };
-        // yield return new object[] { DbType.MariaDb };
+        yield return new object[] { DbType.MariaDb };
     }
 
     public static TestDbContainerBase GetTestDbContainer(DbType dbType)
@@ -86,10 +86,10 @@ public abstract class DbTestsBase
         return dbType switch
         {
             DbType.Ef => new EfTestDbContainer(),
-         //   DbType.MySql => new MySqlTestDbContainer(),
+           DbType.MySql => new MySqlTestDbContainer(),
             DbType.MsSql => new MsSqlTestDbContainer(),
             DbType.PostgreSql => new PostgreSqlTestDbContainer(),
-        //    DbType.MariaDb => new MariaDbTestDbContainer(),
+           DbType.MariaDb => new MariaDbTestDbContainer(),
             _ => throw new ArgumentOutOfRangeException(nameof(dbType), dbType, null)
         };
 

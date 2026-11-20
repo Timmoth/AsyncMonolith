@@ -1,13 +1,13 @@
 ﻿using System.Text.Json;
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
-using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 
 namespace AsyncMonolith.TestHelpers;
 
 /// <summary>
-/// Represents a fake implementation of the <see cref="IProducerService"/> interface for testing purposes.
+///     An <see cref="IProducerService" /> that records produced messages in <see cref="CreatedConsumerMessages" />
+///     instead of writing them to a database.
 /// </summary>
 public class FakeProducerService : IProducerService
 {
@@ -15,13 +15,8 @@ public class FakeProducerService : IProducerService
     private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FakeProducerService"/> class.
-    /// </summary>
-    /// <param name="timeProvider">The time provider.</param>
-    /// <param name="consumerRegistry">The consumer registry.</param>
-    /// <param name="idGenerator">The ID generator.</param>
-    public FakeProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry,
+    /// <summary>Initializes a new instance of the <see cref="FakeProducerService" /> class.</summary>
+    internal FakeProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry,
         IAsyncMonolithIdGenerator idGenerator)
     {
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
@@ -29,117 +24,61 @@ public class FakeProducerService : IProducerService
         _idGenerator = idGenerator ?? throw new ArgumentNullException(nameof(idGenerator));
     }
 
-    /// <summary>
-    /// Gets or sets the list of consumer messages created by the producer service.
-    /// </summary>
-    public List<ConsumerMessage> CreatedConsumerMessages { get; set; } = new List<ConsumerMessage>();
+    /// <summary>The messages produced so far, one per consumer.</summary>
+    public List<ConsumerMessage> CreatedConsumerMessages { get; } = [];
 
-    /// <summary>
-    /// Produces a single consumer message.
-    /// </summary>
-    /// <typeparam name="TK">The type of the consumer payload.</typeparam>
-    /// <param name="message">The consumer payload message.</param>
-    /// <param name="availableAfter">The available after timestamp (in Unix time) for the consumer message.</param>
-    /// <param name="insertId">The insert ID for the consumer message.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public Task Produce<TK>(TK message, long? availableAfter = null, string? insertId = null,
-        CancellationToken cancellationToken = default)
-        where TK : IConsumerPayload
+    /// <inheritdoc />
+    public Task Produce<TPayload>(TPayload payload, TimeSpan? delay = null, string? deduplicationKey = null,
+        CancellationToken cancellationToken = default) where TPayload : IConsumerPayload =>
+        Produce(payload, _timeProvider.GetUtcNow() + (delay ?? TimeSpan.Zero), deduplicationKey, cancellationToken);
+
+    /// <inheritdoc />
+    public Task Produce<TPayload>(TPayload payload, DateTimeOffset availableAt, string? deduplicationKey = null,
+        CancellationToken cancellationToken = default) where TPayload : IConsumerPayload
     {
-        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-        availableAfter ??= currentTime;
-        var payload = JsonSerializer.Serialize(message);
-        insertId ??= _idGenerator.GenerateId();
-        var payloadType = typeof(TK).Name;
+        var payloadType = AsyncMonolithNames.ForPayload<TPayload>();
+        var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType)
+            .Where(c => deduplicationKey is null || !CreatedConsumerMessages.Any(m =>
+                m.DeduplicationKey == deduplicationKey && m.ConsumerType == c));
+        Record(payloadType, JsonSerializer.Serialize(payload), consumers, availableAt,
+            deduplicationKey ?? _idGenerator.GenerateId());
+        return Task.CompletedTask;
+    }
 
-        foreach (var consumerId in _consumerRegistry.ResolvePayloadConsumerTypes(payloadType))
+    /// <inheritdoc />
+    public Task ProduceList<TPayload>(IEnumerable<TPayload> payloads, TimeSpan? delay = null,
+        CancellationToken cancellationToken = default) where TPayload : IConsumerPayload
+    {
+        var payloadType = AsyncMonolithNames.ForPayload<TPayload>();
+        var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
+        var availableAt = _timeProvider.GetUtcNow() + (delay ?? TimeSpan.Zero);
+        foreach (var payload in payloads)
+        {
+            Record(payloadType, JsonSerializer.Serialize(payload), consumers, availableAt, _idGenerator.GenerateId());
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void Record(string payloadType, string payload, IEnumerable<string> consumers, DateTimeOffset availableAt,
+        string deduplicationKey)
+    {
+        var now = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
+        foreach (var consumer in consumers)
         {
             CreatedConsumerMessages.Add(new ConsumerMessage
             {
                 Id = _idGenerator.GenerateId(),
-                CreatedAt = currentTime,
-                AvailableAfter = availableAfter.Value,
-                ConsumerType = consumerId,
+                CreatedAt = now,
+                AvailableAfter = Math.Max(now, availableAt.ToUnixTimeSeconds()),
+                ConsumerType = consumer,
                 PayloadType = payloadType,
                 Payload = payload,
                 Attempts = 0,
-                InsertId = insertId,
+                DeduplicationKey = deduplicationKey,
                 TraceId = null,
                 SpanId = null,
-                RailId = _consumerRegistry.ResolveConsumerRailId(consumerId)
-            });
-        }
-
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Produces a list of consumer messages.
-    /// </summary>
-    /// <typeparam name="TK">The type of the consumer payload.</typeparam>
-    /// <param name="messages">The list of consumer payload messages.</param>
-    /// <param name="availableAfter">The available after timestamp (in Unix time) for the consumer messages.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public Task ProduceList<TK>(List<TK> messages, long? availableAfter = null,
-        CancellationToken cancellationToken = default) where TK : IConsumerPayload
-    {
-        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-        availableAfter ??= currentTime;
-
-        var payloadType = typeof(TK).Name;
-        var consumers = _consumerRegistry.ResolvePayloadConsumerTypes(payloadType);
-        foreach (var message in messages)
-        {
-            var insertId = _idGenerator.GenerateId();
-            var payload = JsonSerializer.Serialize(message);
-
-            foreach (var consumerId in consumers)
-            {
-                CreatedConsumerMessages.Add(new ConsumerMessage
-                {
-                    Id = _idGenerator.GenerateId(),
-                    CreatedAt = currentTime,
-                    AvailableAfter = availableAfter.Value,
-                    ConsumerType = consumerId,
-                    PayloadType = payloadType,
-                    Payload = payload,
-                    Attempts = 0,
-                    InsertId = insertId,
-                    TraceId = null,
-                    SpanId = null,
-                    RailId = _consumerRegistry.ResolveConsumerRailId(consumerId)
-                });
-            }
-        }
-
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Produces a scheduled consumer message.
-    /// </summary>
-    /// <param name="message">The scheduled consumer message.</param>
-    public void Produce(ScheduledMessage message)
-    {
-        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-        var insertId = _idGenerator.GenerateId();
-        foreach (var consumerId in _consumerRegistry.ResolvePayloadConsumerTypes(message.PayloadType))
-        {
-            CreatedConsumerMessages.Add(new ConsumerMessage
-            {
-                Id = _idGenerator.GenerateId(),
-                CreatedAt = currentTime,
-                AvailableAfter = currentTime,
-                ConsumerType = consumerId,
-                PayloadType = message.PayloadType,
-                Payload = message.Payload,
-                Attempts = 0,
-                InsertId = insertId,
-                TraceId = null,
-                SpanId = null,
-                RailId = _consumerRegistry.ResolveConsumerRailId(consumerId)
+                RailId = _consumerRegistry.ResolveConsumerRailId(consumer)
             });
         }
     }

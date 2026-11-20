@@ -1,9 +1,5 @@
 # AsyncMonolith ![Logo](AsyncMonolith/logo.png)
-[![Ef](https://img.shields.io/nuget/v/AsyncMonolith.Ef?label=Ef)](https://www.nuget.org/packages/AsyncMonolith.Ef)
-[![MySql](https://img.shields.io/nuget/v/AsyncMonolith.MySql?label=MySql)](https://www.nuget.org/packages/AsyncMonolith.MySql)
-[![MsSql](https://img.shields.io/nuget/v/AsyncMonolith.MsSql?label=MsSql)](https://www.nuget.org/packages/AsyncMonolith.MsSql)
-[![PostgreSql](https://img.shields.io/nuget/v/AsyncMonolith.PostgreSql?label=PostgreSql)](https://www.nuget.org/packages/AsyncMonolith.PostgreSql)
-[![MariaDb](https://img.shields.io/nuget/v/AsyncMonolith.MariaDb?label=MariaDb)](https://www.nuget.org/packages/AsyncMonolith.MariaDb)
+[![NuGet](https://img.shields.io/nuget/v/AsyncMonolith?label=AsyncMonolith)](https://www.nuget.org/packages/AsyncMonolith)
 
 AsyncMonolith is a lightweight library that facilitates simple, durable and asynchronous messaging in dotnet apps.
 
@@ -56,7 +52,7 @@ Producing and scheduling messages
   await _producerService.Produce(new UserDeleted()
   {
     Id = id
-  }, 60);
+  }, TimeSpan.FromSeconds(60));
   
  // Publish 'CacheRefreshScheduled' every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.
  _scheduleService.Schedule(new CacheRefreshScheduled
@@ -69,16 +65,16 @@ Consuming messages
 ```csharp
 [ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
 [ConsumerAttempts(1)] // Consumer messages moved to poisoned table after 1 failed attempt
-public class DeleteUsersPosts : BaseConsumer<UserDeleted>
+public class DeleteUsersPosts : IConsumer<UserDeleted>
 {
     private readonly ApplicationDbContext _dbContext;
 
-    public ValueSubmittedConsumer(ApplicationDbContext dbContext)
+    public DeleteUsersPosts(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
     }
 
-    public override Task Consume(UserDeleted message, CancellationToken cancellationToken)
+    public async Task Consume(UserDeleted message, ConsumeContext context, CancellationToken cancellationToken)
     {
         ...
 		await _dbContext.SaveChangesAsync(cancellationToken);

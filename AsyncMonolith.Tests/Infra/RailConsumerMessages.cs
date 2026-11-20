@@ -8,7 +8,7 @@ public class RailConsumerMessage : IConsumerPayload
     
 }
 
-public class RailConsumer0 : BaseConsumer<RailConsumerMessage>
+public class RailConsumer0 : IConsumer<RailConsumerMessage>
 {
     private readonly TestConsumerInvocations _consumerInvocations;
 
@@ -17,7 +17,7 @@ public class RailConsumer0 : BaseConsumer<RailConsumerMessage>
         _consumerInvocations = consumerInvocations;
     }
 
-    public override Task Consume(RailConsumerMessage message, CancellationToken cancellationToken)
+    public Task Consume(RailConsumerMessage message, ConsumeContext context, CancellationToken cancellationToken)
     {
         _consumerInvocations.Increment(nameof(RailConsumer0));
 
@@ -26,7 +26,7 @@ public class RailConsumer0 : BaseConsumer<RailConsumerMessage>
 }
 
 [ConsumerRailIdAttribute(1)]
-public class RailConsumer1 : BaseConsumer<RailConsumerMessage>
+public class RailConsumer1 : IConsumer<RailConsumerMessage>
 {
     private readonly TestConsumerInvocations _consumerInvocations;
 
@@ -35,7 +35,7 @@ public class RailConsumer1 : BaseConsumer<RailConsumerMessage>
         _consumerInvocations = consumerInvocations;
     }
 
-    public override Task Consume(RailConsumerMessage message, CancellationToken cancellationToken)
+    public Task Consume(RailConsumerMessage message, ConsumeContext context, CancellationToken cancellationToken)
     {
         _consumerInvocations.Increment(nameof(RailConsumer1));
 
@@ -44,7 +44,7 @@ public class RailConsumer1 : BaseConsumer<RailConsumerMessage>
 }
 
 [ConsumerRailId(2)]
-public class RailConsumer2 : BaseConsumer<RailConsumerMessage>
+public class RailConsumer2 : IConsumer<RailConsumerMessage>
 {
     private readonly TestConsumerInvocations _consumerInvocations;
 
@@ -53,7 +53,7 @@ public class RailConsumer2 : BaseConsumer<RailConsumerMessage>
         _consumerInvocations = consumerInvocations;
     }
 
-    public override Task Consume(RailConsumerMessage message, CancellationToken cancellationToken)
+    public Task Consume(RailConsumerMessage message, ConsumeContext context, CancellationToken cancellationToken)
     {
         _consumerInvocations.Increment(nameof(RailConsumer2));
 

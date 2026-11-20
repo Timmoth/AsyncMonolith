@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AsyncMonolith.Tests;
 
+[Trait("Category", "Integration")]
 public class ConsumerMessageFetcherTests : DbTestsBase
 {
     [Theory]
@@ -18,14 +19,14 @@ public class ConsumerMessageFetcherTests : DbTestsBase
         try
         {
             // Given
-            var settings = AsyncMonolithSettings.Default;
+            var settings = new AsyncMonolithOptions();
             var serviceProvider = await Setup(dbContainer, settings);
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var producer = serviceProvider.GetRequiredService<IProducerService>();
             var fetcher = serviceProvider.GetRequiredService<IConsumerMessageFetcher>();
 
             var messages = new List<SingleConsumerMessage>();
-            for (var i = 0; i < 2 * settings.ProcessorBatchSize; i++)
+            for (var i = 0; i < 2 * settings.BatchSize; i++)
             {
                 messages.Add(new SingleConsumerMessage
                 {
@@ -33,15 +34,15 @@ public class ConsumerMessageFetcherTests : DbTestsBase
                 });
             }
 
-            await producer.ProduceList(messages);
-            await dbContext.SaveChangesAsync();
+            await producer.ProduceList(messages, cancellationToken: TestContext.Current.CancellationToken);
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // When
             var dbMessages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), 0,
                 CancellationToken.None);
 
             // Then
-            dbMessages.Count.ShouldBe(settings.ProcessorBatchSize);
+            dbMessages.Count.ShouldBe(settings.BatchSize);
         }
         finally
         {
@@ -58,14 +59,14 @@ public class ConsumerMessageFetcherTests : DbTestsBase
         try
         {
             // Given
-            var settings = AsyncMonolithSettings.Default;
+            var settings = new AsyncMonolithOptions();
             var serviceProvider = await Setup(dbContainer, settings);
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var producer = serviceProvider.GetRequiredService<IProducerService>();
             var fetcher = serviceProvider.GetRequiredService<IConsumerMessageFetcher>();
 
-            await producer.Produce(new RailConsumerMessage() { });
-            await dbContext.SaveChangesAsync();
+            await producer.Produce(new RailConsumerMessage() { }, cancellationToken: TestContext.Current.CancellationToken);
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // When
             var rail0Messages = await fetcher.Fetch(dbContext.ConsumerMessages, FakeTime.GetUtcNow().ToUnixTimeSeconds(), 0,

@@ -2,19 +2,10 @@
 
 Install the nuget package to support your database
 
-[![Ef](https://img.shields.io/nuget/v/AsyncMonolith.Ef?label=Ef)](https://www.nuget.org/packages/AsyncMonolith.Ef)
-[![MySql](https://img.shields.io/nuget/v/AsyncMonolith.MySql?label=MySql)](https://www.nuget.org/packages/AsyncMonolith.MySql)
-[![MsSql](https://img.shields.io/nuget/v/AsyncMonolith.MsSql?label=MsSql)](https://www.nuget.org/packages/AsyncMonolith.MsSql)
-[![PostgreSql](https://img.shields.io/nuget/v/AsyncMonolith.PostgreSql?label=PostgreSql)](https://www.nuget.org/packages/AsyncMonolith.PostgreSql)
-[![MariaDb](https://img.shields.io/nuget/v/AsyncMonolith.MariaDb?label=MariaDb)](https://www.nuget.org/packages/AsyncMonolith.MariaDb)
+[![NuGet](https://img.shields.io/nuget/v/AsyncMonolith?label=AsyncMonolith)](https://www.nuget.org/packages/AsyncMonolith)
 
 ```csharp
-    // Pick one
-    dotnet add package AsyncMonolith.Ef
-    dotnet add package AsyncMonolith.MySql
-    dotnet add package AsyncMonolith.MsSql
-    dotnet add package AsyncMonolith.PostgreSql
-    dotnet add package AsyncMonolith.MariaDb
+    dotnet add package AsyncMonolith
 ```
 
 Setup your DbContext
@@ -27,17 +18,20 @@ Setup your DbContext
         {
         }
 
-        // Add Db Sets
-        public DbSet<ConsumerMessage> ConsumerMessages { get; set; } = default!;
-        public DbSet<PoisonedMessage> PoisonedMessages { get; set; } = default!;
-        public DbSet<ScheduledMessage> ScheduledMessages { get; set; } = default!;
+        // Map AsyncMonolith's tables. DbSet properties for them are optional.
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.ConfigureAsyncMonolith();
 
-        // Configure the ModelBuilder
-		protected override void OnModelCreating(ModelBuilder modelBuilder)
-		{
-			modelBuilder.ConfigureAsyncMonolith();
-			base.OnModelCreating(modelBuilder);
-		}
+            // Or keep them apart from your own tables:
+            // modelBuilder.ConfigureAsyncMonolith(o =>
+            // {
+            //     o.Schema = "jobs";        // databases that support schemas
+            //     o.TablePrefix = "jobs_";  // jobs_consumer_messages, ...
+            // });
+
+            base.OnModelCreating(modelBuilder);
+        }
     }
 ```
 
@@ -47,35 +41,46 @@ Register your dependencies and configure settings
 
 ```csharp
 
-    // Register required services
-    builder.Services.AddLogging();
-    builder.Services.AddSingleton(TimeProvider.System);
+    // Your DbContext, with any EF Core provider
+    builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(connectionString));
 
-	// Register AsyncMonolith using either:
-	// services.AddEfAsyncMonolith
-	// services.AddMsSqlAsyncMonolith
-	// services.AddMySqlAsyncMonolith
-	// services.AddPostgreSqlAsyncMonolith
-	// services.AddMariaDbAsyncMonolith
-    builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(settings =>
+    // AsyncMonolith picks its queries from the provider: PostgreSQL (Npgsql), SQL Server, and MySQL or MariaDB
+    // (MySql.EntityFrameworkCore or Pomelo) lock rows so several app instances can share the tables. Any other
+    // provider, such as SQLite, works without row locks (fine for a single instance).
+    builder.Services.AddAsyncMonolith<ApplicationDbContext>(options =>
     {
-        settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
-        settings.AttemptDelay = 10, // Seconds before a failed message is retried
-        settings.MaxAttempts = 5, // Number of times a failed message is retried
-        settings.ProcessorMinDelay = 10, // Minimum millisecond delay before the next batch is processed
-        settings.ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next batch is processed
-		settings.ProcessorBatchSize = 5, // The number of messages to process in a single batch
-        settings.ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
-        settings.ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
-        settings.DefaultConsumerTimeout = 10 // The default number of seconds before a consumer will timeout
-    });
+        options.RegisterTypesFromAssemblyContaining<Program>();
+        options.MaxAttempts = 5; // Attempts before a message is poisoned
+        options.AttemptDelay = TimeSpan.FromSeconds(10); // First retry delay; doubles each retry
+        options.MaxAttemptDelay = TimeSpan.FromMinutes(5); // Longest retry delay
+        options.DefaultConsumerTimeout = TimeSpan.FromSeconds(10); // Before a consumer is cancelled
+        options.BatchSize = 5; // Messages a processor takes at once
+        options.IdlePollInterval = TimeSpan.FromSeconds(1); // Wait after a batch that wasn't full
+        options.BusyPollInterval = TimeSpan.FromMilliseconds(10); // Wait after a full batch
+    })
+    .BindConfiguration("AsyncMonolith"); // Optional: override any option from appsettings.json
 ```
-The following methods are available on the `AsyncMonolithSettings` passed into the `settings` lambda:
+
+Options are validated when the host starts, so an invalid value stops startup with an `OptionsValidationException` that names it. In `appsettings.json`, write times as `"00:00:30"`.
+
+The following methods are available on the `AsyncMonolithOptions` passed into the `options` lambda:
 
 - `RegisterTypesFromAssemblyContaining<T>()`
 - `RegisterTypesFromAssemblyContaining(Type type)`
 - `RegisterTypesFromAssembly(Assembly assembly)`
 - `RegisterTypesFromAssemblies(params Assembly[] assemblies)`
+
+### Modules
+
+Call `AddAsyncMonolith` once, in the host. A module or library with its own consumers registers them itself, before or after the host's call:
+
+```csharp
+services.AddAsyncMonolithConsumersFromAssemblyContaining<BillingModule>();
+// or
+services.AddAsyncMonolithConsumers(typeof(BillingModule).Assembly);
+```
+
+Registering an assembly more than once is harmless. Consumers from every module are checked together when the host starts: a payload with no consumer in any module, or two payloads or consumers with the same stored name, stops startup with an error (see [Stored names](guides/changing-messages.md#stored-names)).
 
 Create messages and consumers
 
@@ -91,7 +96,7 @@ Create messages and consumers
     // Define Consumer
     [ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
     [ConsumerAttempts(1)] // Consumer messages moved to poisoned table after 1 failed attempt
-    public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
+    public class ValueSubmittedConsumer : IConsumer<ValueSubmitted>
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IProducerService _producerService;
@@ -102,7 +107,7 @@ Create messages and consumers
             _producerService = producerService;
         }
 
-        public override Task Consume(ValueSubmitted message, CancellationToken cancellationToken)
+        public Task Consume(ValueSubmitted message, ConsumeContext context, CancellationToken cancellationToken)
         {
             ...
 	        await _dbContext.SaveChangesAsync(cancellationToken);
@@ -134,7 +139,7 @@ Produce / schedule messages
     await _producerService.Produce(new ValueSubmitted()
     {
       Value = newValue
-    }, 10, $"user:{userId}");
+    }, TimeSpan.FromSeconds(10), $"user:{userId}");
 
     // Publish a message every Monday at 12pm (UTC) with a tag that can be used to modify / delete related scheduled messages.
     _scheduleService.Schedule(new ValueSubmitted

@@ -12,16 +12,17 @@ namespace AsyncMonolith.Consumers;
 ///     Background service which fetches and processes batches of consumer messages.
 /// </summary>
 /// <typeparam name="T">The type of the DbContext.</typeparam>
-public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
+internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
 {
     private readonly IConsumerMessageFetcher _consumerMessageFetcher;
     private readonly ConsumerRegistry _consumerRegistry;
     private readonly ILogger<ConsumerMessageProcessor<T>> _logger;
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
+    private readonly AsyncMonolithMetrics _metrics;
 
-    private int _railId = 0;
+    private int _railId;
     /// <summary>
     ///     Initializes a new instance of the <see cref="ConsumerMessageProcessor{T}" /> class.
     /// </summary>
@@ -31,12 +32,13 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     /// <param name="options">The options.</param>
     /// <param name="scopeFactory">The service scope factory.</param>
     /// <param name="consumerMessageFetcher">The consumer message fetcher.</param>
+    /// <param name="metrics">The metrics.</param>
     public ConsumerMessageProcessor(ILogger<ConsumerMessageProcessor<T>> logger,
         TimeProvider timeProvider,
         ConsumerRegistry consumerRegistry,
-        IOptions<AsyncMonolithSettings> options,
+        IOptions<AsyncMonolithOptions> options,
         IServiceScopeFactory scopeFactory,
-        IConsumerMessageFetcher consumerMessageFetcher)
+        IConsumerMessageFetcher consumerMessageFetcher, AsyncMonolithMetrics metrics)
     {
         _logger = logger;
         _timeProvider = timeProvider;
@@ -44,6 +46,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         _options = options;
         _scopeFactory = scopeFactory;
         _consumerMessageFetcher = consumerMessageFetcher;
+        _metrics = metrics;
     }
 
     /// <summary>
@@ -62,132 +65,220 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var consecutiveFailures = 0;
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = _options.Value.ProcessorMaxDelay;
+            var processed = 0;
             try
             {
-                var processedMessageCount = await ProcessBatch(stoppingToken);
-                if (processedMessageCount == _options.Value.ProcessorBatchSize)
-                {
-                    delay = _options.Value.ProcessorMinDelay;
-                }
+                processed = await ProcessBatch(stoppingToken);
+                consecutiveFailures = 0;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing consumer message batch.");
+                // Back off while batches keep failing (for example while the database is unavailable).
+                consecutiveFailures++;
+                _logger.ConsumerBatchFailed(ex);
             }
 
-            if (delay >= 10)
+            var delay = ProcessorPolling.NextDelay(_options.Value, processed, consecutiveFailures);
+            if (delay > TimeSpan.Zero)
             {
-                await Task.Delay(delay, stoppingToken);
+                try
+                {
+                    await Task.Delay(delay, _timeProvider, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             }
         }
     }
 
     /// <summary>
-    ///     Fetch and Processes the next batch of consumer messages.
+    ///     Seconds a claimed message stays leased beyond its consumer timeout. If a processor stops before
+    ///     finishing a message, the message becomes available again once the lease runs out.
     /// </summary>
+    internal const int LeaseGracePeriodSeconds = 30;
+
+    /// <summary>
+    ///     How long after its timeout the processor keeps waiting for a consumer to stop before abandoning it.
+    /// </summary>
+    internal static readonly TimeSpan AbandonGracePeriod = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    ///     Claims and processes the next batch of consumer messages.
+    /// </summary>
+    /// <remarks>
+    ///     Messages are claimed in one short transaction: each is leased by moving its AvailableAfter past
+    ///     the consumer timeout, and the attempt is counted. Consumers then run outside any transaction, so
+    ///     they can write to the database freely (SQLite allows only one writer at a time). Each message is
+    ///     then completed in its own short write, guarded by its lease.
+    /// </remarks>
     /// <param name="cancellationToken">The cancellation token to stop the execution.</param>
-    /// <returns>The number of processed messages.</returns>
+    /// <returns>The number of messages processed successfully.</returns>
     internal async Task<int> ProcessBatch(CancellationToken cancellationToken)
     {
-        using var scope = _scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<T>();
-        await using var dbContextTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        var consumerSet = dbContext.Set<ConsumerMessage>();
-        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
-        var messages = await _consumerMessageFetcher.Fetch(consumerSet, currentTime, _railId, cancellationToken);
-
+        var messages = await ClaimBatch(cancellationToken);
         if (messages.Count == 0)
         {
             return 0;
         }
-        
-        var tasks = new List<Task<List<(ConsumerMessage message, bool success)>>>();
 
-        foreach (var consumerMessageGroup in messages.GroupBy(m => m.ConsumerType))
+        var tasks = new List<Task<List<bool>>>();
+        foreach (var consumerMessageGroup in messages.GroupBy(m => m.Message.ConsumerType))
         {
-            var group = consumerMessageGroup.ToList(); // materialize to avoid deferred execution
+            var group = consumerMessageGroup.ToList();
             var executionMode = _consumerRegistry.ResolveConsumerExecutionMode(consumerMessageGroup.Key);
 
-            if (executionMode == ConsumerInstanceExecutionMode.Parallel)
+            if (executionMode == ConsumerExecutionMode.Parallel)
             {
                 // Parallel: all messages in the group are processed concurrently
-                tasks.Add(Task.WhenAll(group.Select(m => Process(m, cancellationToken)))
-                    .ContinueWith(t => t.Result.ToList(), cancellationToken));
+                tasks.Add(Task.WhenAll(group.Select(m => ProcessAndComplete(m, cancellationToken)))
+                    .ContinueWith(t => t.Result.ToList(), cancellationToken, TaskContinuationOptions.None,
+                        TaskScheduler.Default));
             }
             else
             {
                 // Sequential: one message at a time in order
                 tasks.Add(Task.Run(async () =>
                 {
-                    var results = new List<(ConsumerMessage message, bool success)>();
+                    var results = new List<bool>();
                     foreach (var message in group)
                     {
-                        var result = await Process(message, cancellationToken);
-                        results.Add(result);
+                        results.Add(await ProcessAndComplete(message, cancellationToken));
                     }
+
                     return results;
                 }, cancellationToken));
             }
         }
 
-        // Wait for all group tasks (whether parallel or sequential within)
-        var allResults = (await Task.WhenAll(tasks)).SelectMany(r => r).ToList();
-        
-        var processedMessageCount = 0;
-        foreach (var (message, success) in allResults)
-        {
-            if (success)
-            {
-                processedMessageCount++;
-                // Remove the message
-                consumerSet.Remove(message);
-            }
-            else
-            {
-                // Increment the number of attempts
-                message.Attempts++;
-                if (message.Attempts < _consumerRegistry.ResolveConsumerMaxAttempts(message))
-                {
-                    // Retry the message after a delay
-                    message.AvailableAfter =
-                        _timeProvider.GetUtcNow().ToUnixTimeSeconds() + _options.Value.AttemptDelay;
-                }
-                else
-                {
-                    // Move the message into the poisoned message table
-                    consumerSet.Remove(message);
-                    var poisonedSet = dbContext.Set<PoisonedMessage>();
-                    poisonedSet.Add(new PoisonedMessage
-                    {
-                        Id = message.Id,
-                        Attempts = message.Attempts,
-                        AvailableAfter = message.AvailableAfter,
-                        ConsumerType = message.ConsumerType,
-                        CreatedAt = message.CreatedAt,
-                        Payload = message.Payload,
-                        PayloadType = message.PayloadType,
-                        InsertId = message.InsertId,
-                        TraceId = message.TraceId,
-                        SpanId = message.SpanId,
-                        RailId = message.RailId,
-                    });
-                }
-            }
-        }
-
-        // Save changes to the message tables
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        // Commit transaction
-        await dbContextTransaction.CommitAsync(cancellationToken);
-
-        return processedMessageCount;
+        return (await Task.WhenAll(tasks)).SelectMany(r => r).Count(success => success);
     }
 
-    private Activity? StartActivity(ConsumerMessage message)
+    /// <summary>
+    ///     Fetches the next batch for this rail and leases it in one short transaction.
+    /// </summary>
+    /// <returns>The claimed messages, with their attempt counted and their lease in AvailableAfter.</returns>
+    internal async Task<List<ClaimedMessage>> ClaimBatch(CancellationToken cancellationToken)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<T>();
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var currentTime = _timeProvider.GetUtcNow().ToUnixTimeSeconds();
+        var messages = await _consumerMessageFetcher.Fetch(dbContext.Set<ConsumerMessage>(), currentTime, _railId,
+            cancellationToken);
+        if (messages.Count == 0)
+        {
+            return [];
+        }
+
+        // Claim each message only if it is unchanged since it was read. Another processor (in this app or another
+        // instance) that claimed it first has changed its attempts and due time, so the update matches nothing.
+        var claimed = new List<ClaimedMessage>(messages.Count);
+        foreach (var message in messages)
+        {
+            var dueAt = message.AvailableAfter;
+            var attempts = message.Attempts;
+            var leaseUntil = currentTime + _consumerRegistry.ResolveConsumerTimeout(message) + LeaseGracePeriodSeconds;
+
+            var updated = await dbContext.Set<ConsumerMessage>()
+                .Where(m => m.Id == message.Id && m.AvailableAfter == dueAt && m.Attempts == attempts)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(m => m.Attempts, attempts + 1)
+                    .SetProperty(m => m.AvailableAfter, leaseUntil), cancellationToken);
+            if (updated == 0)
+            {
+                continue;
+            }
+
+            message.Attempts = attempts + 1;
+            message.AvailableAfter = leaseUntil;
+            claimed.Add(new ClaimedMessage(message, dueAt));
+            _metrics.Lag.Record(Math.Max(0, currentTime - dueAt),
+                new KeyValuePair<string, object?>("consumer_type", message.ConsumerType));
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return claimed;
+    }
+
+    private async Task<bool> ProcessAndComplete(ClaimedMessage claimed, CancellationToken cancellationToken)
+    {
+        var started = Stopwatch.GetTimestamp();
+        var error = await Process(claimed.Message, cancellationToken);
+        var duration = Stopwatch.GetElapsedTime(started);
+
+        // Record the outcome even when stopping, so the attempt isn't left waiting for its lease to expire.
+        var outcome = await Complete(claimed, error is null, CancellationToken.None, error);
+        _metrics.RecordOutcome(claimed.Message.ConsumerType, outcome, duration);
+        return error is null;
+    }
+
+    /// <summary>
+    ///     Records the outcome of a claimed message: removes it on success, otherwise schedules a retry or
+    ///     moves it to the poisoned messages. Does nothing if the lease has since been taken over.
+    /// </summary>
+    internal async Task<MessageOutcome> Complete(ClaimedMessage claimed, bool success,
+        CancellationToken cancellationToken, string? error = null)
+    {
+        var message = claimed.Message;
+        using var scope = _scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<T>();
+        var leased = dbContext.Set<ConsumerMessage>()
+            .Where(m => m.Id == message.Id && m.AvailableAfter == message.AvailableAfter);
+
+        if (success)
+        {
+            return await leased.ExecuteDeleteAsync(cancellationToken) == 0
+                ? MessageOutcome.LeaseLost
+                : MessageOutcome.Consumed;
+        }
+
+        if (message.Attempts < _consumerRegistry.ResolveConsumerMaxAttempts(message))
+        {
+            var retryAt = _timeProvider.GetUtcNow().ToUnixTimeSeconds() +
+                          (long)_options.Value.GetRetryDelay(message.Attempts).TotalSeconds;
+            var updated = await leased.ExecuteUpdateAsync(s => s
+                .SetProperty(m => m.AvailableAfter, retryAt)
+                .SetProperty(m => m.LastError, error), cancellationToken);
+            return updated == 0 ? MessageOutcome.LeaseLost : MessageOutcome.Retrying;
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        if (await leased.ExecuteDeleteAsync(cancellationToken) == 0)
+        {
+            return MessageOutcome.LeaseLost;
+        }
+
+        dbContext.Set<PoisonedMessage>().Add(new PoisonedMessage
+        {
+            Id = message.Id,
+            Attempts = message.Attempts,
+            AvailableAfter = claimed.DueAt,
+            ConsumerType = message.ConsumerType,
+            CreatedAt = message.CreatedAt,
+            Payload = message.Payload,
+            PayloadType = message.PayloadType,
+            DeduplicationKey = message.DeduplicationKey,
+            TraceId = message.TraceId,
+            SpanId = message.SpanId,
+            RailId = message.RailId,
+            LastError = error
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return MessageOutcome.Poisoned;
+    }
+
+    private static Activity? StartActivity(ConsumerMessage message)
     {
         if (string.IsNullOrEmpty(message.TraceId) || string.IsNullOrEmpty(message.SpanId))
         {
@@ -212,49 +303,79 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     /// </summary>
     /// <param name="message">The consumer message to process.</param>
     /// <param name="cancellationToken">The cancellation token to stop the execution.</param>
-    /// <returns>A tuple containing the processed consumer message and a flag indicating success.</returns>
-    internal async Task<(ConsumerMessage message, bool success)> Process(ConsumerMessage message,
-        CancellationToken cancellationToken = default)
+    /// <returns>Null on success, otherwise a description of the error.</returns>
+    internal async Task<string?> Process(ConsumerMessage message, CancellationToken cancellationToken = default)
     {
         using var activity = StartActivity(message);
 
         activity?.AddTag("consumer_message.id", message.Id);
-        activity?.AddTag("consumer_message.attempt", message.Attempts + 1);
+        activity?.AddTag("consumer_message.attempt", message.Attempts);
         activity?.AddTag("consumer_message.payload.type", message.PayloadType);
         activity?.AddTag("consumer_message.type", message.ConsumerType);
 
+        var consumerTimeout = _consumerRegistry.ResolveConsumerTimeout(message);
         try
         {
             var consumerType = _consumerRegistry.ResolveConsumerType(message);
-            var consumerTimeout = _consumerRegistry.ResolveConsumerTimeout(message);
 
-            var timeoutCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            using var timeoutCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCancellationToken.CancelAfter(TimeSpan.FromSeconds(consumerTimeout));
 
             using var scope = _scopeFactory.CreateScope();
 
-            // Resolve the consumer
-            if (scope.ServiceProvider.GetRequiredService(consumerType)
-                is not IConsumer consumer)
+            var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
+            var context = ConsumeContext.For(message, _consumerRegistry.ResolveConsumerMaxAttempts(message));
+            var consuming = ConsumerInvoker.Invoke(consumer, message, context, _options.Value.SerializerOptions,
+                timeoutCancellationToken.Token);
+            try
             {
-                throw new Exception($"Couldn't resolve consumer service of type: '{message.ConsumerType}'");
+                // Don't wait indefinitely for a consumer that ignores its cancellation token: it would hold up its
+                // rail, and its lease would expire while it ran.
+                await consuming.WaitAsync(TimeSpan.FromSeconds(consumerTimeout) + AbandonGracePeriod,
+                    cancellationToken);
+            }
+            catch (TimeoutException ex)
+            {
+                // Observe the abandoned task's eventual failure so it isn't reported as unobserved.
+                _ = consuming.ContinueWith(t => _ = t.Exception, CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                _logger.ConsumerAbandoned(message.ConsumerType, consumerTimeout);
+                return $"Timed out after {consumerTimeout} seconds and did not stop when cancelled.";
             }
 
-            // Execute the consumer
-            await consumer.Consume(message, timeoutCancellationToken.Token);
-
             activity?.SetStatus(ActivityStatusCode.Ok);
-            _logger.LogInformation("Successfully processed message for consumer: '{id}'", message.ConsumerType);
-            return (message, true);
+            _logger.ConsumerMessageProcessed(message.ConsumerType);
+            return null;
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            _logger.ConsumerMessageFailed(ex, message.Attempts);
+            return $"Timed out after {consumerTimeout} seconds.";
         }
         catch (Exception ex)
         {
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            activity?.AddTag("exception.type", nameof(ex));
+            activity?.AddTag("exception.type", ex.GetType().FullName);
             activity?.AddTag("exception.message", ex.Message);
-            _logger.LogError(ex, "Failed to consume message on attempt {attempt}.", message.Attempts);
+            _logger.ConsumerMessageFailed(ex, message.Attempts);
+            return Describe(ex);
         }
+    }
 
-        return (message, false);
+    private const int MaxErrorLength = 2000;
+
+    private static string Describe(Exception exception)
+    {
+        var description = $"{exception.GetType().FullName}: {exception.Message}";
+        return description.Length <= MaxErrorLength ? description : description[..MaxErrorLength];
     }
 }
+
+/// <summary>
+///     A message claimed by a processor: the message (attempt counted, lease in AvailableAfter) and the time it
+///     became due before it was leased.
+/// </summary>
+internal sealed record ClaimedMessage(ConsumerMessage Message, long DueAt);

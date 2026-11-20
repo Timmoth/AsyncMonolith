@@ -1,10 +1,8 @@
+using AsyncMonolith.Database;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Diagnostics.Metrics;
 using System.Reflection;
 using AsyncMonolith.Consumers;
-using AsyncMonolith.Ef;
-using AsyncMonolith.MariaDb;
-using AsyncMonolith.MsSql;
-using AsyncMonolith.MySql;
-using AsyncMonolith.PostgreSql;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.TestHelpers;
@@ -25,47 +23,38 @@ public static class TestServiceHelpers
     }
 
     public static (FakeTimeProvider fakeTime, TestConsumerInvocations invocations) AddTestServices(
-        this ServiceCollection services, DbType dbType, AsyncMonolithSettings settings)
+        this ServiceCollection services, DbType dbType, AsyncMonolithOptions settings)
     {
-        var fakeTime = new FakeTimeProvider(DateTimeOffset.Parse("2020-08-31T10:00:00.0000000Z"));
+        var fakeTime = new FakeTimeProvider(DateTimeOffset.Parse("2020-08-31T10:00:00.0000000Z", System.Globalization.CultureInfo.InvariantCulture));
         services.AddSingleton<TimeProvider>(fakeTime);
         services.AddLogging();
+        services.TryAddSingleton(sp => new AsyncMonolithMetrics(sp.GetService<IMeterFactory>()));
 
-        services.InternalConfigureAsyncMonolithSettings(settings);
+        services.InternalConfigureAsyncMonolithOptions(o =>
+        {
+            o.MaxAttempts = settings.MaxAttempts;
+            o.AttemptDelay = settings.AttemptDelay;
+            o.MaxAttemptDelay = settings.MaxAttemptDelay;
+            o.DefaultConsumerTimeout = settings.DefaultConsumerTimeout;
+            o.BatchSize = settings.BatchSize;
+            o.IdlePollInterval = settings.IdlePollInterval;
+            o.BusyPollInterval = settings.BusyPollInterval;
+            o.SerializerOptions = settings.SerializerOptions;
+            o.PoisonedMessageRetention = settings.PoisonedMessageRetention;
+        });
         settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
         
         
         services.InternalRegisterAsyncMonolithConsumers(settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
+        services.AddScoped<ProducerService<TestDbContext>>();
+        services.AddScoped<IProducerService, ProducerService<TestDbContext>>();
         services.AddScoped<IScheduleService, ScheduleService<TestDbContext>>();
-        switch (dbType)
-        {
-            case DbType.Ef:
-                services.AddScoped<IProducerService, EfProducerService<TestDbContext>>();
-                services.AddSingleton<IConsumerMessageFetcher, EfConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, EfScheduledMessageFetcher>();
-                break;
-            case DbType.MySql:
-                services.AddScoped<IProducerService, MySqlProducerService<TestDbContext>>();
-                services.AddSingleton<IConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
-                break;
-            case DbType.MsSql:
-                services.AddScoped<IProducerService, MsSqlProducerService<TestDbContext>>();
-                services.AddSingleton<IConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
-                break;
-            case DbType.PostgreSql:
-                services.AddScoped<IProducerService, PostgreSqlProducerService<TestDbContext>>();
-                services.AddSingleton<IConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
-                break;
-            case DbType.MariaDb:
-                services.AddScoped<IProducerService, MariaDbProducerService<TestDbContext>>();
-                services.AddSingleton<IConsumerMessageFetcher, MariaDbConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, MariaDbScheduledMessageFetcher>();
-                break;
-        }
+        services.AddScoped<IPoisonedMessageService, PoisonedMessageService<TestDbContext>>();
+        services.AddScoped<IQueueStatisticsService, QueueStatisticsService<TestDbContext>>();
+        // One fetcher pair for every database: the SQL is chosen from the EF provider in use.
+        services.AddSingleton<IConsumerMessageFetcher, ConsumerMessageFetcher>();
+        services.AddSingleton<IScheduledMessageFetcher, ScheduledMessageFetcher>();
 
         var invocations = new TestConsumerInvocations();
         services.AddSingleton(invocations);

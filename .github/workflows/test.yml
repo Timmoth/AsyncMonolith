@@ -1,19 +1,61 @@
 name: Test
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
+    inputs:
+      integration:
+        description: Also run the integration tests (Testcontainers, slow)
+        type: boolean
+        default: false
 
 jobs:
-  build:
+  fast:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 8.0.x
+      uses: actions/checkout@v4
 
-    - name: Test
-      run: dotnet test AsyncMonolith.Tests --verbosity normal
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+
+    - name: Fast tests
+      run: >-
+        dotnet test --project AsyncMonolith.Tests --filter-not-trait "Category=Integration"
+        --coverage --coverage-output-format cobertura --coverage-output "$GITHUB_WORKSPACE/coverage/fast.cobertura.xml"
+
+    - name: Upload coverage
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-fast
+        path: coverage/
+
+  integration:
+    if: github.event_name == 'workflow_dispatch' && inputs.integration
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+
+    - name: Integration tests
+      run: >-
+        dotnet test --project AsyncMonolith.Tests --filter-trait "Category=Integration"
+        --coverage --coverage-output-format cobertura --coverage-output "$GITHUB_WORKSPACE/coverage/integration.cobertura.xml"
+
+    - name: Upload coverage
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-integration
+        path: coverage/

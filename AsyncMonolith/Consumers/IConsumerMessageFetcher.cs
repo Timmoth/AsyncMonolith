@@ -5,7 +5,7 @@ namespace AsyncMonolith.Consumers;
 /// <summary>
 ///     Represents an interface for fetching consumer messages.
 /// </summary>
-public interface IConsumerMessageFetcher
+internal interface IConsumerMessageFetcher
 {
     /// <summary>
     ///     Fetches consumer messages.

@@ -9,8 +9,10 @@ CREATE TABLE consumer_messages (
     payload_type VARCHAR(255) NOT NULL,
     payload TEXT NOT NULL,
     insert_id VARCHAR(255) NOT NULL,
-    trace_id VARCHAR(255) NOT NULL,
-    span_id VARCHAR(255) NOT NULL,
+    trace_id VARCHAR(255) NULL,
+    span_id VARCHAR(255) NULL,
+    rail_id INT NOT NULL DEFAULT 0,
+    last_error TEXT NULL,
     PRIMARY KEY (id)
 );
 
@@ -23,8 +25,10 @@ CREATE TABLE poisoned_messages (
     payload_type VARCHAR(255) NOT NULL,
     payload TEXT NOT NULL,
     insert_id VARCHAR(255) NOT NULL,
-    trace_id VARCHAR(255) NOT NULL,
-    span_id VARCHAR(255) NOT NULL,
+    trace_id VARCHAR(255) NULL,
+    span_id VARCHAR(255) NULL,
+    rail_id INT NOT NULL DEFAULT 0,
+    last_error TEXT NULL,
     PRIMARY KEY (id)
 );
 
@@ -46,5 +50,9 @@ CREATE TABLE submitted_values (
 );
 
 CREATE UNIQUE INDEX IX_consumer_messages_insert_id_consumer_type ON consumer_messages (insert_id, consumer_type);
+CREATE INDEX IX_consumer_messages_rail_id_available_after ON consumer_messages (rail_id, available_after);
+CREATE INDEX IX_poisoned_messages_created_at ON poisoned_messages (created_at);
+CREATE INDEX IX_scheduled_messages_available_after ON scheduled_messages (available_after);
+CREATE INDEX IX_scheduled_messages_tag ON scheduled_messages (tag);
 
 COMMIT;

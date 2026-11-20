@@ -9,17 +9,18 @@ public class MariaDbTestDbContainer : TestDbContainerBase
 {
     public override async Task InitializeContainerAsync()
     {
-        var container = new MariaDbBuilder().Build();
+        var container = new MariaDbBuilder("mariadb:11.8").Build();
+        // Kept before starting, so a container that fails to start is still cleaned up.
+        DbContainer = container;
         await container.StartAsync();
         ConnectionString = container.GetConnectionString();
-        DbContainer = container;
     }
 
-    public override void AddDb(ServiceCollection services)
+    public override void AddDb(IServiceCollection services)
     {
         services.AddDbContext<TestDbContext>((sp, options) =>
             {
-                options.UseMySql(ConnectionString, ServerVersion.AutoDetect(ConnectionString));
+                options.UseMySQL(ConnectionString);
             }
         );
     }

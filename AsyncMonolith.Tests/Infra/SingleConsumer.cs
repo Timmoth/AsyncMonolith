@@ -4,7 +4,7 @@ namespace AsyncMonolith.Tests.Infra;
 
 [ConsumerTimeout(1)]
 [ConsumerAttempts(2)]
-public class SingleConsumer : BaseConsumer<SingleConsumerMessage>
+public class SingleConsumer : IConsumer<SingleConsumerMessage>
 {
     private readonly TestConsumerInvocations _consumerInvocations;
 
@@ -13,7 +13,7 @@ public class SingleConsumer : BaseConsumer<SingleConsumerMessage>
         _consumerInvocations = consumerInvocations;
     }
 
-    public override Task Consume(SingleConsumerMessage message, CancellationToken cancellationToken)
+    public Task Consume(SingleConsumerMessage message, ConsumeContext context, CancellationToken cancellationToken)
     {
         _consumerInvocations.Increment(nameof(SingleConsumer));
         return Task.CompletedTask;
