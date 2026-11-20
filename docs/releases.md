@@ -2,7 +2,7 @@ Make sure to check this table before updating the nuget package in your solution
 
 | Version | Description                                | Migration Required |
 |---------|--------------------------------------------|--------------------|
-| 11.0.0  | SQLite-safe processing, stored names, modules, backoff, poisoned message service (see below) | Yes |
+| 11.0.0  | One package, multi-instance-safe processing, new consumer and options APIs (see below) | Yes |
 | 8.0.6   | Added ConsumerAttempts override attribute  | No                 |
 | 8.0.5   | Bundle debug symbols with nuget package    | No                 |
 | 8.0.4   | Bundle XML docs with nuget package         | No                 |
@@ -19,6 +19,14 @@ Make sure to check this table before updating the nuget package in your solution
 
 AsyncMonolith is now a single package. From 11.0.0 the major version follows [Semantic Versioning](https://semver.org) (it changes for breaking changes) rather than the .NET version. It is tested against PostgreSQL, SQL Server, MySQL 8.4 (with Oracle's `MySql.EntityFrameworkCore`), MariaDB 11.8 and SQLite.
 
+**Upgrading from 8.x or 10.x**
+
+1. Replace `AsyncMonolith.Ef`, `.PostgreSql`, `.MsSql`, `.MySql` or `.MariaDb` with the `AsyncMonolith` package, and add your EF Core provider if your app doesn't reference it already.
+2. Replace `services.Add{Database}AsyncMonolith<TDbContext>(settings => ...)` with `services.AddAsyncMonolith<TDbContext>(options => ...)`, converting times to `TimeSpan`s (see the options changes below).
+3. Make consumers implement `IConsumer<TPayload>` and add the `ConsumeContext context` parameter to `Consume`.
+4. Call `modelBuilder.ConfigureAsyncMonolith()` in `OnModelCreating`, then add and apply a migration (see below).
+5. On PostgreSQL, SQL Server, MySQL or MariaDB, make sure every `Produce` is followed by `SaveChangesAsync`: messages are no longer written without it.
+
 **Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_11_0_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. It also adds indexes for finding due messages (`rail_id, available_after`), due schedules (`available_after`), schedules by tag, and poisoned messages by age, which keep processing fast as the tables grow. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
 
 **Changes**
@@ -27,9 +35,9 @@ AsyncMonolith is now a single package. From 11.0.0 the major version follows [Se
 - Cron expressions can have 5 fields (minute precision) as well as 6 (seconds first).
 - `AsyncMonolithOptions.SerializerOptions` sets the `JsonSerializerOptions` for payloads. The default is unchanged.
 - Tables can live in their own schema or have a prefix: `modelBuilder.ConfigureAsyncMonolith(o => { o.Schema = "jobs"; o.TablePrefix = "jobs_"; })`. The row-locking SQL follows the mapping.
-- Every database now produces messages the same way: they are added to your `DbContext` and written on `SaveChanges`, in your transaction. The PostgreSQL, SQL Server, MySQL and MariaDB packages used to write immediately. A repeated insert id skips consumers that already have a pending message with it, on every database.
+- Every database now produces messages the same way: they are added to your `DbContext` and written on `SaveChanges`, in your transaction. The PostgreSQL, SQL Server, MySQL and MariaDB packages used to write immediately. A repeated deduplication key skips consumers that already have a pending message with it, on every database.
 - Several app instances can safely share the tables with any database. Claims and schedule occurrences use conditional updates, so a message is processed by one processor at a time and a schedule fires once per occurrence.
-- Fetch order is deterministic (oldest first, then by id). See [Ordering](guides/consuming-messages.md#ordering) for what is and isn't guaranteed.
+- Fetch order is deterministic (oldest first, then by id). See [Ordering](https://timmoth.github.io/AsyncMonolith/guides/consuming-messages/#ordering) for what is and isn't guaranteed.
 - Consumers can write to the database on SQLite. Messages are claimed and leased in a short transaction, consumers run outside it, and each message is completed in its own short write. If the app stops mid-message, the message is retried once its consumer timeout plus 30 seconds has passed.
 - Retries back off exponentially from `AttemptDelay` up to the new `MaxAttemptDelay` option (default 5 minutes).
 - The last error is stored on retried and poisoned messages.
@@ -56,5 +64,4 @@ AsyncMonolith is now a single package. From 11.0.0 the major version follows [Se
 - `AsyncMonolith.TestHelpers` uses xunit v3, and `ConsumerTestBase.InitializeAsync`/`DisposeAsync` return `ValueTask`.
 - `IScheduleService` has a new member (`EnsureSchedule`), so custom implementations must add it.
 - Errors that were thrown as `System.Exception` are now `InvalidOperationException`.
-- `ConsumerRegistry` exposes properties instead of public fields.
 - `TestConsumerMessageProcessor.ProcessNext<TDbContext, TConsumer>` now finds the consumer's message. It previously always returned null.
