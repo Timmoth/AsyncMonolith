@@ -35,7 +35,7 @@ You can produce messages to be consumed immediately like this:
     await _dbContext.SaveChangesAsync(cancellationToken);
 ```
 
-The message is added to your `DbContext` and written when you call `SaveChangesAsync`, in the same transaction as your other changes. If you never save, or the save fails, no message is written. This works the same with every database package. Learn more about the [Transactional Outbox](../transactional-outbox) pattern.
+The message is added to your `DbContext` and written when you call `SaveChangesAsync`, in the same transaction as your other changes. If you never save, or the save fails, no message is written. This works the same with every database. Learn more about the [Transactional Outbox](../transactional-outbox) pattern.
 
 ## Delayed messages
 You can produce messages to be consumed after a delay by passing a `TimeSpan`, or at a set time by passing a `DateTimeOffset`. Times are stored in whole seconds and rounded up, so a message is never consumed early.

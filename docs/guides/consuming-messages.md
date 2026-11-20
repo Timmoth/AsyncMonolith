@@ -1,7 +1,7 @@
 - **Independent Consumption**: Each message will be consumed independently by each consumer set up to handle it.
 - **Periodic Querying**: Each instance of your app will periodically query the `consumer_messages` table for a batch of available messages to process.
   - After a batch that wasn't full it waits `IdlePollInterval` before looking again; after a full batch it waits `BusyPollInterval`.
-- **Multiple instances**: Any number of app instances can process the same tables, with every database package. A processor claims each message with a conditional update, so a message is only ever claimed by one processor at a time, and each schedule occurrence fires once. The PostgreSQL, SQL Server, MySQL and MariaDB packages also lock rows while claiming, so processors skip each other's batches instead of competing for them.
+- **Multiple instances**: Any number of app instances can process the same tables, with any database. A processor claims each message with a conditional update, so a message is only ever claimed by one processor at a time, and each schedule occurrence fires once. On PostgreSQL, SQL Server, MySQL and MariaDB, processors also lock rows while claiming, so processors skip each other's batches instead of competing for them.
 - **Rails**: Each rail (`[ConsumerRailId]`) gets its own processor, so a slow consumer on one rail doesn't hold up consumers on another.
 - **Batching**: Consumer messages will be read from the `consumer_messages` table in batches defined by `BatchSize`.
 - **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure.

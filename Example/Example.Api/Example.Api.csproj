@@ -21,7 +21,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\AsyncMonolith\AsyncMonolith.csproj" />
-	  <ProjectReference Include="..\..\AsyncMonolith.PostgreSql\AsyncMonolith.PostgreSql.csproj" />
+	  <ProjectReference Include="..\..\AsyncMonolith\AsyncMonolith.csproj" />
 	  <ProjectReference Include="..\AsyncMonolith.Web\AsyncMonolith.Web.csproj" />
 	</ItemGroup>
 

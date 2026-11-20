@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using AsyncMonolith.Consumers;
-using AsyncMonolith.Ef;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Tests.Infra;
 using AsyncMonolith.Utilities;
@@ -61,7 +60,7 @@ public class RobustnessTests
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddDbContext<TestDbContext>(o => o.UseSqlite($"Data Source={path}"));
         builder.Services.AddSingleton<TestConsumerInvocations>();
-        builder.Services.AddEfAsyncMonolith<TestDbContext>(o =>
+        builder.Services.AddAsyncMonolith<TestDbContext>(o =>
         {
             o.RegisterTypesFromAssemblyContaining<RobustnessTests>();
             o.IdlePollInterval = TimeSpan.FromMilliseconds(50);
@@ -148,7 +147,7 @@ public class RobustnessTests
         var services = new ServiceCollection();
         services.AddDbContext<TestDbContext>(_ => { });
 
-        services.AddEfAsyncMonolith<TestDbContext>().AddConsumersFromAssemblyContaining<RobustnessTests>();
+        services.AddAsyncMonolith<TestDbContext>().AddConsumersFromAssemblyContaining<RobustnessTests>();
 
         services.ShouldContain(d => d.ServiceType == typeof(SingleConsumer));
         services.BuildServiceProvider().GetRequiredService<ConsumerRegistry>()

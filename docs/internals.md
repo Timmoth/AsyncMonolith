@@ -20,7 +20,7 @@ Writes scheduled messages to the `scheduled_messages` table.
 
 One background processor runs per rail. Each cycle it:
 
-1. **Claims** a batch in a short transaction: it reads due messages (locking rows with the PostgreSQL, SQL Server, MySQL and MariaDB packages), then for each one counts the attempt and leases it by moving `available_after` past the consumer's timeout plus 30 seconds. The update only applies if the message is unchanged since it was read, so only one processor can claim it.
+1. **Claims** a batch in a short transaction: it reads due messages (locking rows on PostgreSQL, SQL Server, MySQL and MariaDB), then for each one counts the attempt and leases it by moving `available_after` past the consumer's timeout plus 30 seconds. The update only applies if the message is unchanged since it was read, so only one processor can claim it.
 2. **Consumes** each claimed message outside any transaction, in its own DI scope, so consumers can use the database freely.
 3. **Completes** each message in its own short write: deleted on success, otherwise retried after a backoff delay, or moved to `poisoned_messages` after its last attempt. If its lease was taken over meanwhile, nothing is changed.
 

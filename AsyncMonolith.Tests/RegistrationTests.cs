@@ -1,4 +1,3 @@
-using AsyncMonolith.Ef;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.TestHelpers;
 using AsyncMonolith.Tests.Infra;
@@ -24,7 +23,7 @@ public class RegistrationTests
     }
 
     private static void AddAsyncMonolith(IServiceCollection services) =>
-        services.AddEfAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<RegistrationTests>());
+        services.AddAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<RegistrationTests>());
 
     [Fact]
     public void Does_not_register_the_DbContext_base_type()

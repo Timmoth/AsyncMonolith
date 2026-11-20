@@ -16,11 +16,6 @@
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
 	</ItemGroup>
 	<ItemGroup>
-		<InternalsVisibleTo Include="$(AssemblyName).Ef" />
-		<InternalsVisibleTo Include="$(AssemblyName).MariaDb" />
-		<InternalsVisibleTo Include="$(AssemblyName).MsSql" />
-		<InternalsVisibleTo Include="$(AssemblyName).MySql" />
-		<InternalsVisibleTo Include="$(AssemblyName).PostgreSql" />
 		<InternalsVisibleTo Include="$(AssemblyName).TestHelpers" />
 		<InternalsVisibleTo Include="$(AssemblyName).Tests" />
 	</ItemGroup>

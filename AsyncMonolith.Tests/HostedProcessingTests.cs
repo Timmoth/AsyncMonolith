@@ -1,5 +1,4 @@
 using AsyncMonolith.Consumers;
-using AsyncMonolith.Ef;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Tests.Infra;
@@ -33,7 +32,7 @@ public sealed class HostedProcessingTests : IAsyncLifetime
         builder.Services.AddSingleton<TestConsumerInvocations>();
         builder.Services.AddSingleton<ConcurrencyProbe>();
         builder.Services.AddSingleton<ContextRecorder>();
-        builder.Services.AddEfAsyncMonolith<TestDbContext>(s =>
+        builder.Services.AddAsyncMonolith<TestDbContext>(s =>
         {
             if (!registerAsModule)
             {

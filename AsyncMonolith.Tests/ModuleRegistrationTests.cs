@@ -1,5 +1,4 @@
 using AsyncMonolith.Consumers;
-using AsyncMonolith.Ef;
 using AsyncMonolith.Tests.Infra;
 using AsyncMonolith.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,7 +28,7 @@ public class ModuleRegistrationTests
         var services = Services();
 
         services.AddAsyncMonolithConsumers(module);
-        services.AddEfAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<ModuleRegistrationTests>());
+        services.AddAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<ModuleRegistrationTests>());
 
         var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<ConsumerRegistry>();
@@ -45,7 +44,7 @@ public class ModuleRegistrationTests
         var module = ClashingTypes.Build(["Billing"]);
         var services = Services();
 
-        services.AddEfAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<ModuleRegistrationTests>());
+        services.AddAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<ModuleRegistrationTests>());
         services.AddAsyncMonolithConsumers(module);
 
         var registry = services.BuildServiceProvider().GetRequiredService<ConsumerRegistry>();
@@ -57,7 +56,7 @@ public class ModuleRegistrationTests
     {
         var services = Services();
 
-        services.AddEfAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<ModuleRegistrationTests>());
+        services.AddAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<ModuleRegistrationTests>());
         services.AddAsyncMonolithConsumersFromAssemblyContaining<ModuleRegistrationTests>();
 
         services.Count(d => d.ServiceType == typeof(SingleConsumer)).ShouldBe(1);
@@ -69,7 +68,7 @@ public class ModuleRegistrationTests
     public void Payload_without_a_consumer_in_any_module_fails_when_the_host_starts()
     {
         var services = Services();
-        services.AddEfAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<ModuleRegistrationTests>());
+        services.AddAsyncMonolith<TestDbContext>(s => s.RegisterTypesFromAssemblyContaining<ModuleRegistrationTests>());
         services.AddAsyncMonolithConsumers(ClashingTypes.PayloadOnly("Billing"));
 
         var exception = Should.Throw<InvalidOperationException>(() =>
@@ -82,7 +81,7 @@ public class ModuleRegistrationTests
     public void Rails_are_read_from_every_module()
     {
         var services = Services();
-        services.AddEfAsyncMonolith<TestDbContext>(_ => { });
+        services.AddAsyncMonolith<TestDbContext>(_ => { });
         services.AddAsyncMonolithConsumersFromAssemblyContaining<ModuleRegistrationTests>();
 
         services.BuildServiceProvider().GetRequiredService<ConsumerRegistry>().RailIds.ShouldBe([0, 1, 2]);
@@ -92,7 +91,7 @@ public class ModuleRegistrationTests
     public void Rail_zero_is_used_when_there_are_no_consumers()
     {
         var services = Services();
-        services.AddEfAsyncMonolith<TestDbContext>(_ => { });
+        services.AddAsyncMonolith<TestDbContext>(_ => { });
 
         services.BuildServiceProvider().GetRequiredService<ConsumerRegistry>().RailIds.ShouldBe([0]);
     }

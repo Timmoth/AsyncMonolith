@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 namespace AsyncMonolith.Utilities;
 
 /// <summary>
-///     Options for AsyncMonolith. Set them in the <c>Add*AsyncMonolith</c> call, or bind them from configuration
+///     Options for AsyncMonolith. Set them in the <c>AddAsyncMonolith</c> call, or bind them from configuration
 ///     with <see cref="AsyncMonolithBuilder.BindConfiguration" />. They are validated when the host starts.
 /// </summary>
 public sealed class AsyncMonolithOptions
@@ -167,7 +167,7 @@ internal sealed class AsyncMonolithOptionsValidator : IValidateOptions<AsyncMono
 }
 
 /// <summary>
-///     Returned by <c>Add*AsyncMonolith</c> to continue configuring AsyncMonolith.
+///     Returned by <c>AddAsyncMonolith</c> to continue configuring AsyncMonolith.
 /// </summary>
 public sealed class AsyncMonolithBuilder
 {

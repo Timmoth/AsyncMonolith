@@ -28,7 +28,7 @@ jobs:
 
       - name: Pack
         run: |
-          for project in AsyncMonolith AsyncMonolith.Ef AsyncMonolith.PostgreSql AsyncMonolith.MsSql AsyncMonolith.MySql AsyncMonolith.MariaDb AsyncMonolith.TestHelpers; do
+          for project in AsyncMonolith AsyncMonolith.TestHelpers; do
             dotnet pack "$project/$project.csproj" -c Release --no-build --output nupkg
           done
 

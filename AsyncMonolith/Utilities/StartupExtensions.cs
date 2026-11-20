@@ -2,6 +2,7 @@
 using System.Diagnostics.Metrics;
 using System.Reflection;
 using AsyncMonolith.Consumers;
+using AsyncMonolith.Database;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,28 @@ public static class StartupExtensions
         return modelBuilder;
     }
 
+    /// <summary>
+    ///     Registers AsyncMonolith: the producer, schedule, poisoned message and statistics services, and the
+    ///     background processors. Call it once, in the host.
+    /// </summary>
+    /// <remarks>
+    ///     The queries are chosen from the DbContext's EF Core provider. PostgreSQL (Npgsql), SQL Server, and MySQL
+    ///     or MariaDB (MySql.EntityFrameworkCore or Pomelo) lock rows, so several app instances skip each other's
+    ///     batches. Other providers, such as SQLite, use plain queries without row locks.
+    /// </remarks>
+    /// <typeparam name="T">The DbContext containing the AsyncMonolith tables.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">Sets options and the assemblies to scan for consumers.</param>
+    /// <returns>A builder to bind configuration or add more consumer assemblies.</returns>
+    public static AsyncMonolithBuilder AddAsyncMonolith<T>(this IServiceCollection services,
+        Action<AsyncMonolithOptions>? configure = null) where T : DbContext
+    {
+        var builder = services.InternalAddAsyncMonolith<T>(configure ?? (_ => { }));
+        services.TryAddSingleton<IConsumerMessageFetcher, ConsumerMessageFetcher>();
+        services.TryAddSingleton<IScheduledMessageFetcher, ScheduledMessageFetcher>();
+        return builder;
+    }
+
     internal static void InternalConfigureAsyncMonolithOptions(
         this IServiceCollection services,
         Action<AsyncMonolithOptions> configure)
@@ -48,7 +71,7 @@ public static class StartupExtensions
         if (services.Any(d => d.ServiceType == typeof(AsyncMonolithRegistration)))
         {
             throw new InvalidOperationException(
-                "AsyncMonolith is already registered. Call Add*AsyncMonolith once, in the host; modules register " +
+                "AsyncMonolith is already registered. Call AddAsyncMonolith once, in the host; modules register " +
                 "their consumers with AddAsyncMonolithConsumers.");
         }
 
@@ -88,7 +111,7 @@ public static class StartupExtensions
 
     /// <summary>
     ///     Registers the consumers and payloads in the given assemblies. Call it from each module that has
-    ///     consumers; the host calls <c>Add*AsyncMonolith</c> once. Order doesn't matter, and registering the
+    ///     consumers; the host calls <c>AddAsyncMonolith</c> once. Order doesn't matter, and registering the
     ///     same assembly twice is harmless.
     /// </summary>
     /// <remarks>
@@ -244,7 +267,7 @@ public static class StartupExtensions
 
     private sealed class ConsumerAssemblies : HashSet<Assembly>;
 
-    /// <summary>Marks that Add*AsyncMonolith has been called.</summary>
+    /// <summary>Marks that AddAsyncMonolith has been called.</summary>
     private sealed class AsyncMonolithRegistration;
 
     private static string RegisterPayloadName(Dictionary<string, Type> payloadTypes, Type payloadType)

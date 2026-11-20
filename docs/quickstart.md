@@ -2,19 +2,10 @@
 
 Install the nuget package to support your database
 
-[![Ef](https://img.shields.io/nuget/v/AsyncMonolith.Ef?label=Ef)](https://www.nuget.org/packages/AsyncMonolith.Ef)
-[![MySql](https://img.shields.io/nuget/v/AsyncMonolith.MySql?label=MySql)](https://www.nuget.org/packages/AsyncMonolith.MySql)
-[![MsSql](https://img.shields.io/nuget/v/AsyncMonolith.MsSql?label=MsSql)](https://www.nuget.org/packages/AsyncMonolith.MsSql)
-[![PostgreSql](https://img.shields.io/nuget/v/AsyncMonolith.PostgreSql?label=PostgreSql)](https://www.nuget.org/packages/AsyncMonolith.PostgreSql)
-[![MariaDb](https://img.shields.io/nuget/v/AsyncMonolith.MariaDb?label=MariaDb)](https://www.nuget.org/packages/AsyncMonolith.MariaDb)
+[![NuGet](https://img.shields.io/nuget/v/AsyncMonolith?label=AsyncMonolith)](https://www.nuget.org/packages/AsyncMonolith)
 
 ```csharp
-    // Pick one
-    dotnet add package AsyncMonolith.Ef
-    dotnet add package AsyncMonolith.MySql
-    dotnet add package AsyncMonolith.MsSql
-    dotnet add package AsyncMonolith.PostgreSql
-    dotnet add package AsyncMonolith.MariaDb
+    dotnet add package AsyncMonolith
 ```
 
 Setup your DbContext
@@ -50,17 +41,13 @@ Register your dependencies and configure settings
 
 ```csharp
 
-    // Register required services
-    builder.Services.AddLogging();
-    builder.Services.AddSingleton(TimeProvider.System);
+    // Your DbContext, with any EF Core provider
+    builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(connectionString));
 
-	// Register AsyncMonolith using either:
-	// services.AddEfAsyncMonolith
-	// services.AddMsSqlAsyncMonolith
-	// services.AddMySqlAsyncMonolith
-	// services.AddPostgreSqlAsyncMonolith
-	// services.AddMariaDbAsyncMonolith
-    builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(options =>
+    // AsyncMonolith picks its queries from the provider: PostgreSQL (Npgsql), SQL Server, and MySQL or MariaDB
+    // (MySql.EntityFrameworkCore or Pomelo) lock rows so several app instances can share the tables. Any other
+    // provider, such as SQLite, works without row locks (fine for a single instance).
+    builder.Services.AddAsyncMonolith<ApplicationDbContext>(options =>
     {
         options.RegisterTypesFromAssemblyContaining<Program>();
         options.MaxAttempts = 5; // Attempts before a message is poisoned
@@ -85,7 +72,7 @@ The following methods are available on the `AsyncMonolithOptions` passed into th
 
 ### Modules
 
-Call `Add*AsyncMonolith` once, in the host. A module or library with its own consumers registers them itself, before or after the host's call:
+Call `AddAsyncMonolith` once, in the host. A module or library with its own consumers registers them itself, before or after the host's call:
 
 ```csharp
 services.AddAsyncMonolithConsumersFromAssemblyContaining<BillingModule>();

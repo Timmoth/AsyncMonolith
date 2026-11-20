@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
-using AsyncMonolith.Ef;
 using AsyncMonolith.Tests.Infra;
 using AsyncMonolith.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -115,7 +114,7 @@ public sealed class MetricsTests
         var services = new ServiceCollection();
         services.AddMetrics();
         services.AddDbContext<TestDbContext>(_ => { });
-        services.AddEfAsyncMonolith<TestDbContext>();
+        services.AddAsyncMonolith<TestDbContext>();
 
         using var provider = services.BuildServiceProvider();
         var meter = provider.GetRequiredService<AsyncMonolithMetrics>().Meter;

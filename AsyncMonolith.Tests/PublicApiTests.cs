@@ -48,17 +48,6 @@ public class PublicApiTests
         ]);
     }
 
-    [Theory]
-    [InlineData("AsyncMonolith.Ef")]
-    [InlineData("AsyncMonolith.PostgreSql")]
-    [InlineData("AsyncMonolith.MsSql")]
-    [InlineData("AsyncMonolith.MySql")]
-    [InlineData("AsyncMonolith.MariaDb")]
-    public void Provider_packages_export_only_their_registration_extensions(string assemblyName)
-    {
-        ExportedTypes(Assembly.Load(assemblyName)).ShouldBe([$"{assemblyName}.StartupExtensions"]);
-    }
-
     [Fact]
     public void TestHelpers_package_exports_only_the_intended_types()
     {

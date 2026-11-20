@@ -1,8 +1,3 @@
-using AsyncMonolith.Ef;
-using AsyncMonolith.MariaDb;
-using AsyncMonolith.MsSql;
-using AsyncMonolith.MySql;
-using AsyncMonolith.PostgreSql;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Tests.Infra;
 using AsyncMonolith.Utilities;
@@ -23,7 +18,7 @@ public class LoadTests
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private static void AddAsyncMonolith(IServiceCollection services, DbType dbType)
+    private static void AddAsyncMonolith(IServiceCollection services)
     {
         Action<AsyncMonolithOptions> configure = o =>
         {
@@ -33,15 +28,7 @@ public class LoadTests
             o.IdlePollInterval = TimeSpan.FromMilliseconds(50);
             o.BusyPollInterval = TimeSpan.Zero;
         };
-        _ = dbType switch
-        {
-            DbType.Ef => services.AddEfAsyncMonolith<TestDbContext>(configure),
-            DbType.PostgreSql => services.AddPostgreSqlAsyncMonolith<TestDbContext>(configure),
-            DbType.MsSql => services.AddMsSqlAsyncMonolith<TestDbContext>(configure),
-            DbType.MySql => services.AddMySqlAsyncMonolith<TestDbContext>(configure),
-            DbType.MariaDb => services.AddMariaDbAsyncMonolith<TestDbContext>(configure),
-            _ => throw new ArgumentOutOfRangeException(nameof(dbType))
-        };
+        services.AddAsyncMonolith<TestDbContext>(configure);
     }
 
     [Theory]
@@ -63,7 +50,7 @@ public class LoadTests
                 builder.Services.AddSingleton<ConcurrencyProbe>();
                 builder.Services.AddSingleton<ContextRecorder>();
                 builder.Services.AddSingleton<SerializationRecorder>();
-                AddAsyncMonolith(builder.Services, dbType);
+                AddAsyncMonolith(builder.Services);
                 hosts.Add(builder.Build());
             }
 

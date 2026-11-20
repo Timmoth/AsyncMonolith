@@ -1,6 +1,5 @@
 using System.Text.Json;
 using AsyncMonolith.Consumers;
-using AsyncMonolith.Ef;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Tests.Infra;
@@ -73,7 +72,7 @@ public class ConfigurationTests
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
         builder.Services.AddDbContext<TestDbContext>(_ => { });
-        builder.Services.AddEfAsyncMonolith<TestDbContext>(s => s.BatchSize = 0);
+        builder.Services.AddAsyncMonolith<TestDbContext>(s => s.BatchSize = 0);
         using var host = builder.Build();
 
         await Should.ThrowAsync<OptionsValidationException>(() =>
@@ -95,7 +94,7 @@ public class ConfigurationTests
         services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(configuration);
         services.AddDbContext<TestDbContext>(_ => { });
 
-        services.AddEfAsyncMonolith<TestDbContext>(s => s.MaxAttempts = 3).BindConfiguration("AsyncMonolith");
+        services.AddAsyncMonolith<TestDbContext>(s => s.MaxAttempts = 3).BindConfiguration("AsyncMonolith");
 
         var options = services.BuildServiceProvider().GetRequiredService<IOptions<AsyncMonolithOptions>>().Value;
         options.MaxAttempts.ShouldBe(9);
@@ -228,7 +227,7 @@ public class ConfigurationTests
         var services = new ServiceCollection();
         services.AddDbContext<TestDbContext>(_ => { });
 
-        services.AddEfAsyncMonolith<TestDbContext>(s =>
+        services.AddAsyncMonolith<TestDbContext>(s =>
         {
             s.RegisterTypesFromAssemblyContaining<ConfigurationTests>();
             s.MaxAttempts = 9;

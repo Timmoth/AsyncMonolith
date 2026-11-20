@@ -1,9 +1,5 @@
 # AsyncMonolith ![Logo](AsyncMonolith/logo.png)
-[![Ef](https://img.shields.io/nuget/v/AsyncMonolith.Ef?label=Ef)](https://www.nuget.org/packages/AsyncMonolith.Ef)
-[![MySql](https://img.shields.io/nuget/v/AsyncMonolith.MySql?label=MySql)](https://www.nuget.org/packages/AsyncMonolith.MySql)
-[![MsSql](https://img.shields.io/nuget/v/AsyncMonolith.MsSql?label=MsSql)](https://www.nuget.org/packages/AsyncMonolith.MsSql)
-[![PostgreSql](https://img.shields.io/nuget/v/AsyncMonolith.PostgreSql?label=PostgreSql)](https://www.nuget.org/packages/AsyncMonolith.PostgreSql)
-[![MariaDb](https://img.shields.io/nuget/v/AsyncMonolith.MariaDb?label=MariaDb)](https://www.nuget.org/packages/AsyncMonolith.MariaDb)
+[![NuGet](https://img.shields.io/nuget/v/AsyncMonolith?label=AsyncMonolith)](https://www.nuget.org/packages/AsyncMonolith)
 
 AsyncMonolith is a lightweight library that facilitates simple, durable and asynchronous messaging in dotnet apps.
 

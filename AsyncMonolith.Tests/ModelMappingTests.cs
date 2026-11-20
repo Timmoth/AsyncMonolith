@@ -1,7 +1,5 @@
+using AsyncMonolith.Utilities;
 using AsyncMonolith.Consumers;
-using AsyncMonolith.Ef;
-using AsyncMonolith.MsSql;
-using AsyncMonolith.PostgreSql;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Tests.Infra;
@@ -77,7 +75,7 @@ public class ModelMappingTests
         try
         {
             await using var services = Services<PrefixedDbContext>(o => o.UseSqlite($"Data Source={path}"),
-                s => s.AddEfAsyncMonolith<PrefixedDbContext>(o => o.RegisterTypesFromAssemblyContaining<ModelMappingTests>()));
+                s => s.AddAsyncMonolith<PrefixedDbContext>(o => o.RegisterTypesFromAssemblyContaining<ModelMappingTests>()));
             using (var scope = services.CreateScope())
             {
                 await scope.ServiceProvider.GetRequiredService<PrefixedDbContext>().Database.EnsureCreatedAsync(Ct);
@@ -129,17 +127,7 @@ public class ModelMappingTests
                         o.UseSqlServer(container.ConnectionString);
                     }
                 },
-                s =>
-                {
-                    if (dbType == DbType.PostgreSql)
-                    {
-                        s.AddPostgreSqlAsyncMonolith<SchemaDbContext>(o => o.RegisterTypesFromAssemblyContaining<ModelMappingTests>());
-                    }
-                    else
-                    {
-                        s.AddMsSqlAsyncMonolith<SchemaDbContext>(o => o.RegisterTypesFromAssemblyContaining<ModelMappingTests>());
-                    }
-                });
+                s => s.AddAsyncMonolith<SchemaDbContext>(o => o.RegisterTypesFromAssemblyContaining<ModelMappingTests>()));
             using (var scope = services.CreateScope())
             {
                 await scope.ServiceProvider.GetRequiredService<SchemaDbContext>().Database.EnsureCreatedAsync(Ct);

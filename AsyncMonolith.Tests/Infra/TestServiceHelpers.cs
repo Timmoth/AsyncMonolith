@@ -1,12 +1,8 @@
+using AsyncMonolith.Database;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Diagnostics.Metrics;
 using System.Reflection;
 using AsyncMonolith.Consumers;
-using AsyncMonolith.Ef;
-using AsyncMonolith.MariaDb;
-using AsyncMonolith.MsSql;
-using AsyncMonolith.MySql;
-using AsyncMonolith.PostgreSql;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.TestHelpers;
@@ -56,29 +52,9 @@ public static class TestServiceHelpers
         services.AddScoped<IScheduleService, ScheduleService<TestDbContext>>();
         services.AddScoped<IPoisonedMessageService, PoisonedMessageService<TestDbContext>>();
         services.AddScoped<IQueueStatisticsService, QueueStatisticsService<TestDbContext>>();
-        switch (dbType)
-        {
-            case DbType.Ef:
-                services.AddSingleton<IConsumerMessageFetcher, EfConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, EfScheduledMessageFetcher>();
-                break;
-            case DbType.MySql:
-                services.AddSingleton<IConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
-                break;
-            case DbType.MsSql:
-                services.AddSingleton<IConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
-                break;
-            case DbType.PostgreSql:
-                services.AddSingleton<IConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
-                break;
-            case DbType.MariaDb:
-                services.AddSingleton<IConsumerMessageFetcher, MariaDbConsumerMessageFetcher>();
-                services.AddSingleton<IScheduledMessageFetcher, MariaDbScheduledMessageFetcher>();
-                break;
-        }
+        // One fetcher pair for every database: the SQL is chosen from the EF provider in use.
+        services.AddSingleton<IConsumerMessageFetcher, ConsumerMessageFetcher>();
+        services.AddSingleton<IScheduledMessageFetcher, ScheduledMessageFetcher>();
 
         var invocations = new TestConsumerInvocations();
         services.AddSingleton(invocations);

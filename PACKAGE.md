@@ -7,21 +7,23 @@ Background messaging and scheduling for .NET monoliths, using the database you a
 - **Schedules**: recurring messages from cron expressions in any time zone.
 - **Safe with several app instances**, with metrics on the `async_monolith` meter.
 
-## Packages
+## Databases
 
-| Package | Use with |
+One package works with any EF Core provider and picks its queries from the one you use:
+
+| Provider | Row locking |
 |---|---|
-| `AsyncMonolith.PostgreSql` | PostgreSQL (Npgsql) |
-| `AsyncMonolith.MsSql` | SQL Server |
-| `AsyncMonolith.MySql` | MySQL (`MySql.EntityFrameworkCore`) |
-| `AsyncMonolith.MariaDb` | MariaDB |
-| `AsyncMonolith.Ef` | Any EF Core provider, including SQLite (without row locking) |
-| `AsyncMonolith.TestHelpers` | Testing consumers with xunit v3 |
+| PostgreSQL (`Npgsql.EntityFrameworkCore.PostgreSQL`) | `FOR UPDATE SKIP LOCKED` |
+| SQL Server (`Microsoft.EntityFrameworkCore.SqlServer`) | `UPDLOCK, READPAST` |
+| MySQL / MariaDB (`MySql.EntityFrameworkCore` or Pomelo) | `FOR UPDATE SKIP LOCKED` |
+| Anything else, such as SQLite | None: fine for a single instance |
+
+`AsyncMonolith.TestHelpers` adds fakes and helpers for testing consumers with xunit v3.
 
 ## Quick start
 
 ```csharp
-builder.Services.AddPostgreSqlAsyncMonolith<AppDbContext>(o => o.RegisterTypesFromAssemblyContaining<Program>());
+builder.Services.AddAsyncMonolith<AppDbContext>(o => o.RegisterTypesFromAssemblyContaining<Program>());
 
 // In AppDbContext.OnModelCreating
 modelBuilder.ConfigureAsyncMonolith();
