@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-				<!-- Prerelease until Pomelo supports EF Core 10 and these run in the integration tests. -->
-		<VersionSuffix>preview.1</VersionSuffix>
 		<NoWarn>$(NoWarn);NU5104</NoWarn>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>AsyncMonolith.MySql</PackageId>
