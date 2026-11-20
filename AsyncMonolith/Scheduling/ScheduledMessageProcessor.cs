@@ -46,26 +46,37 @@ internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T :
     /// <param name="stoppingToken">The cancellation token to stop the execution.</param>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var consecutiveFailures = 0;
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = _options.Value.IdlePollInterval;
+            var processed = 0;
             try
             {
-                var processedScheduledMessages = await ProcessBatch(stoppingToken);
-
-                if (processedScheduledMessages >= _options.Value.BatchSize)
-                {
-                    delay = _options.Value.BusyPollInterval;
-                }
+                processed = await ProcessBatch(stoppingToken);
+                consecutiveFailures = 0;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
             }
             catch (Exception ex)
             {
+                // Back off while batches keep failing (for example while the database is unavailable).
+                consecutiveFailures++;
                 _logger.ScheduleBatchFailed(ex);
             }
 
+            var delay = ProcessorPolling.NextDelay(_options.Value, processed, consecutiveFailures);
             if (delay > TimeSpan.Zero)
             {
-                await Task.Delay(delay, stoppingToken);
+                try
+                {
+                    await Task.Delay(delay, _timeProvider, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             }
         }
     }

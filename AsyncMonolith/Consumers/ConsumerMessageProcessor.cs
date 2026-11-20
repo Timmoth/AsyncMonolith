@@ -62,25 +62,37 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
     /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var consecutiveFailures = 0;
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = _options.Value.IdlePollInterval;
+            var processed = 0;
             try
             {
-                var processedMessageCount = await ProcessBatch(stoppingToken);
-                if (processedMessageCount == _options.Value.BatchSize)
-                {
-                    delay = _options.Value.BusyPollInterval;
-                }
+                processed = await ProcessBatch(stoppingToken);
+                consecutiveFailures = 0;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
             }
             catch (Exception ex)
             {
+                // Back off while batches keep failing (for example while the database is unavailable).
+                consecutiveFailures++;
                 _logger.ConsumerBatchFailed(ex);
             }
 
+            var delay = ProcessorPolling.NextDelay(_options.Value, processed, consecutiveFailures);
             if (delay > TimeSpan.Zero)
             {
-                await Task.Delay(delay, stoppingToken);
+                try
+                {
+                    await Task.Delay(delay, _timeProvider, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             }
         }
     }
