@@ -14,6 +14,8 @@ Tests are split into two groups:
   dotnet test --project AsyncMonolith.Tests --filter-trait "Category=Integration"
   ```
 
+Add `--coverage --coverage-output-format cobertura` to either command for a coverage report. CI uploads one for each run as an artifact.
+
 
 ## AsyncMonolith.TestHelpers
 

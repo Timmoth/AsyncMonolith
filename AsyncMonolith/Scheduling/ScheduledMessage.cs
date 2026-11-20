@@ -71,19 +71,12 @@ public class ScheduledMessage
     {
         var expression = Cron.Parse(CronExpression);
 
+        // Throws TimeZoneNotFoundException for an unknown time zone.
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(CronTimeZone);
-        if (timezone == null)
-        {
-            throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{CronTimeZone}'");
-        }
-
-        var next = expression.GetNextOccurrence(timeProvider.GetUtcNow(), timezone);
-        if (next == null)
-        {
-            throw new InvalidOperationException("Couldn't determine next scheduled message occurrence");
-        }
-
-        return next.Value.ToUnixTimeSeconds();
+        var next = expression.GetNextOccurrence(timeProvider.GetUtcNow(), timezone) ??
+                   throw new InvalidOperationException(
+                       $"The cron expression '{CronExpression}' never occurs after now in time zone '{CronTimeZone}'.");
+        return next.ToUnixTimeSeconds();
     }
 
     /// <summary>

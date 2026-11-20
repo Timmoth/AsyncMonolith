@@ -119,4 +119,23 @@ public class TestHelpersTests
         host.Invocations.Order.ShouldBe(["OrderedConsumer:direct"]);
         (await host.ConsumerMessages()).ShouldBeEmpty();
     }
+
+    [Fact]
+    public async Task Message_assertion_helpers_find_messages_by_consumer_payload_and_id()
+    {
+        await using var host = await SqliteTestHost.Create();
+        await host.Produce(new MultiConsumerMessage { Name = "x" });
+        await host.Produce(new MultiConsumerMessage { Name = "y" });
+        await host.Schedule(new SingleConsumerMessage { Name = "s" }, "0 * * * * *");
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+
+        (await db.GetConsumerMessages<MultiConsumer1, MultiConsumerMessage>()).Count.ShouldBe(2);
+        var x = (await db.GetConsumerMessages<MultiConsumer1, MultiConsumerMessage>(new MultiConsumerMessage { Name = "x" }))
+            .ShouldHaveSingleItem();
+        (await db.AssertSingleConsumerMessageById<MultiConsumer1, MultiConsumerMessage>(
+            new MultiConsumerMessage { Name = "x" }, x.Id)).Id.ShouldBe(x.Id);
+        (await db.AssertSingleScheduledMessage(new SingleConsumerMessage { Name = "s" })).CronExpression
+            .ShouldBe("0 * * * * *");
+    }
 }

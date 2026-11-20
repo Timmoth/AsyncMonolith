@@ -25,7 +25,16 @@ jobs:
         global-json-file: global.json
 
     - name: Fast tests
-      run: dotnet test --project AsyncMonolith.Tests --filter-not-trait "Category=Integration"
+      run: >-
+        dotnet test --project AsyncMonolith.Tests --filter-not-trait "Category=Integration"
+        --coverage --coverage-output-format cobertura --coverage-output "$GITHUB_WORKSPACE/coverage/fast.cobertura.xml"
+
+    - name: Upload coverage
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-fast
+        path: coverage/
 
   integration:
     if: github.event_name == 'workflow_dispatch' && inputs.integration
@@ -40,4 +49,13 @@ jobs:
         global-json-file: global.json
 
     - name: Integration tests
-      run: dotnet test --project AsyncMonolith.Tests --filter-trait "Category=Integration"
+      run: >-
+        dotnet test --project AsyncMonolith.Tests --filter-trait "Category=Integration"
+        --coverage --coverage-output-format cobertura --coverage-output "$GITHUB_WORKSPACE/coverage/integration.cobertura.xml"
+
+    - name: Upload coverage
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-integration
+        path: coverage/

@@ -51,24 +51,17 @@ internal sealed class ScheduleService<T> : IScheduleService where T : DbContext
 
         var expression = Cron.Parse(cronExpression);
 
+        // Throws TimeZoneNotFoundException for an unknown time zone.
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
-        if (timezone == null)
-        {
-            throw new InvalidOperationException($"Couldn't determine scheduled message timezone: '{timeZone}'");
-        }
-
-        var next = expression.GetNextOccurrence(_timeProvider.GetUtcNow(), timezone);
-        if (next == null)
-        {
-            throw new InvalidOperationException(
-                $"Couldn't determine next scheduled message occurrence for chron expression: '{cronExpression}', timezone: '{timeZone}'");
-        }
+        var next = expression.GetNextOccurrence(_timeProvider.GetUtcNow(), timezone) ??
+                   throw new InvalidOperationException(
+                       $"The cron expression '{cronExpression}' never occurs after now in time zone '{timeZone}'.");
 
         _dbContext.Set<ScheduledMessage>().Add(new ScheduledMessage
         {
             Id = id,
             PayloadType = AsyncMonolithNames.ForPayload<TPayload>(),
-            AvailableAfter = next.Value.ToUnixTimeSeconds(),
+            AvailableAfter = next.ToUnixTimeSeconds(),
             Tag = tag,
             CronExpression = cronExpression,
             CronTimeZone = timeZone,
