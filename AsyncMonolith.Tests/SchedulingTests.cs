@@ -248,4 +248,53 @@ public class SchedulingTests
         (await host.ScheduledProcessor.ProcessBatch(Ct)).ShouldBe(1);
         (await host.ConsumerMessages()).Count.ShouldBe(3);
     }
+
+    private static ScheduledMessage StoredSchedule(string id, string cron, string timeZone, string payloadType,
+        long availableAfter) => new()
+    {
+        Id = id,
+        Tag = id,
+        AvailableAfter = availableAfter,
+        CronExpression = cron,
+        CronTimeZone = timeZone,
+        PayloadType = payloadType,
+        Payload = "{\"name\":\"x\"}"
+    };
+
+    [Theory]
+    [InlineData("not a cron", "UTC")]
+    [InlineData("0 * * * * *", "Not/AZone")]
+    public async Task A_schedule_that_cant_be_evaluated_doesnt_stop_the_others(string cron, string timeZone)
+    {
+        await using var host = await SqliteTestHost.Create();
+        await host.Schedule(new SingleConsumerMessage { Name = "good" }, "0 * * * * *");
+        await host.Change(db => db.ScheduledMessages.Add(
+            StoredSchedule("broken", cron, timeZone, nameof(SingleConsumerMessage), host.Now)));
+        host.Time.Advance(TimeSpan.FromMinutes(1));
+
+        (await host.ScheduledProcessor.ProcessBatch(Ct)).ShouldBe(1);
+
+        (await host.ConsumerMessages()).ShouldHaveSingleItem().Payload.ShouldContain("good");
+        var broken = (await host.ScheduledMessages()).Single(m => m.Id == "broken");
+        broken.AvailableAfter.ShouldBe(host.Now + ScheduledMessageProcessor<TestDbContext>.InvalidScheduleRetrySeconds);
+
+        // And it isn't retried every poll.
+        (await host.ScheduledProcessor.ProcessBatch(Ct)).ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task A_schedule_whose_payload_has_no_consumers_skips_the_occurrence_without_stopping_the_others()
+    {
+        await using var host = await SqliteTestHost.Create();
+        await host.Schedule(new SingleConsumerMessage { Name = "good" }, "0 * * * * *");
+        await host.Change(db => db.ScheduledMessages.Add(
+            StoredSchedule("orphan", "0 * * * * *", "UTC", "RemovedPayload", host.Now)));
+        host.Time.Advance(TimeSpan.FromMinutes(1));
+
+        (await host.ScheduledProcessor.ProcessBatch(Ct)).ShouldBe(1);
+
+        (await host.ConsumerMessages()).ShouldHaveSingleItem().Payload.ShouldContain("good");
+        (await host.ScheduledMessages()).Single(m => m.Id == "orphan").AvailableAfter
+            .ShouldBe(Utc("2020-08-31T10:02:00Z"));
+    }
 }

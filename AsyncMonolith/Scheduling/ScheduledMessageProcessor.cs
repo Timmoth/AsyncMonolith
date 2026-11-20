@@ -70,11 +70,15 @@ internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T :
         }
     }
 
+    /// <summary>How long to wait before checking a schedule that couldn't be evaluated again.</summary>
+    internal const int InvalidScheduleRetrySeconds = 3600;
+
     /// <summary>
-    ///     Processes a batch of scheduled messages.
+    ///     Processes a batch of scheduled messages. A schedule that fails is logged and moved on; it never stops
+    ///     the others.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The number of processed scheduled messages.</returns>
+    /// <returns>The number of messages produced.</returns>
     internal async Task<int> ProcessBatch(CancellationToken cancellationToken = default)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -102,9 +106,23 @@ internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T :
 
             foreach (var message in messages)
             {
-                // Move the schedule on only if no other processor has already done so for this occurrence.
+                // A schedule that can't be evaluated (bad cron expression or time zone, or no future occurrence)
+                // is checked again in an hour instead of blocking every other schedule in the batch.
                 var dueAt = message.AvailableAfter;
-                var next = message.GetNextOccurrence(_timeProvider);
+                long next;
+                Exception? invalid = null;
+                try
+                {
+                    next = message.GetNextOccurrence(_timeProvider);
+                }
+                catch (Exception ex) when (ex is FormatException or InvalidOperationException or ArgumentException
+                                               or TimeZoneNotFoundException or InvalidTimeZoneException)
+                {
+                    invalid = ex;
+                    next = currentTime + InvalidScheduleRetrySeconds;
+                }
+
+                // Move the schedule on only if no other processor has already done so for this occurrence.
                 var updated = await set
                     .Where(m => m.Id == message.Id && m.AvailableAfter == dueAt)
                     .ExecuteUpdateAsync(s => s.SetProperty(m => m.AvailableAfter, next), cancellationToken);
@@ -113,8 +131,23 @@ internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T :
                     continue;
                 }
 
-                producer.ProduceScheduled(message);
-                processedScheduledMessageCount++;
+                if (invalid is not null)
+                {
+                    _logger.ScheduleInvalid(invalid, message.Id, message.Tag);
+                    continue;
+                }
+
+                try
+                {
+                    producer.ProduceScheduled(message);
+                    processedScheduledMessageCount++;
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // No registered consumers for the payload (for example a module was removed): skip this
+                    // occurrence, keep the schedule.
+                    _logger.ScheduledOccurrenceSkipped(ex, message.Id, message.PayloadType);
+                }
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);

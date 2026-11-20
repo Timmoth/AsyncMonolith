@@ -22,4 +22,14 @@ internal static partial class AsyncMonolithLog
 
     [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Successfully scheduled message")]
     public static partial void ScheduledMessagesProduced(this ILogger logger);
+
+    [LoggerMessage(EventId = 6, Level = LogLevel.Error,
+        Message = "Schedule '{ScheduleId}' (tag '{Tag}') can't be evaluated and will be checked again in an hour.")]
+    public static partial void ScheduleInvalid(this ILogger logger, Exception exception, string scheduleId,
+        string? tag);
+
+    [LoggerMessage(EventId = 7, Level = LogLevel.Error,
+        Message = "Schedule '{ScheduleId}' skipped an occurrence: payload '{PayloadType}' has no registered consumers.")]
+    public static partial void ScheduledOccurrenceSkipped(this ILogger logger, Exception exception, string scheduleId,
+        string payloadType);
 }
