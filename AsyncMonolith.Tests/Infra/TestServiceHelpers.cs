@@ -44,6 +44,7 @@ public static class TestServiceHelpers
             o.IdlePollInterval = settings.IdlePollInterval;
             o.BusyPollInterval = settings.BusyPollInterval;
             o.SerializerOptions = settings.SerializerOptions;
+            o.PoisonedMessageRetention = settings.PoisonedMessageRetention;
         });
         settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
         

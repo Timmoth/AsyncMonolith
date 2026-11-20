@@ -22,6 +22,9 @@ All packages now share one version and must be upgraded together. From 11.0.0 th
 **Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_11_0_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. It also adds indexes for finding due messages (`rail_id, available_after`), due schedules (`available_after`), schedules by tag, and poisoned messages by age, which keep processing fast as the tables grow. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
 
 **Changes**
+- Metrics on the `async_monolith` meter, and optional `PoisonedMessageRetention`.
+- A schedule that can't be evaluated, or whose payload has no consumers, no longer stops the others. A consumer that ignores cancellation is abandoned two seconds after its timeout. Processors back off while the database is unavailable.
+- The database packages no longer reference a database driver: bring your own EF Core provider (for MySQL, `MySql.EntityFrameworkCore`).
 - Cron expressions can have 5 fields (minute precision) as well as 6 (seconds first).
 - `AsyncMonolithOptions.SerializerOptions` sets the `JsonSerializerOptions` for payloads. The default is unchanged.
 - Tables can live in their own schema or have a prefix: `modelBuilder.ConfigureAsyncMonolith(o => { o.Schema = "jobs"; o.TablePrefix = "jobs_"; })`. The database packages' SQL follows the mapping.

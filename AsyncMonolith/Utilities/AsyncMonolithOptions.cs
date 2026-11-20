@@ -53,6 +53,12 @@ public sealed class AsyncMonolithOptions
     public TimeSpan BusyPollInterval { get; set; } = TimeSpan.FromMilliseconds(10);
 
     /// <summary>
+    ///     How long poisoned messages are kept, measured from when they were last due. Older ones are deleted about
+    ///     once an hour. Null (the default) keeps them until you delete or retry them.
+    /// </summary>
+    public TimeSpan? PoisonedMessageRetention { get; set; }
+
+    /// <summary>
     ///     How payloads are serialized to and from JSON. Null (the default) uses System.Text.Json's defaults.
     ///     Changing it changes the stored format, so messages and schedules already stored with different settings
     ///     may no longer deserialize. Set it in code; it isn't read from configuration.
@@ -142,6 +148,11 @@ internal sealed class AsyncMonolithOptionsValidator : IValidateOptions<AsyncMono
         if (options.BusyPollInterval < TimeSpan.Zero)
         {
             errors.Add("BusyPollInterval must not be negative.");
+        }
+
+        if (options.PoisonedMessageRetention is { } retention && retention < TimeSpan.FromHours(1))
+        {
+            errors.Add("PoisonedMessageRetention must be at least 1 hour, or null to keep poisoned messages.");
         }
 
         if (options.BusyPollInterval > options.IdlePollInterval)

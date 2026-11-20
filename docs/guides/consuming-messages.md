@@ -48,6 +48,7 @@ Design consumers so the order of messages doesn't matter, for example by checkin
 - **Errors**: The error from the most recent failed attempt is stored in `last_error` on both tables, for example `System.InvalidOperationException: ...` or `Timed out after 10 seconds.`
 - **Interrupted processing**: A message is leased while its consumer runs. If the app stops mid-message, the message becomes available again once its consumer timeout plus 30 seconds has passed, and the interrupted attempt counts.
 - **Manual Intervention**: Use `IPoisonedMessageService` to count, list, retry or delete poisoned messages. Retrying moves a message back to `consumer_messages` with its attempts reset. Changes are saved immediately.
+- **Retention**: Set `PoisonedMessageRetention` (for example `TimeSpan.FromDays(30)`) to delete poisoned messages that old, measured from when they were last due. It runs about once an hour. By default they are kept.
 - **Monitoring**: Periodically monitor the `poisoned_messages` table to ensure there are not too many failed messages.
 
 ```csharp

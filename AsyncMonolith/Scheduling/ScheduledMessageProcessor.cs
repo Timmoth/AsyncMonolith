@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using AsyncMonolith.Consumers;
+using System.Diagnostics;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -56,6 +57,7 @@ internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T :
             try
             {
                 processed = await ProcessBatch(stoppingToken);
+                await CleanUpIfDue(stoppingToken);
                 consecutiveFailures = 0;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -82,6 +84,32 @@ internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T :
                 }
             }
         }
+    }
+
+    /// <summary>How often expired poisoned messages are deleted, when retention is set.</summary>
+    internal static readonly TimeSpan CleanupInterval = TimeSpan.FromHours(1);
+
+    private DateTimeOffset _nextCleanup = DateTimeOffset.MinValue;
+
+    /// <summary>
+    ///     Deletes poisoned messages older than <see cref="AsyncMonolithOptions.PoisonedMessageRetention" />, at most
+    ///     once per <see cref="CleanupInterval" />.
+    /// </summary>
+    /// <returns>The number deleted, or 0 when retention is off or a cleanup ran recently.</returns>
+    internal async Task<int> CleanUpIfDue(CancellationToken cancellationToken)
+    {
+        var now = _timeProvider.GetUtcNow();
+        if (_options.Value.PoisonedMessageRetention is not { } retention || now < _nextCleanup)
+        {
+            return 0;
+        }
+
+        _nextCleanup = now + CleanupInterval;
+        var cutoff = (now - retention).ToUnixTimeSeconds();
+        using var scope = _scopeFactory.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<T>().Set<PoisonedMessage>()
+            .Where(m => m.AvailableAfter < cutoff)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
     /// <summary>How long to wait before checking a schedule that couldn't be evaluated again.</summary>
