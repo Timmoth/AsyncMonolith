@@ -22,6 +22,6 @@ public abstract class TestDbContainerBase : IAsyncLifetime
 
     public abstract Task InitializeContainerAsync();
 
-    public abstract void AddDb(ServiceCollection services);
+    public abstract void AddDb(IServiceCollection services);
     public abstract DbType GetDbType();
 }
