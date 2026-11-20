@@ -1,51 +1,30 @@
-﻿using System.Globalization;
-using AsyncMonolith.Consumers;
+﻿using AsyncMonolith.Consumers;
+using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Npgsql;
 
 namespace AsyncMonolith.PostgreSql;
 
 /// <summary>
-/// Represents a consumer message fetcher implementation for PostgreSQL.
+///     Fetches due consumer messages on this rail for PostgreSQL, locking the rows and skipping rows other processors have locked. Values are
+///     passed as EF parameters, so this works with any EF Core provider for PostgreSQL.
 /// </summary>
 internal sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
 {
-    private const string PgSql = @"
-                    SELECT * 
-                    FROM {table} 
-                    WHERE available_after <= @currentTime AND rail_id = @railId
-                    ORDER BY created_at, id 
-                    FOR UPDATE SKIP LOCKED 
-                    LIMIT @batchSize";
+    private const string Sql = "SELECT * FROM {table} WHERE available_after <= {0} AND rail_id = {1} ORDER BY created_at, id LIMIT {2} FOR UPDATE SKIP LOCKED";
 
     private readonly IOptions<AsyncMonolithOptions> _options;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PostgreSqlConsumerMessageFetcher"/> class.
-    /// </summary>
-    /// <param name="options">The options for the AsyncMonolith settings.</param>
     public PostgreSqlConsumerMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
 
-    /// <summary>
-    /// Fetches a batch of consumer messages from the PostgreSQL database.
-    /// </summary>
-    /// <param name="consumerSet">The DbSet of consumer messages.</param>
-    /// <param name="currentTime">The current time.</param>
-    /// <param name="railId">The message rail to fetch messages from.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the list of fetched consumer messages.</returns>
     public Task<List<ConsumerMessage>> Fetch(DbSet<ConsumerMessage> consumerSet, long currentTime, int railId,
         CancellationToken cancellationToken = default)
     {
-        return consumerSet
-            .FromSqlRaw(PgSql.Replace("{table}", AsyncMonolithTables.Name(consumerSet), StringComparison.Ordinal), new NpgsqlParameter("@currentTime", currentTime),
-                new NpgsqlParameter("@railId", railId),
-                new NpgsqlParameter("@batchSize", _options.Value.BatchSize))
-            .ToListAsync(cancellationToken);
+        var sql = Sql.Replace("{table}", AsyncMonolithTables.Name(consumerSet), StringComparison.Ordinal);
+        return consumerSet.FromSqlRaw(sql, currentTime, railId, _options.Value.BatchSize).ToListAsync(cancellationToken);
     }
 }

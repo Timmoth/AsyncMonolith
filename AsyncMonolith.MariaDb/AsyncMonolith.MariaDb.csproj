@@ -1,9 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<!-- Pomelo has no EF Core 10 release yet and declares EF Core 9; MySQL/MariaDB on EF Core 10 is untested. -->
-		<NoWarn>$(NoWarn);NU1608</NoWarn>
-		<!-- Prerelease until Pomelo supports EF Core 10 and these run in the integration tests. -->
+				<!-- Prerelease until Pomelo supports EF Core 10 and these run in the integration tests. -->
 		<VersionSuffix>preview.1</VersionSuffix>
 		<NoWarn>$(NoWarn);NU5104</NoWarn>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -30,9 +28,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
-		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
-		<PackageReference Include="MySqlConnector" />
 	</ItemGroup>
 	<ItemGroup>
 		<InternalsVisibleTo Include="AsyncMonolith.Tests" />

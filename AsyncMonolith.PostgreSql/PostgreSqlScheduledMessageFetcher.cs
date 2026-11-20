@@ -1,48 +1,30 @@
-﻿using System.Globalization;
+﻿using AsyncMonolith.Consumers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Npgsql;
 
 namespace AsyncMonolith.PostgreSql;
 
 /// <summary>
-/// Fetches scheduled messages from a PostgreSQL database.
+///     Fetches due schedules for PostgreSQL, locking the rows and skipping rows other processors have locked. Values are
+///     passed as EF parameters, so this works with any EF Core provider for PostgreSQL.
 /// </summary>
 internal sealed class PostgreSqlScheduledMessageFetcher : IScheduledMessageFetcher
 {
-    private const string PgSql = @"
-                    SELECT * 
-                    FROM {table} 
-                    WHERE available_after <= @currentTime 
-                    FOR UPDATE SKIP LOCKED 
-                    LIMIT @batchSize";
+    private const string Sql = "SELECT * FROM {table} WHERE available_after <= {0} ORDER BY available_after, id LIMIT {1} FOR UPDATE SKIP LOCKED";
 
     private readonly IOptions<AsyncMonolithOptions> _options;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PostgreSqlScheduledMessageFetcher"/> class.
-    /// </summary>
-    /// <param name="options">The options for the AsyncMonolith.</param>
     public PostgreSqlScheduledMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
 
-    /// <summary>
-    /// Fetches scheduled messages from the database.
-    /// </summary>
-    /// <param name="scheduledMessageSet">The <see cref="DbSet{TEntity}"/> of scheduled messages.</param>
-    /// <param name="currentTime">The current time.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains a list of fetched scheduled messages.</returns>
     public Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> scheduledMessageSet, long currentTime,
         CancellationToken cancellationToken = default)
     {
-        return scheduledMessageSet
-            .FromSqlRaw(PgSql.Replace("{table}", AsyncMonolithTables.Name(scheduledMessageSet), StringComparison.Ordinal), new NpgsqlParameter("@currentTime", currentTime),
-                new NpgsqlParameter("@batchSize", _options.Value.BatchSize))
-            .ToListAsync(cancellationToken);
+        var sql = Sql.Replace("{table}", AsyncMonolithTables.Name(scheduledMessageSet), StringComparison.Ordinal);
+        return scheduledMessageSet.FromSqlRaw(sql, currentTime, _options.Value.BatchSize).ToListAsync(cancellationToken);
     }
 }

@@ -19,7 +19,7 @@ public class MariaDbTestDbContainer : TestDbContainerBase
     {
         services.AddDbContext<TestDbContext>((sp, options) =>
             {
-                options.UseMySql(ConnectionString, ServerVersion.AutoDetect(ConnectionString));
+                options.UseMySQL(ConnectionString);
             }
         );
     }

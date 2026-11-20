@@ -1,48 +1,30 @@
-﻿using System.Globalization;
+﻿using AsyncMonolith.Consumers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using MySqlConnector;
 
 namespace AsyncMonolith.MariaDb;
 
 /// <summary>
-/// Fetches scheduled messages from MariaDb.
+///     Fetches due schedules for MariaDB, locking the rows and skipping rows other processors have locked. Values are
+///     passed as EF parameters, so this works with any EF Core provider for MariaDB.
 /// </summary>
 internal sealed class MariaDbScheduledMessageFetcher : IScheduledMessageFetcher
 {
-    private const string MariaDb = @"
-                    SELECT * 
-                    FROM {table} 
-                    WHERE available_after <= @currentTime 
-                    LIMIT @batchSize 
-                    FOR UPDATE SKIP LOCKED";
+    private const string Sql = "SELECT * FROM {table} WHERE available_after <= {0} ORDER BY available_after, id LIMIT {1} FOR UPDATE SKIP LOCKED";
 
     private readonly IOptions<AsyncMonolithOptions> _options;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MariaDbScheduledMessageFetcher"/> class.
-    /// </summary>
-    /// <param name="options">The options for AsyncMonolith.</param>
     public MariaDbScheduledMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
 
-    /// <summary>
-    /// Fetches scheduled messages from the database.
-    /// </summary>
-    /// <param name="scheduledMessageSet">The <see cref="DbSet{TEntity}"/> of scheduled messages.</param>
-    /// <param name="currentTime">The current time.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains a list of fetched scheduled messages.</returns>
     public Task<List<ScheduledMessage>> Fetch(DbSet<ScheduledMessage> scheduledMessageSet, long currentTime,
         CancellationToken cancellationToken = default)
     {
-        return scheduledMessageSet
-            .FromSqlRaw(MariaDb.Replace("{table}", AsyncMonolithTables.Name(scheduledMessageSet), StringComparison.Ordinal), new MySqlParameter("@currentTime", currentTime),
-                new MySqlParameter("@batchSize", _options.Value.BatchSize))
-            .ToListAsync(cancellationToken);
+        var sql = Sql.Replace("{table}", AsyncMonolithTables.Name(scheduledMessageSet), StringComparison.Ordinal);
+        return scheduledMessageSet.FromSqlRaw(sql, currentTime, _options.Value.BatchSize).ToListAsync(cancellationToken);
     }
 }
