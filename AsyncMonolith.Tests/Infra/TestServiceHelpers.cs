@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Diagnostics.Metrics;
 using System.Reflection;
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Ef;
@@ -30,6 +32,7 @@ public static class TestServiceHelpers
         var fakeTime = new FakeTimeProvider(DateTimeOffset.Parse("2020-08-31T10:00:00.0000000Z", System.Globalization.CultureInfo.InvariantCulture));
         services.AddSingleton<TimeProvider>(fakeTime);
         services.AddLogging();
+        services.TryAddSingleton(sp => new AsyncMonolithMetrics(sp.GetService<IMeterFactory>()));
 
         services.InternalConfigureAsyncMonolithOptions(o =>
         {

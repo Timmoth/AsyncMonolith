@@ -20,6 +20,7 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
     private readonly IOptions<AsyncMonolithOptions> _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
+    private readonly AsyncMonolithMetrics _metrics;
 
     private int _railId;
     /// <summary>
@@ -31,12 +32,13 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
     /// <param name="options">The options.</param>
     /// <param name="scopeFactory">The service scope factory.</param>
     /// <param name="consumerMessageFetcher">The consumer message fetcher.</param>
+    /// <param name="metrics">The metrics.</param>
     public ConsumerMessageProcessor(ILogger<ConsumerMessageProcessor<T>> logger,
         TimeProvider timeProvider,
         ConsumerRegistry consumerRegistry,
         IOptions<AsyncMonolithOptions> options,
         IServiceScopeFactory scopeFactory,
-        IConsumerMessageFetcher consumerMessageFetcher)
+        IConsumerMessageFetcher consumerMessageFetcher, AsyncMonolithMetrics metrics)
     {
         _logger = logger;
         _timeProvider = timeProvider;
@@ -44,6 +46,7 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
         _options = options;
         _scopeFactory = scopeFactory;
         _consumerMessageFetcher = consumerMessageFetcher;
+        _metrics = metrics;
     }
 
     /// <summary>
@@ -199,6 +202,8 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
             message.Attempts = attempts + 1;
             message.AvailableAfter = leaseUntil;
             claimed.Add(new ClaimedMessage(message, dueAt));
+            _metrics.Lag.Record(Math.Max(0, currentTime - dueAt),
+                new KeyValuePair<string, object?>("consumer_type", message.ConsumerType));
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -207,10 +212,13 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
 
     private async Task<bool> ProcessAndComplete(ClaimedMessage claimed, CancellationToken cancellationToken)
     {
+        var started = Stopwatch.GetTimestamp();
         var error = await Process(claimed.Message, cancellationToken);
+        var duration = Stopwatch.GetElapsedTime(started);
 
         // Record the outcome even when stopping, so the attempt isn't left waiting for its lease to expire.
-        await Complete(claimed, error is null, CancellationToken.None, error);
+        var outcome = await Complete(claimed, error is null, CancellationToken.None, error);
+        _metrics.RecordOutcome(claimed.Message.ConsumerType, outcome, duration);
         return error is null;
     }
 
@@ -218,8 +226,8 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
     ///     Records the outcome of a claimed message: removes it on success, otherwise schedules a retry or
     ///     moves it to the poisoned messages. Does nothing if the lease has since been taken over.
     /// </summary>
-    internal async Task Complete(ClaimedMessage claimed, bool success, CancellationToken cancellationToken,
-        string? error = null)
+    internal async Task<MessageOutcome> Complete(ClaimedMessage claimed, bool success,
+        CancellationToken cancellationToken, string? error = null)
     {
         var message = claimed.Message;
         using var scope = _scopeFactory.CreateScope();
@@ -229,24 +237,25 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
 
         if (success)
         {
-            await leased.ExecuteDeleteAsync(cancellationToken);
-            return;
+            return await leased.ExecuteDeleteAsync(cancellationToken) == 0
+                ? MessageOutcome.LeaseLost
+                : MessageOutcome.Consumed;
         }
 
         if (message.Attempts < _consumerRegistry.ResolveConsumerMaxAttempts(message))
         {
             var retryAt = _timeProvider.GetUtcNow().ToUnixTimeSeconds() +
                           (long)_options.Value.GetRetryDelay(message.Attempts).TotalSeconds;
-            await leased.ExecuteUpdateAsync(s => s
+            var updated = await leased.ExecuteUpdateAsync(s => s
                 .SetProperty(m => m.AvailableAfter, retryAt)
                 .SetProperty(m => m.LastError, error), cancellationToken);
-            return;
+            return updated == 0 ? MessageOutcome.LeaseLost : MessageOutcome.Retrying;
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         if (await leased.ExecuteDeleteAsync(cancellationToken) == 0)
         {
-            return;
+            return MessageOutcome.LeaseLost;
         }
 
         dbContext.Set<PoisonedMessage>().Add(new PoisonedMessage
@@ -266,6 +275,7 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
         });
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        return MessageOutcome.Poisoned;
     }
 
     private static Activity? StartActivity(ConsumerMessage message)

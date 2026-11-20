@@ -1,4 +1,6 @@
-﻿using AsyncMonolith.Consumers;
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Diagnostics.Metrics;
+using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
@@ -57,6 +59,7 @@ public static class SetupTestHelpers
     private static void AddBaseServices(IServiceCollection services, Action<AsyncMonolithOptions> configure)
     {
         services.InternalConfigureAsyncMonolithOptions(configure);
+        services.TryAddSingleton(sp => new AsyncMonolithMetrics(sp.GetService<IMeterFactory>()));
         var registration = new AsyncMonolithOptions();
         configure(registration);
         services.InternalRegisterAsyncMonolithConsumers(registration);

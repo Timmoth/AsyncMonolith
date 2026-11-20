@@ -25,10 +25,12 @@ internal sealed class ProducerService<T> : IProducerService where T : DbContext
     private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
     private readonly JsonSerializerOptions? _serializerOptions;
+    private readonly AsyncMonolithMetrics _metrics;
 
     public ProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry, T dbContext,
-        IAsyncMonolithIdGenerator idGenerator, IOptions<AsyncMonolithOptions> options)
+        IAsyncMonolithIdGenerator idGenerator, IOptions<AsyncMonolithOptions> options, AsyncMonolithMetrics metrics)
     {
+        _metrics = metrics;
         _serializerOptions = options.Value.SerializerOptions;
         _timeProvider = timeProvider;
         _consumerRegistry = consumerRegistry;
@@ -141,6 +143,8 @@ internal sealed class ProducerService<T> : IProducerService where T : DbContext
                 TraceId = activity?.TraceId.ToString(),
                 SpanId = activity?.SpanId.ToString()
             });
+            _metrics.Produced.Add(1, new KeyValuePair<string, object?>("payload_type", payloadType),
+                new KeyValuePair<string, object?>("consumer_type", consumer));
         }
     }
 }

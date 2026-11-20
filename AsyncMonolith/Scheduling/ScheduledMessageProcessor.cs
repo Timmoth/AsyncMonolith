@@ -20,6 +20,7 @@ internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T :
     private readonly IOptions<AsyncMonolithOptions> _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
+    private readonly AsyncMonolithMetrics _metrics;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ScheduledMessageProcessor{T}" /> class.
@@ -29,15 +30,17 @@ internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T :
     /// <param name="options">The options.</param>
     /// <param name="scopeFactory">The service scope factory.</param>
     /// <param name="messageFetcher">The scheduled message fetcher.</param>
+    /// <param name="metrics">The metrics.</param>
     public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger,
         TimeProvider timeProvider, IOptions<AsyncMonolithOptions> options, IServiceScopeFactory scopeFactory,
-        IScheduledMessageFetcher messageFetcher)
+        IScheduledMessageFetcher messageFetcher, AsyncMonolithMetrics metrics)
     {
         _logger = logger;
         _timeProvider = timeProvider;
         _options = options;
         _scopeFactory = scopeFactory;
         _messageFetcher = messageFetcher;
+        _metrics = metrics;
     }
 
     /// <summary>
@@ -152,6 +155,7 @@ internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T :
                 {
                     producer.ProduceScheduled(message);
                     processedScheduledMessageCount++;
+                    _metrics.SchedulesFired.Add(1, new KeyValuePair<string, object?>("payload_type", message.PayloadType));
                 }
                 catch (InvalidOperationException ex)
                 {

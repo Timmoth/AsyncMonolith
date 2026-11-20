@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using AsyncMonolith.Utilities;
+using System.Diagnostics.Metrics;
+using System.Reflection;
 using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
@@ -61,6 +63,7 @@ public static class StartupExtensions
         // TryAdd, so a host can register its own implementation before or instead of these.
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IAsyncMonolithIdGenerator, AsyncMonolithIdGenerator>();
+        services.TryAddSingleton(sp => new AsyncMonolithMetrics(sp.GetService<IMeterFactory>()));
         services.TryAddScoped<ProducerService<T>>();
         services.TryAddScoped<IProducerService, ProducerService<T>>();
         services.TryAddScoped<IScheduleService, ScheduleService<T>>();
