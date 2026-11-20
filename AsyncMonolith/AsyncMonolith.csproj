@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IsAsyncMonolithPackage>true</IsAsyncMonolithPackage>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageId>AsyncMonolith</PackageId>
 		<Description>Transactional outbox, background consumers and scheduled messages for .NET monoliths on EF Core.</Description>

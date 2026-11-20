@@ -36,6 +36,11 @@ jobs:
         name: coverage-fast
         path: coverage/
 
+    - name: Pack (checks package validation and metadata)
+      run: |
+        dotnet pack AsyncMonolith/AsyncMonolith.csproj -c Release --output nupkg
+        dotnet pack AsyncMonolith.TestHelpers/AsyncMonolith.TestHelpers.csproj -c Release --output nupkg
+
   integration:
     if: github.event_name == 'workflow_dispatch' && inputs.integration
     runs-on: ubuntu-latest

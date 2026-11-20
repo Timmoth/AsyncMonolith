@@ -1,0 +1,133 @@
+name: Release
+
+# Publishes AsyncMonolith and AsyncMonolith.TestHelpers to nuget.org with trusted publishing: GitHub issues a
+# short-lived OIDC token, nuget.org exchanges it for a one-hour API key, and no long-lived key is stored.
+#
+# - Push a tag such as v11.0.0 to release. The tag must match <VersionPrefix> in Directory.Build.props.
+# - Run it manually ("Run workflow") for a dry run: everything except publishing.
+#
+# The nuget.org account that owns the trusted publishing policy for this workflow file is "aptacode".
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Full test suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build AsyncMonolith.sln -c Release
+
+      - name: Fast and integration tests
+        run: dotnet test --project AsyncMonolith.Tests -c Release --no-build
+
+  package:
+    name: Pack
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Read the version
+        id: version
+        run: |
+          version=$(dotnet msbuild AsyncMonolith/AsyncMonolith.csproj -getProperty:Version)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Packing $version"
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the version in Directory.Build.props ($version)."
+            exit 1
+          fi
+
+      - name: Check the release notes
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          awk -v v="$version" '/^## /{p=($2==v)} p' docs/releases.md > release-notes.md
+          if [[ ! -s release-notes.md ]]; then
+            echo "::error::docs/releases.md has no '## $version' section."
+            exit 1
+          fi
+
+      - name: Pack
+        run: |
+          dotnet pack AsyncMonolith/AsyncMonolith.csproj -c Release --output nupkg
+          dotnet pack AsyncMonolith.TestHelpers/AsyncMonolith.TestHelpers.csproj -c Release --output nupkg
+          ls -l nupkg
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: |
+            nupkg/
+            release-notes.md
+
+  publish:
+    name: Publish to nuget.org
+    needs: package
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write   # trusted publishing
+      contents: write   # GitHub release
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: packages
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # The API key lasts an hour, so ask for it right before pushing.
+      - name: NuGet login (OIDC to temporary API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: aptacode # nuget.org profile name that owns the trusted publishing policy
+
+      - name: Push packages
+        run: >-
+          dotnet nuget push "nupkg/*.nupkg"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME" nupkg/*.nupkg
+          --repo "$GITHUB_REPOSITORY"
+          --title "AsyncMonolith ${{ needs.package.outputs.version }}"
+          --notes-file release-notes.md
+          --verify-tag
