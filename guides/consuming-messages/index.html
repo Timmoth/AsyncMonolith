@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Timmoth" /><link rel="canonical" href="https://timmoth.github.io/AsyncMonolith/guides/consuming-messages/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Consuming messages - AsyncMonolith Docs</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Consuming messages";
+        var mkdocs_page_input_path = "guides/consuming-messages.md";
+        var mkdocs_page_url = "/AsyncMonolith/guides/consuming-messages/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/csharp.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../..">
+          <img src="../../assets/logo.png" class="logo" alt="Logo"/>
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Overview ✅</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Quick start ▶️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../internals/">Internals 🧠</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../releases/">Releases 📒</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../warnings/">Warnings ⚠️</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../support/">Support 🛟</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../demo/">Demo App ✨</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../contributing/">Contributing 🙏</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../tests/">Tests 🐞</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../producing-messages/">Producing messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../scheduling-messages/">Scheduling messages</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Consuming messages</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../changing-messages/">Changing messages</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../opentelemetry/">Opentelemetry</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Posts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../posts/transactional-outbox/">What is the Transactional Outbox?</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../posts/mediator/">What is the Mediator pattern?</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../posts/idempotency/">What is Idempotency?</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">AsyncMonolith Docs</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Guides</li>
+      <li class="breadcrumb-item active">Consuming messages</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/Timmoth/AsyncMonolith/edit/main/docs/guides/consuming-messages.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <ul>
+<li><strong>Independent Consumption</strong>: Each message will be consumed independently by each consumer set up to handle it.</li>
+<li><strong>Periodic Querying</strong>: Each instance of your app will periodically query the <code>consumer_messages</code> table for a batch of available messages to process.</li>
+<li>After a batch that wasn't full it waits <code>IdlePollInterval</code> before looking again; after a full batch it waits <code>BusyPollInterval</code>.</li>
+<li><strong>Multiple instances</strong>: Any number of app instances can process the same tables, with any database. A processor claims each message with a conditional update, so a message is only ever claimed by one processor at a time, and each schedule occurrence fires once. On PostgreSQL, SQL Server, MySQL and MariaDB, processors also lock rows while claiming, so processors skip each other's batches instead of competing for them.</li>
+<li><strong>Rails</strong>: Each rail (<code>[ConsumerRailId]</code>) gets its own processor, so a slow consumer on one rail doesn't hold up consumers on another.</li>
+<li><strong>Batching</strong>: Consumer messages will be read from the <code>consumer_messages</code> table in batches defined by <code>BatchSize</code>.</li>
+<li><strong>Idempotency</strong>: Ensure your Consumers are idempotent, since they will be retried on failure.</li>
+<li><strong>Timeout</strong>: Consumers timeout after the number of seconds defined by the <code>ConsumerTimeout</code> attribute or the <code>DefaultConsumerTimeout</code> if not set. <strong>Pass the <code>CancellationToken</code> to everything your consumer awaits.</strong> A consumer that ignores it is abandoned two seconds after its timeout so its rail can carry on, but it may keep running in the background while the message is retried.</li>
+</ul>
+<p>Consumers implement <code>IConsumer&lt;TPayload&gt;</code>. The <code>ConsumeContext</code> describes the message and this attempt: <code>MessageId</code>, <code>DeduplicationKey</code>, <code>Attempt</code> (starting at 1), <code>MaxAttempts</code>, <code>IsLastAttempt</code>, <code>CreatedAt</code>, <code>ConsumerName</code>, <code>PayloadName</code> and <code>TraceId</code>. Use them for idempotency checks and logging.</p>
+<p>Example</p>
+<div class="highlight"><pre><span></span><code><span class="na">[ConsumerTimeout(5)]</span><span class="w"> </span><span class="c1">// Consumer timeouts after 5 seconds</span>
+<span class="na">[ConsumerAttempts(1)]</span><span class="w"> </span><span class="c1">// Consumer messages moved to poisoned table after 1 failed attempt</span>
+<span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">DeleteUsersPosts</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">IConsumer</span><span class="o">&lt;</span><span class="n">UserDeleted</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">private</span><span class="w"> </span><span class="k">readonly</span><span class="w"> </span><span class="n">ApplicationDbContext</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="nf">DeleteUsersPosts</span><span class="p">(</span><span class="n">ApplicationDbContext</span><span class="w"> </span><span class="n">dbContext</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">_dbContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dbContext</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="n">Task</span><span class="w"> </span><span class="nf">Consume</span><span class="p">(</span><span class="n">UserDeleted</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="n">ConsumeContext</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="n">CancellationToken</span><span class="w"> </span><span class="n">cancellationToken</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="n">_dbContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">(</span><span class="n">cancellationToken</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="ordering">Ordering</h2>
+<p>Messages are taken roughly oldest first, but <strong>delivery order is not guaranteed</strong>:</p>
+<ul>
+<li><code>created_at</code> is stored in whole seconds. Messages created in the same second are taken in <code>id</code> order, and ids are random, so their order is effectively arbitrary.</li>
+<li>A failed message is retried later, after messages that were created after it.</li>
+<li>Messages in a batch run in parallel by default. <code>[ConsumerExecutionMode(ConsumerExecutionMode.Sequential)]</code> only runs one consumer's messages one at a time <strong>within a batch on one processor</strong>. It doesn't order them across batches, retries, rails or app instances.</li>
+</ul>
+<p>Design consumers so the order of messages doesn't matter, for example by checking the current state of the data rather than relying on earlier messages having run.</p>
+<h2 id="consumer-failures">Consumer Failures 💢</h2>
+<ul>
+<li><strong>Retry Logic</strong>: Messages are retried up to <code>MaxAttempts</code> times before they are moved to the <code>poisoned_messages</code> table. Add the <code>[ConsumerAttempts(1)]</code> attribute to override this per consumer.</li>
+<li><strong>Backoff</strong>: The first retry waits <code>AttemptDelay</code> (default 10 seconds), and each later retry waits twice as long as the one before, up to <code>MaxAttemptDelay</code> (default 5 minutes). With the defaults a message is retried after 10, 20, 40 and 80 seconds.</li>
+<li><strong>Errors</strong>: The error from the most recent failed attempt is stored in <code>last_error</code> on both tables, for example <code>System.InvalidOperationException: ...</code> or <code>Timed out after 10 seconds.</code></li>
+<li><strong>Interrupted processing</strong>: A message is leased while its consumer runs. If the app stops mid-message, the message becomes available again once its consumer timeout plus 30 seconds has passed, and the interrupted attempt counts.</li>
+<li><strong>Manual Intervention</strong>: Use <code>IPoisonedMessageService</code> to count, list, retry or delete poisoned messages. Retrying moves a message back to <code>consumer_messages</code> with its attempts reset. Changes are saved immediately.</li>
+<li><strong>Retention</strong>: Set <code>PoisonedMessageRetention</code> (for example <code>TimeSpan.FromDays(30)</code>) to delete poisoned messages that old, measured from when they were last due. It runs about once an hour. By default they are kept.</li>
+<li><strong>Monitoring</strong>: Periodically monitor the <code>poisoned_messages</code> table to ensure there are not too many failed messages.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">public</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nf">FailedMessagesController</span><span class="p">(</span><span class="n">IPoisonedMessageService</span><span class="w"> </span><span class="n">poisoned</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">ControllerBase</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="na">[HttpGet]</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">Task</span><span class="o">&lt;</span><span class="n">IReadOnlyList</span><span class="o">&lt;</span><span class="n">PoisonedMessageInfo</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">List</span><span class="p">()</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">poisoned</span><span class="p">.</span><span class="n">List</span><span class="p">(</span><span class="n">skip</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">take</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">);</span>
+<span class="w">    </span><span class="na">[HttpPost("{id}/retry")]</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">Task</span><span class="o">&lt;</span><span class="kt">bool</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Retry</span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">poisoned</span><span class="p">.</span><span class="n">Retry</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="na">[HttpDelete("{id}")]</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">Task</span><span class="o">&lt;</span><span class="kt">bool</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Delete</span><span class="p">(</span><span class="kt">string</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">poisoned</span><span class="p">.</span><span class="n">Delete</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="queue-statistics">Queue statistics 📊</h2>
+<p><code>IQueueStatisticsService.Read()</code> returns a snapshot for health checks and dashboards:</p>
+<ul>
+<li><code>Available</code>: messages due now and waiting for a processor</li>
+<li><code>Waiting</code>: messages not yet due (delayed, waiting to retry, or being processed)</li>
+<li><code>OldestAvailableAgeSeconds</code>: how long the longest-waiting due message has been due. If this keeps growing, processors are stuck or falling behind.</li>
+<li><code>Poisoned</code> and <code>Schedules</code>: row counts</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../scheduling-messages/" class="btn btn-neutral float-left" title="Scheduling messages"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../changing-messages/" class="btn btn-neutral float-right" title="Changing messages">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/Timmoth/AsyncMonolith/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../scheduling-messages/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../changing-messages/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
