@@ -9,7 +9,7 @@ namespace AsyncMonolith.MySql;
 /// <summary>
 /// Fetches scheduled messages from MySQL database.
 /// </summary>
-public sealed class MySqlScheduledMessageFetcher : IScheduledMessageFetcher
+internal sealed class MySqlScheduledMessageFetcher : IScheduledMessageFetcher
 {
     private const string MySql = @"
                     SELECT * 

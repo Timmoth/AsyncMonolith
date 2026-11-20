@@ -9,7 +9,7 @@ namespace AsyncMonolith.PostgreSql;
 /// <summary>
 /// Fetches scheduled messages from a PostgreSQL database.
 /// </summary>
-public sealed class PostgreSqlScheduledMessageFetcher : IScheduledMessageFetcher
+internal sealed class PostgreSqlScheduledMessageFetcher : IScheduledMessageFetcher
 {
     private const string PgSql = @"
                     SELECT * 

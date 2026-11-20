@@ -28,4 +28,7 @@
 	  <PackageReference Include="Microsoft.EntityFrameworkCore" />
   </ItemGroup>
 	
+	<ItemGroup>
+		<InternalsVisibleTo Include="AsyncMonolith.Tests" />
+	</ItemGroup>
 </Project>

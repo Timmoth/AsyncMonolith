@@ -9,7 +9,7 @@ namespace AsyncMonolith.MsSql;
 /// <summary>
 /// Fetches scheduled messages from the MsSql database.
 /// </summary>
-public sealed class MsSqlScheduledMessageFetcher : IScheduledMessageFetcher
+internal sealed class MsSqlScheduledMessageFetcher : IScheduledMessageFetcher
 {
     private const string MsSql = @"
                         SELECT TOP (@batchSize) * 

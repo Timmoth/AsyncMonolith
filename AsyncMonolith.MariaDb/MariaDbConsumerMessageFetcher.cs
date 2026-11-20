@@ -9,7 +9,7 @@ namespace AsyncMonolith.MariaDb;
 /// <summary>
 /// Represents a message fetcher for consumer messages in MariaDb.
 /// </summary>
-public sealed class MariaDbConsumerMessageFetcher : IConsumerMessageFetcher
+internal sealed class MariaDbConsumerMessageFetcher : IConsumerMessageFetcher
 {
     private const string MariaDb = @"
                     SELECT * 

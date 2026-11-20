@@ -40,10 +40,10 @@ public sealed class SqliteTestHost : IAsyncDisposable
 
     public long Now => Time.GetUtcNow().ToUnixTimeSeconds();
 
-    public ConsumerMessageProcessor<TestDbContext> ConsumerProcessor =>
+    internal ConsumerMessageProcessor<TestDbContext> ConsumerProcessor =>
         Services.GetRequiredService<ConsumerMessageProcessor<TestDbContext>>();
 
-    public ScheduledMessageProcessor<TestDbContext> ScheduledProcessor =>
+    internal ScheduledMessageProcessor<TestDbContext> ScheduledProcessor =>
         Services.GetRequiredService<ScheduledMessageProcessor<TestDbContext>>();
 
     public static async Task<SqliteTestHost> Create(Action<AsyncMonolithOptions>? configure = null,

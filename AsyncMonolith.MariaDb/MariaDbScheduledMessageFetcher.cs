@@ -9,7 +9,7 @@ namespace AsyncMonolith.MariaDb;
 /// <summary>
 /// Fetches scheduled messages from MariaDb.
 /// </summary>
-public sealed class MariaDbScheduledMessageFetcher : IScheduledMessageFetcher
+internal sealed class MariaDbScheduledMessageFetcher : IScheduledMessageFetcher
 {
     private const string MariaDb = @"
                     SELECT * 

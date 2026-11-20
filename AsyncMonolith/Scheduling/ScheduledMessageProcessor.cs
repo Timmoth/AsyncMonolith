@@ -13,7 +13,7 @@ namespace AsyncMonolith.Scheduling;
 ///     Represents a background service for processing scheduled messages.
 /// </summary>
 /// <typeparam name="T">The type of the database context.</typeparam>
-public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
+internal sealed class ScheduledMessageProcessor<T> : BackgroundService where T : DbContext
 {
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
     private readonly IScheduledMessageFetcher _messageFetcher;

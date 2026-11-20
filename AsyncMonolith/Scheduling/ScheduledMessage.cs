@@ -68,7 +68,7 @@ public class ScheduledMessage
     /// </summary>
     /// <param name="timeProvider">The time provider.</param>
     /// <returns>The next occurrence of the scheduled message in Unix timestamp format.</returns>
-    public long GetNextOccurrence(TimeProvider timeProvider)
+    internal long GetNextOccurrence(TimeProvider timeProvider)
     {
         var expression = Cronos.CronExpression.Parse(CronExpression, Cronos.CronFormat.IncludeSeconds);
 
@@ -93,7 +93,7 @@ public class ScheduledMessage
     /// <param name="cronExpression">The new cron expression.</param>
     /// <param name="timeZone">The new cron timezone.</param>
     /// <param name="timeProvider">The time provider.</param>
-    public void UpdateSchedule(string cronExpression, string timeZone, TimeProvider timeProvider)
+    internal void UpdateSchedule(string cronExpression, string timeZone, TimeProvider timeProvider)
     {
         CronExpression = cronExpression;
         CronTimeZone = timeZone;
@@ -105,7 +105,7 @@ public class ScheduledMessage
     /// </summary>
     /// <typeparam name="TPayload">The type of the payload.</typeparam>
     /// <param name="message">The payload message.</param>
-    public void UpdatePayload<TPayload>(TPayload message) where TPayload : IConsumerPayload
+    internal void UpdatePayload<TPayload>(TPayload message) where TPayload : IConsumerPayload
     {
         var payload = JsonSerializer.Serialize(message);
         Payload = payload;

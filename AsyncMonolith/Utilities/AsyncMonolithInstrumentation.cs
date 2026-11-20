@@ -26,5 +26,5 @@ public static class AsyncMonolithInstrumentation
     /// <summary>
     /// The activity source instance.
     /// </summary>
-    public static readonly ActivitySource ActivitySource = new(ActivitySourceName);
+    internal static readonly ActivitySource ActivitySource = new(ActivitySourceName);
 }

@@ -8,7 +8,7 @@ namespace AsyncMonolith.Ef;
 /// <summary>
 /// Fetches scheduled messages from the database using Entity Framework.
 /// </summary>
-public sealed class EfScheduledMessageFetcher : IScheduledMessageFetcher
+internal sealed class EfScheduledMessageFetcher : IScheduledMessageFetcher
 {
     private readonly IOptions<AsyncMonolithOptions> _options;
 

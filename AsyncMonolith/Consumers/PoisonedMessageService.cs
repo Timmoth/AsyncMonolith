@@ -34,7 +34,7 @@ public interface IPoisonedMessageService
 ///     Entity Framework implementation of <see cref="IPoisonedMessageService" />.
 /// </summary>
 /// <typeparam name="T">The DbContext containing the AsyncMonolith tables.</typeparam>
-public sealed class PoisonedMessageService<T> : IPoisonedMessageService where T : DbContext
+internal sealed class PoisonedMessageService<T> : IPoisonedMessageService where T : DbContext
 {
     private readonly T _dbContext;
     private readonly TimeProvider _timeProvider;

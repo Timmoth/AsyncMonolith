@@ -8,7 +8,7 @@ namespace AsyncMonolith.Ef;
 /// <summary>
 /// Fetches consumer messages using Entity Framework.
 /// </summary>
-public sealed class EfConsumerMessageFetcher : IConsumerMessageFetcher
+internal sealed class EfConsumerMessageFetcher : IConsumerMessageFetcher
 {
     private readonly IOptions<AsyncMonolithOptions> _options;
 

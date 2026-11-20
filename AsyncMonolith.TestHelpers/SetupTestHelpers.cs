@@ -26,7 +26,9 @@ public static class SetupTestHelpers
         AddBaseServices(services, configure);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
         services.AddScoped<IScheduleService, FakeScheduleService>();
-        services.AddScoped<IProducerService, FakeProducerService>();
+        services.AddScoped(sp => new FakeProducerService(sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<ConsumerRegistry>(), sp.GetRequiredService<IAsyncMonolithIdGenerator>()));
+        services.AddScoped<IProducerService>(sp => sp.GetRequiredService<FakeProducerService>());
         return services;
     }
 

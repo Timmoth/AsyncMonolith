@@ -16,7 +16,7 @@ public class FakeProducerService : IProducerService
     private readonly TimeProvider _timeProvider;
 
     /// <summary>Initializes a new instance of the <see cref="FakeProducerService" /> class.</summary>
-    public FakeProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry,
+    internal FakeProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry,
         IAsyncMonolithIdGenerator idGenerator)
     {
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));

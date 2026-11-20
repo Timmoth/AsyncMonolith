@@ -9,7 +9,7 @@ namespace AsyncMonolith.PostgreSql;
 /// <summary>
 /// Represents a consumer message fetcher implementation for PostgreSQL.
 /// </summary>
-public sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
+internal sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
 {
     private const string PgSql = @"
                     SELECT * 

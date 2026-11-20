@@ -12,7 +12,7 @@ namespace AsyncMonolith.Consumers;
 ///     Background service which fetches and processes batches of consumer messages.
 /// </summary>
 /// <typeparam name="T">The type of the DbContext.</typeparam>
-public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
+internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : DbContext
 {
     private readonly IConsumerMessageFetcher _consumerMessageFetcher;
     private readonly ConsumerRegistry _consumerRegistry;

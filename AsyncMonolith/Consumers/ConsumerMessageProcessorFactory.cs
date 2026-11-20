@@ -8,7 +8,7 @@ namespace AsyncMonolith.Consumers;
 ///     Represents a factory for creating and managing consumer message processors.
 /// </summary>
 /// <typeparam name="T">The type of the DbContext used by the consumer message processors.</typeparam>
-public class ConsumerMessageProcessorFactory<T> : IHostedService where T : DbContext
+internal sealed class ConsumerMessageProcessorFactory<T> : IHostedService where T : DbContext
 {
     private readonly List<IHostedService> _hostedServices;
     private readonly int[] _instances;

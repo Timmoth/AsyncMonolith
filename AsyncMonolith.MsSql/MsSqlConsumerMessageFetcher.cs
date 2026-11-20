@@ -9,7 +9,7 @@ namespace AsyncMonolith.MsSql;
 /// <summary>
 /// Represents a message fetcher for consuming messages from a SQL Server database.
 /// </summary>
-public sealed class MsSqlConsumerMessageFetcher : IConsumerMessageFetcher
+internal sealed class MsSqlConsumerMessageFetcher : IConsumerMessageFetcher
 {
     private const string MsSql = @"
                 SELECT TOP (@batchSize) * 

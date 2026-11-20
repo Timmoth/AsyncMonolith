@@ -9,7 +9,7 @@ namespace AsyncMonolith.MySql;
 /// <summary>
 /// Represents a message fetcher for consumer messages in MySQL.
 /// </summary>
-public sealed class MySqlConsumerMessageFetcher : IConsumerMessageFetcher
+internal sealed class MySqlConsumerMessageFetcher : IConsumerMessageFetcher
 {
     private const string MySql = @"
                     SELECT * 

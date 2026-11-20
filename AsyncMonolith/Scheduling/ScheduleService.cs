@@ -10,7 +10,7 @@ namespace AsyncMonolith.Scheduling;
 /// Service for scheduling messages.
 /// </summary>
 /// <typeparam name="T">The type of DbContext.</typeparam>
-public sealed class ScheduleService<T> : IScheduleService where T : DbContext
+internal sealed class ScheduleService<T> : IScheduleService where T : DbContext
 {
     private readonly T _dbContext;
     private readonly IAsyncMonolithIdGenerator _idGenerator;

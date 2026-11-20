@@ -5,7 +5,7 @@ namespace AsyncMonolith.Scheduling;
 /// <summary>
 ///     Interface for fetching scheduled messages.
 /// </summary>
-public interface IScheduledMessageFetcher
+internal interface IScheduledMessageFetcher
 {
     /// <summary>
     ///     Fetches scheduled messages.

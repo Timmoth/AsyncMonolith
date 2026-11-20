@@ -33,4 +33,7 @@
 		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
 		<PackageReference Include="MySqlConnector" />
 	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="AsyncMonolith.Tests" />
+	</ItemGroup>
 </Project>

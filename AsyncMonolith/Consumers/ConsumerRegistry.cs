@@ -5,7 +5,7 @@ namespace AsyncMonolith.Consumers;
 /// <summary>
 ///     Represents a registry for consumers and their associated types and payloads.
 /// </summary>
-public sealed class ConsumerRegistry
+internal sealed class ConsumerRegistry
 {
     /// <summary>
     ///     Gets the async monolith settings.
