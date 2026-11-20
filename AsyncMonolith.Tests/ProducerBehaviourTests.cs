@@ -58,16 +58,78 @@ public class ProducerBehaviourTests
     }
 
     [Fact]
-    public async Task Producing_the_same_insert_id_twice_is_rejected_by_the_database()
+    public async Task Producing_an_insert_id_that_is_already_pending_is_skipped()
     {
         await using var host = await SqliteTestHost.Create();
         await host.Produce(new SingleConsumerMessage { Name = "first" }, insertId: "dedupe-key");
 
-        await Should.ThrowAsync<DbUpdateException>(() =>
-            host.Produce(new SingleConsumerMessage { Name = "second" }, insertId: "dedupe-key"));
+        await host.Produce(new SingleConsumerMessage { Name = "second" }, insertId: "dedupe-key");
 
         JsonSerializer.Deserialize<SingleConsumerMessage>((await host.ConsumerMessages()).ShouldHaveSingleItem().Payload)!
             .Name.ShouldBe("first");
+    }
+
+    [Fact]
+    public async Task Producing_an_insert_id_twice_before_saving_adds_it_once()
+    {
+        await using var host = await SqliteTestHost.Create();
+
+        using (var scope = host.Services.CreateScope())
+        {
+            var producer = scope.ServiceProvider.GetRequiredService<IProducerService>();
+            await producer.Produce(new MultiConsumerMessage { Name = "first" }, insertId: "dedupe-key", cancellationToken: Ct);
+            await producer.Produce(new MultiConsumerMessage { Name = "second" }, insertId: "dedupe-key", cancellationToken: Ct);
+            await scope.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct);
+        }
+
+        (await host.ConsumerMessages()).Count.ShouldBe(2);
+        (await host.ConsumerMessages()).ShouldAllBe(m => m.Payload.Contains("first", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Only_consumers_that_already_have_the_insert_id_pending_are_skipped()
+    {
+        await using var host = await SqliteTestHost.Create();
+        await host.Produce(new MultiConsumerMessage { Name = "first" }, insertId: "dedupe-key");
+        // MultiConsumer1 has processed its message; MultiConsumer2's is still pending.
+        await host.Change(db => db.ConsumerMessages.Remove(
+            db.ConsumerMessages.Single(m => m.ConsumerType == nameof(MultiConsumer1))));
+
+        await host.Produce(new MultiConsumerMessage { Name = "second" }, insertId: "dedupe-key");
+
+        var messages = await host.ConsumerMessages();
+        messages.Single(m => m.ConsumerType == nameof(MultiConsumer1)).Payload.ShouldContain("second");
+        messages.Single(m => m.ConsumerType == nameof(MultiConsumer2)).Payload.ShouldContain("first");
+    }
+
+    [Fact]
+    public async Task An_insert_id_can_be_produced_again_once_its_messages_are_consumed()
+    {
+        await using var host = await SqliteTestHost.Create();
+        await host.Produce(new SingleConsumerMessage { Name = "first" }, insertId: "dedupe-key");
+        await host.ConsumerProcessor.ProcessBatch(Ct);
+
+        await host.Produce(new SingleConsumerMessage { Name = "again" }, insertId: "dedupe-key");
+
+        (await host.ConsumerMessages()).ShouldHaveSingleItem().Payload.ShouldContain("again");
+    }
+
+    [Fact]
+    public async Task Two_producers_racing_on_one_insert_id_are_stopped_by_the_unique_index()
+    {
+        await using var host = await SqliteTestHost.Create();
+        using var first = host.Services.CreateScope();
+        using var second = host.Services.CreateScope();
+
+        // Both check before either has saved
+        await first.ServiceProvider.GetRequiredService<IProducerService>()
+            .Produce(new SingleConsumerMessage { Name = "first" }, insertId: "dedupe-key", cancellationToken: Ct);
+        await second.ServiceProvider.GetRequiredService<IProducerService>()
+            .Produce(new SingleConsumerMessage { Name = "second" }, insertId: "dedupe-key", cancellationToken: Ct);
+
+        await first.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct);
+        await Should.ThrowAsync<DbUpdateException>(() =>
+            second.ServiceProvider.GetRequiredService<TestDbContext>().SaveChangesAsync(Ct));
     }
 
     [Fact]

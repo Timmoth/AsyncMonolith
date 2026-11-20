@@ -35,9 +35,7 @@ You can produce messages to be consumed immediately like this:
     await _dbContext.SaveChangesAsync(cancellationToken);
 ```
 
-The message will be produced transactionally along with the change to your domain objects when you call `SaveChangesAsync`. Lean more about the [Transactional Outbox](../transactional-outbox) pattern.
-
-***If using the MySql, MsSql, MariaDb or PostgreSQL packages you will need to wrap your changes in a transaction see below***
+The message is added to your `DbContext` and written when you call `SaveChangesAsync`, in the same transaction as your other changes. If you never save, or the save fails, no message is written. This works the same with every database package. Learn more about the [Transactional Outbox](../transactional-outbox) pattern.
 
 ## Delayed messages
 You can produce messages to be consumed after a delay by specifying the number of seconds to wait before a consumer should process the message.
@@ -71,30 +69,14 @@ Deduplicated messages are useful when you may emit the same message multiple tim
     await _dbContext.SaveChangesAsync(cancellationToken);
 ```
 
-Deduplicated events will ensure only a single message for a given consumer type and insertId are ever pending processing at any given time.
+How deduplication works:
 
-### MySql / MsSql / MariaDb / PostgreSql Transactionality
-
-The produce method makes use of `ExecuteSqlRawAsync` when using the MySql, MsSql or PostgreSQL package, if you want the messages to be inserted transactionally with your domain changes you must wrap all the changes in an explicit transaction.
-
-```csharp
-  await using var dbContextTransaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
-  order.Cancel();
-  _dbContext.Orders.Update(order);
-  await _producerService.Produce(new OrderCancelled()
-  {
-    OrderId = order.Id,
-    CancelledAt = _timeProvider.UtcNow()
-  });
-
-  await _dbContext.SaveChangesAsync(cancellationToken);
-  await dbContextTransaction.CommitAsync(cancellationToken);
-
-```
+- **While pending only.** If a consumer already has a pending message with this insert id (saved, or produced on the same `DbContext` and not yet saved), that consumer is skipped. Once its message has been consumed or poisoned, the same insert id is accepted again. It is not a permanent idempotency key.
+- **Per consumer.** For a payload with several consumers, only the consumers that already have the insert id pending are skipped.
+- **Concurrent producers.** Two requests producing the same insert id at the same moment, in separate transactions, can both pass the check. The unique index on `(insert_id, consumer_type)` then stops the second, and its `SaveChangesAsync` throws `DbUpdateException`.
 
 Summary
 
-- **Transactional Persistence**: Produce messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
+- **Transactional Persistence**: Produce messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally. Nothing is written until you save.
 - **Delay**: Specify the number of seconds a message should remain in the queue before it is processed by a consumer.
-- **Deduplication**: By specifying a `insert_id` when producing messages the system ensures only one message with the same `insert_id` and `consumer_type` will be in the table at a given time. This is useful when you need a process to take place an amount of time after the first action in a sequence occured.
+- **Deduplication**: By specifying an `insert_id`, a consumer that already has a pending message with that `insert_id` is skipped. This is useful when you need a process to take place an amount of time after the first action in a sequence occurred.

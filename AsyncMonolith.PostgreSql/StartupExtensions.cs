@@ -51,7 +51,6 @@ public static class StartupExtensions
     {
         configuration(settings);
         services.InternalAddAsyncMonolith<T>(settings);
-        services.TryAddScoped<IProducerService, PostgreSqlProducerService<T>>();
         services.TryAddSingleton<IConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
         services.TryAddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
         return services;

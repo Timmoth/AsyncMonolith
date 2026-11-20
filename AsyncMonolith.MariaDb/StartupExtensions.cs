@@ -51,7 +51,6 @@ public static class StartupExtensions
         configuration(settings);
 
         services.InternalAddAsyncMonolith<T>(settings);
-        services.TryAddScoped<IProducerService, MariaDbProducerService<T>>();
         services.TryAddSingleton<IConsumerMessageFetcher, MariaDbConsumerMessageFetcher>();
         services.TryAddSingleton<IScheduledMessageFetcher, MariaDbScheduledMessageFetcher>();
         return services;

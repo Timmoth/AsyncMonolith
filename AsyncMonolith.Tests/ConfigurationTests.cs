@@ -218,7 +218,7 @@ public class ConfigurationTests
         });
 
         services.ShouldContain(d => d.ServiceType == typeof(IProducerService) &&
-                                    d.ImplementationType == typeof(EfProducerService<TestDbContext>));
+                                    d.ImplementationType == typeof(ProducerService<TestDbContext>));
         services.ShouldContain(d => d.ServiceType == typeof(IScheduleService) &&
                                     d.ImplementationType == typeof(ScheduleService<TestDbContext>));
         services.ShouldContain(d => d.ServiceType == typeof(IHostedService) &&

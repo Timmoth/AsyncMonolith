@@ -37,33 +37,29 @@ public static class TestServiceHelpers
         
         services.InternalRegisterAsyncMonolithConsumers(settings);
         services.AddSingleton<IAsyncMonolithIdGenerator>(new FakeIdGenerator());
+        services.AddScoped<IProducerService, ProducerService<TestDbContext>>();
         services.AddScoped<IScheduleService, ScheduleService<TestDbContext>>();
         services.AddScoped<IPoisonedMessageService, PoisonedMessageService<TestDbContext>>();
         services.AddScoped<IQueueStatisticsService, QueueStatisticsService<TestDbContext>>();
         switch (dbType)
         {
             case DbType.Ef:
-                services.AddScoped<IProducerService, EfProducerService<TestDbContext>>();
                 services.AddSingleton<IConsumerMessageFetcher, EfConsumerMessageFetcher>();
                 services.AddSingleton<IScheduledMessageFetcher, EfScheduledMessageFetcher>();
                 break;
             case DbType.MySql:
-                services.AddScoped<IProducerService, MySqlProducerService<TestDbContext>>();
                 services.AddSingleton<IConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
                 services.AddSingleton<IScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
                 break;
             case DbType.MsSql:
-                services.AddScoped<IProducerService, MsSqlProducerService<TestDbContext>>();
                 services.AddSingleton<IConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
                 services.AddSingleton<IScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
                 break;
             case DbType.PostgreSql:
-                services.AddScoped<IProducerService, PostgreSqlProducerService<TestDbContext>>();
                 services.AddSingleton<IConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
                 services.AddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
                 break;
             case DbType.MariaDb:
-                services.AddScoped<IProducerService, MariaDbProducerService<TestDbContext>>();
                 services.AddSingleton<IConsumerMessageFetcher, MariaDbConsumerMessageFetcher>();
                 services.AddSingleton<IScheduledMessageFetcher, MariaDbScheduledMessageFetcher>();
                 break;

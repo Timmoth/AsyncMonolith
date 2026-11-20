@@ -48,7 +48,6 @@ public static class StartupExtensions
     {
         configuration(settings);
         services.InternalAddAsyncMonolith<T>(settings);
-        services.TryAddScoped<IProducerService, MySqlProducerService<T>>();
         services.TryAddSingleton<IConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
         services.TryAddSingleton<IScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
         return services;

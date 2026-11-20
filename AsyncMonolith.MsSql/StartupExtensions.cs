@@ -49,7 +49,6 @@ public static class StartupExtensions
     {
         configuration(settings);
         services.InternalAddAsyncMonolith<T>(settings);
-        services.TryAddScoped<IProducerService, MsSqlProducerService<T>>();
         services.TryAddSingleton<IConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
         services.TryAddSingleton<IScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
         return services;
