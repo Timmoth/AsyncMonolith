@@ -2,7 +2,7 @@ Make sure to check this table before updating the nuget package in your solution
 
 | Version | Description                                | Migration Required |
 |---------|--------------------------------------------|--------------------|
-| 10.1.0  | SQLite-safe processing, stored names, modules, backoff, poisoned message service (see below) | Yes |
+| 11.0.0  | SQLite-safe processing, stored names, modules, backoff, poisoned message service (see below) | Yes |
 | 8.0.6   | Added ConsumerAttempts override attribute  | No                 |
 | 8.0.5   | Bundle debug symbols with nuget package    | No                 |
 | 8.0.4   | Bundle XML docs with nuget package         | No                 |
@@ -15,11 +15,11 @@ Make sure to check this table before updating the nuget package in your solution
 ***If you're not using ef migrations check out the sql to configure your database [here](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas)***
 
 
-## 10.1.0
+## 11.0.0
 
-All packages now share one version and must be upgraded together.
+All packages now share one version and must be upgraded together. From 11.0.0 the major version follows [Semantic Versioning](https://semver.org) (it changes for breaking changes) rather than the .NET version. `AsyncMonolith.MySql` and `AsyncMonolith.MariaDb` are published as previews (`11.0.0-preview.1`) until Pomelo supports EF Core 10 and they run in the integration tests.
 
-**Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_10_1_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
+**Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_11_0_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
 
 **Changes**
 - Every database package now produces messages the same way: they are added to your `DbContext` and written on `SaveChanges`, in your transaction. The PostgreSQL, SQL Server, MySQL and MariaDB packages used to write immediately. A repeated insert id skips consumers that already have a pending message with it, on every database.
