@@ -22,6 +22,8 @@ All packages now share one version and must be upgraded together. From 11.0.0 th
 **Migration required.** Add a migration (`dotnet ef migrations add AsyncMonolith_11_0_0`). It adds a nullable `last_error` column to `consumer_messages` and `poisoned_messages`. If you manage the schema by hand, see the [SQL schemas](https://github.com/Timmoth/AsyncMonolith/tree/main/Schemas). They also now include `rail_id`, and their `trace_id` and `span_id` columns are nullable.
 
 **Changes**
+- Cron expressions can have 5 fields (minute precision) as well as 6 (seconds first).
+- `AsyncMonolithOptions.SerializerOptions` sets the `JsonSerializerOptions` for payloads. The default is unchanged.
 - Tables can live in their own schema or have a prefix: `modelBuilder.ConfigureAsyncMonolith(o => { o.Schema = "jobs"; o.TablePrefix = "jobs_"; })`. The database packages' SQL follows the mapping.
 - Every database package now produces messages the same way: they are added to your `DbContext` and written on `SaveChanges`, in your transaction. The PostgreSQL, SQL Server, MySQL and MariaDB packages used to write immediately. A repeated insert id skips consumers that already have a pending message with it, on every database.
 - Several app instances can safely share the tables with any database package. Claims and schedule occurrences use conditional updates, so a message is processed by one processor at a time and a schedule fires once per occurrence.

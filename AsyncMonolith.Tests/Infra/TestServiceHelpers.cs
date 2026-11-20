@@ -40,6 +40,7 @@ public static class TestServiceHelpers
             o.BatchSize = settings.BatchSize;
             o.IdlePollInterval = settings.IdlePollInterval;
             o.BusyPollInterval = settings.BusyPollInterval;
+            o.SerializerOptions = settings.SerializerOptions;
         });
         settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
         

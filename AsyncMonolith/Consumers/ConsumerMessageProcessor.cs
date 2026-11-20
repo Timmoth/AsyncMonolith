@@ -298,7 +298,8 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
 
             var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
             var context = ConsumeContext.For(message, _consumerRegistry.ResolveConsumerMaxAttempts(message));
-            await ConsumerInvoker.Invoke(consumer, message, context, null, timeoutCancellationToken.Token);
+            await ConsumerInvoker.Invoke(consumer, message, context, _options.Value.SerializerOptions,
+                timeoutCancellationToken.Token);
 
             activity?.SetStatus(ActivityStatusCode.Ok);
             _logger.ConsumerMessageProcessed(message.ConsumerType);

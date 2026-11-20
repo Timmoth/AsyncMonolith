@@ -12,6 +12,10 @@ To produce your message you'll need to inject a `IScheduleService`
    }, "0 0 12 * * MON", "UTC", "id:{id}");
  await _dbContext.SaveChangesAsync(cancellationToken);
 ```
+## Cron expressions
+
+Expressions can have 5 fields (`minute hour day month weekday`, for example `0 9 * * *` for 09:00 daily) or 6 fields with seconds first (`30 0 9 * * *` for 09:00:30). They are evaluated in the time zone you pass, using an IANA id such as `Europe/London` or `UTC`.
+
 ## Registering schedules at startup
 
 `Schedule` always inserts a new schedule, so calling it at every startup creates duplicates. Use `EnsureSchedule` with a tag instead. It creates the schedule the first time, and afterwards updates the payload. It only recalculates the next occurrence if the expression or timezone changed, and removes any duplicates with the same tag.

@@ -4,6 +4,7 @@ using AsyncMonolith.Consumers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AsyncMonolith.Producers;
 
@@ -23,10 +24,12 @@ internal sealed class ProducerService<T> : IProducerService where T : DbContext
     private readonly T _dbContext;
     private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
+    private readonly JsonSerializerOptions? _serializerOptions;
 
     public ProducerService(TimeProvider timeProvider, ConsumerRegistry consumerRegistry, T dbContext,
-        IAsyncMonolithIdGenerator idGenerator)
+        IAsyncMonolithIdGenerator idGenerator, IOptions<AsyncMonolithOptions> options)
     {
+        _serializerOptions = options.Value.SerializerOptions;
         _timeProvider = timeProvider;
         _consumerRegistry = consumerRegistry;
         _dbContext = dbContext;
@@ -52,7 +55,7 @@ internal sealed class ProducerService<T> : IProducerService where T : DbContext
         var availableAfter = AvailableAfter(delay);
         foreach (var payload in payloads)
         {
-            Add(payloadType, JsonSerializer.Serialize(payload), consumers, availableAfter, _idGenerator.GenerateId(),
+            Add(payloadType, JsonSerializer.Serialize(payload, _serializerOptions), consumers, availableAfter, _idGenerator.GenerateId(),
                 Activity.Current);
         }
 
@@ -78,7 +81,7 @@ internal sealed class ProducerService<T> : IProducerService where T : DbContext
             consumers = consumers.Where(c => !pending.Contains(c)).ToList();
         }
 
-        Add(payloadType, JsonSerializer.Serialize(payload), consumers, availableAfter,
+        Add(payloadType, JsonSerializer.Serialize(payload, _serializerOptions), consumers, availableAfter,
             deduplicationKey ?? _idGenerator.GenerateId(), Activity.Current);
     }
 

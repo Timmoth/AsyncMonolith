@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -50,6 +51,13 @@ public sealed class AsyncMonolithOptions
     ///     not negative and not more than <see cref="IdlePollInterval" />.
     /// </summary>
     public TimeSpan BusyPollInterval { get; set; } = TimeSpan.FromMilliseconds(10);
+
+    /// <summary>
+    ///     How payloads are serialized to and from JSON. Null (the default) uses System.Text.Json's defaults.
+    ///     Changing it changes the stored format, so messages and schedules already stored with different settings
+    ///     may no longer deserialize. Set it in code; it isn't read from configuration.
+    /// </summary>
+    public JsonSerializerOptions? SerializerOptions { get; set; }
 
     /// <summary>
     ///     Gets the delay before retrying a message that has failed <paramref name="attempts" /> times.

@@ -69,7 +69,7 @@ public class ScheduledMessage
     /// <returns>The next occurrence of the scheduled message in Unix timestamp format.</returns>
     internal long GetNextOccurrence(TimeProvider timeProvider)
     {
-        var expression = Cronos.CronExpression.Parse(CronExpression, Cronos.CronFormat.IncludeSeconds);
+        var expression = Cron.Parse(CronExpression);
 
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(CronTimeZone);
         if (timezone == null)
@@ -104,9 +104,10 @@ public class ScheduledMessage
     /// </summary>
     /// <typeparam name="TPayload">The type of the payload.</typeparam>
     /// <param name="message">The payload message.</param>
-    internal void UpdatePayload<TPayload>(TPayload message) where TPayload : IConsumerPayload
+    /// <param name="serializerOptions">The JSON serializer options, or null for the defaults.</param>
+    internal void UpdatePayload<TPayload>(TPayload message, JsonSerializerOptions? serializerOptions = null) where TPayload : IConsumerPayload
     {
-        var payload = JsonSerializer.Serialize(message);
+        var payload = JsonSerializer.Serialize(message, serializerOptions);
         Payload = payload;
         PayloadType = AsyncMonolithNames.ForPayload<TPayload>();
     }

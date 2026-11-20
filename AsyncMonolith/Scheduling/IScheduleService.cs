@@ -12,7 +12,7 @@ public interface IScheduleService
     /// </summary>
     /// <typeparam name="TPayload">The type of the message.</typeparam>
     /// <param name="message">The message to schedule.</param>
-    /// <param name="cronExpression">The cron expression.</param>
+    /// <param name="cronExpression">A cron expression with 5 fields, or 6 with seconds first.</param>
     /// <param name="timeZone">The timezone for the cron expression.</param>
     /// <param name="tag">The optional tag for the scheduled message.</param>
     /// <returns>The ID of the scheduled message.</returns>
@@ -27,7 +27,7 @@ public interface IScheduleService
     /// </summary>
     /// <typeparam name="TPayload">The type of the message payload.</typeparam>
     /// <param name="message">The message payload.</param>
-    /// <param name="cronExpression">The cron expression, including seconds.</param>
+    /// <param name="cronExpression">A cron expression with 5 fields, or 6 with seconds first.</param>
     /// <param name="timeZone">The timezone the expression is evaluated in.</param>
     /// <param name="tag">The tag that identifies this schedule.</param>
     /// <param name="cancellationToken">The cancellation token.</param>

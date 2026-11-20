@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using AsyncMonolith.Utilities;
+using Microsoft.Extensions.Options;
+using System.Text.Json;
 using AsyncMonolith.Consumers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,7 +40,8 @@ public static class TestConsumerMessageProcessor
 
         var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
         var maxAttempts = scope.ServiceProvider.GetRequiredService<ConsumerRegistry>().ResolveConsumerMaxAttempts(message);
-        await ConsumerInvoker.Invoke(consumer, message, ConsumeContext.For(message, maxAttempts), null,
+        var serializerOptions = scope.ServiceProvider.GetService<IOptions<AsyncMonolithOptions>>()?.Value.SerializerOptions;
+        await ConsumerInvoker.Invoke(consumer, message, ConsumeContext.For(message, maxAttempts), serializerOptions,
             cancellationToken);
 
         consumerMessageSet.Remove(message);
@@ -76,7 +79,8 @@ public static class TestConsumerMessageProcessor
 
         var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
         var maxAttempts = scope.ServiceProvider.GetRequiredService<ConsumerRegistry>().ResolveConsumerMaxAttempts(message);
-        await ConsumerInvoker.Invoke(consumer, message, ConsumeContext.For(message, maxAttempts), null,
+        var serializerOptions = scope.ServiceProvider.GetService<IOptions<AsyncMonolithOptions>>()?.Value.SerializerOptions;
+        await ConsumerInvoker.Invoke(consumer, message, ConsumeContext.For(message, maxAttempts), serializerOptions,
             cancellationToken);
 
         consumerMessageSet.Remove(message);

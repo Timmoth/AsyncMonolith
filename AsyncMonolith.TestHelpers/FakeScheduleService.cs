@@ -56,7 +56,7 @@ public sealed class FakeScheduleService : IScheduleService
         var payload = JsonSerializer.Serialize(message);
         var id = _fakeIdGenerator.GenerateId();
 
-        var expression = Cronos.CronExpression.Parse(cronExpression, Cronos.CronFormat.IncludeSeconds);
+        var expression = Cron.Parse(cronExpression);
 
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
         if (timezone == null)

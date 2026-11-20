@@ -53,9 +53,24 @@ public class SchedulingTests
     }
 
     [Fact]
-    public void Cron_expressions_require_a_seconds_field()
+    public void Five_field_cron_expressions_are_accepted_with_minute_precision()
     {
-        Should.Throw<CronFormatException>(() => Message("0 9 * * *", "UTC").GetNextOccurrence(Clock()));
+        Message("0 9 * * *", "UTC").GetNextOccurrence(Clock()).ShouldBe(Utc("2020-09-01T09:00:00Z"));
+        Message("*/15 * * * *", "UTC").GetNextOccurrence(Clock()).ShouldBe(Utc("2020-08-31T10:15:00Z"));
+    }
+
+    [Fact]
+    public void Six_field_cron_expressions_start_with_seconds()
+    {
+        Message("30 0 9 * * *", "UTC").GetNextOccurrence(Clock()).ShouldBe(Utc("2020-09-01T09:00:30Z"));
+    }
+
+    [Theory]
+    [InlineData("0 9 * *")]
+    [InlineData("0 0 0 9 * * *")]
+    public void Cron_expressions_with_the_wrong_number_of_fields_are_rejected(string expression)
+    {
+        Should.Throw<CronFormatException>(() => Message(expression, "UTC").GetNextOccurrence(Clock()));
     }
 
     [Fact]

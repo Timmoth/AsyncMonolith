@@ -3,6 +3,7 @@ using AsyncMonolith.Consumers;
 using AsyncMonolith.Utilities;
 using Cronos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AsyncMonolith.Scheduling;
 
@@ -15,6 +16,7 @@ internal sealed class ScheduleService<T> : IScheduleService where T : DbContext
     private readonly T _dbContext;
     private readonly IAsyncMonolithIdGenerator _idGenerator;
     private readonly TimeProvider _timeProvider;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ScheduleService{T}" /> class.
@@ -22,9 +24,12 @@ internal sealed class ScheduleService<T> : IScheduleService where T : DbContext
     /// <param name="timeProvider">The time provider.</param>
     /// <param name="dbContext">The DbContext.</param>
     /// <param name="idGenerator">The ID generator.</param>
-    public ScheduleService(TimeProvider timeProvider, T dbContext, IAsyncMonolithIdGenerator idGenerator)
+    /// <param name="options">The AsyncMonolith options.</param>
+    public ScheduleService(TimeProvider timeProvider, T dbContext, IAsyncMonolithIdGenerator idGenerator,
+        IOptions<AsyncMonolithOptions> options)
     {
         _timeProvider = timeProvider;
+        _options = options;
         _dbContext = dbContext;
         _idGenerator = idGenerator;
     }
@@ -41,10 +46,10 @@ internal sealed class ScheduleService<T> : IScheduleService where T : DbContext
     public string Schedule<TPayload>(TPayload message, string cronExpression, string timeZone, string? tag = null)
         where TPayload : IConsumerPayload
     {
-        var payload = JsonSerializer.Serialize(message);
+        var payload = JsonSerializer.Serialize(message, _options.Value.SerializerOptions);
         var id = _idGenerator.GenerateId();
 
-        var expression = Cronos.CronExpression.Parse(cronExpression, Cronos.CronFormat.IncludeSeconds);
+        var expression = Cron.Parse(cronExpression);
 
         var timezone = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
         if (timezone == null)
@@ -89,7 +94,7 @@ internal sealed class ScheduleService<T> : IScheduleService where T : DbContext
         var schedule = existing[0];
         set.RemoveRange(existing.Skip(1));
 
-        schedule.UpdatePayload(message);
+        schedule.UpdatePayload(message, _options.Value.SerializerOptions);
         if (schedule.CronExpression != cronExpression || schedule.CronTimeZone != timeZone)
         {
             schedule.UpdateSchedule(cronExpression, timeZone, _timeProvider);
