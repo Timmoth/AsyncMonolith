@@ -23,7 +23,7 @@ public class DeleteUsersPosts : IConsumer<UserDeleted>
         _dbContext = dbContext;
     }
 
-    public Task Consume(UserDeleted message, ConsumeContext context, CancellationToken cancellationToken)
+    public async Task Consume(UserDeleted message, ConsumeContext context, CancellationToken cancellationToken)
     {
         ...
 		await _dbContext.SaveChangesAsync(cancellationToken);

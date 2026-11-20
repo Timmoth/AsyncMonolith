@@ -69,8 +69,8 @@ public class CancelShipmentTests : ConsumerTestBase
             }
         );
 
-        services.AddRealAsyncMonolithBaseServices<ApplicationDbContext>(settings =>
-            settings.RegisterTypesFromAssemblyContaining<Program>());
+        services.AddRealAsyncMonolithBaseServices<ApplicationDbContext>(options =>
+            options.RegisterTypesFromAssemblyContaining<Program>());
         return Task.CompletedTask;
     }
 

@@ -1,6 +1,6 @@
-- **Frequency**: Scheduled messages will be produced periodically by the `chron_expression` in the given `chron_timezone`
+- **Frequency**: Scheduled messages are produced each time their cron expression occurs, in their time zone.
 - **Transactional Persistence**: Schedule messages along with changes to your `DbContext` before calling `SaveChangesAsync`, ensuring your domain changes and the messages they produce are persisted transactionally.
-- **Processing**: Schedule messages will be processed sequentially after they are made available by their chron job, at which point they will be turned into Consumer Messages and inserted into the `consumer_messages` table to be handled by their respective consumers.
+- **Processing**: When a schedule is due, a message is produced for each consumer of its payload and the schedule moves to its next occurrence. Each due schedule is handled on its own, so one that fails doesn't affect the others.
 
 To produce your message you'll need to inject a `IScheduleService`
 
