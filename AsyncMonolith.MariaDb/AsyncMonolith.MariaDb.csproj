@@ -3,26 +3,12 @@
 	<PropertyGroup>
 		<NoWarn>$(NoWarn);NU5104</NoWarn>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageId>AsyncMonolith.MariaDb</PackageId>
-		<Authors>Tim Jones</Authors>
-		<Company>Aptacode</Company>
-		<Description>MariaDb interface for AsyncMonolith</Description>
-		<PackageProjectUrl>https://github.com/Timmoth/AsyncMonolith</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
+		<Description>AsyncMonolith for MariaDB, with row locking (FOR UPDATE SKIP LOCKED).</Description>
 		<Title>AsyncMonolith.MariaDb</Title>
-		<PackageIcon>logo.png</PackageIcon>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<IncludeSymbols>true</IncludeSymbols>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<None Include="..\AsyncMonolith\logo.png">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />

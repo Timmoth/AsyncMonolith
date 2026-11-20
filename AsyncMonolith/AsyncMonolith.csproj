@@ -2,18 +2,10 @@
 
 	<PropertyGroup>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageId>AsyncMonolith</PackageId>
-		<Authors>Tim Jones</Authors>
-		<Company>Aptacode</Company>
-		<Description>Messaging library for monolithic dotnet apps</Description>
-		<PackageProjectUrl>https://github.com/Timmoth/AsyncMonolith</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
+		<Description>Transactional outbox, background consumers and scheduled messages for .NET monoliths on EF Core.</Description>
 		<Title>Async Monolith</Title>
-		<PackageIcon>logo.png</PackageIcon>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<IncludeSymbols>true</IncludeSymbols>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -31,11 +23,5 @@
 		<InternalsVisibleTo Include="$(AssemblyName).PostgreSql" />
 		<InternalsVisibleTo Include="$(AssemblyName).TestHelpers" />
 		<InternalsVisibleTo Include="$(AssemblyName).Tests" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Update="logo.png">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
 	</ItemGroup>
 </Project>

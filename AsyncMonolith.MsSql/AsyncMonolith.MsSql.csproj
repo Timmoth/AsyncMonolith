@@ -2,26 +2,12 @@
 
 	<PropertyGroup>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageId>AsyncMonolith.MsSql</PackageId>
-		<Authors>Tim Jones</Authors>
-		<Company>Aptacode</Company>
-		<Description>MsSql interface for AsyncMonolith</Description>
-		<PackageProjectUrl>https://github.com/Timmoth/AsyncMonolith</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
+		<Description>AsyncMonolith for SQL Server, with row locking (UPDLOCK, READPAST).</Description>
 		<Title>AsyncMonolith.MsSql</Title>
-		<PackageIcon>logo.png</PackageIcon>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<IncludeSymbols>true</IncludeSymbols>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<None Include="..\AsyncMonolith\logo.png">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />

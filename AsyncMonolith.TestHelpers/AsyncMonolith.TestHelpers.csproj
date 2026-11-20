@@ -2,18 +2,10 @@
 
 	<PropertyGroup>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageId>AsyncMonolith.TestHelpers</PackageId>
-		<Authors>Tim Jones</Authors>
-		<Company>Aptacode</Company>
-		<Description>Test helpers for AsyncMonolith</Description>
-		<PackageProjectUrl>https://github.com/Timmoth/AsyncMonolith</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/Timmoth/AsyncMonolith</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<PackageTags>Monolith Messaging Scheduling Async</PackageTags>
+		<Description>Fakes and helpers for testing AsyncMonolith consumers with xunit v3.</Description>
 		<Title>AsyncMonolith.TestHelpers</Title>
-		<PackageIcon>logo.png</PackageIcon>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<IncludeSymbols>true</IncludeSymbols>
 	</PropertyGroup>
 
   <ItemGroup>
@@ -24,12 +16,6 @@
     <PackageReference Include="MartinCostello.Logging.XUnit.v3" />
     <PackageReference Include="Cronos" />
   </ItemGroup>
-	<ItemGroup>
-		<None Include="..\AsyncMonolith\logo.png">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
 	
 	<ItemGroup>
 		<ProjectReference Include="..\AsyncMonolith\AsyncMonolith.csproj" />
