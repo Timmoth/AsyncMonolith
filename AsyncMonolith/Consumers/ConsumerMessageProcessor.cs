@@ -160,15 +160,30 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
             return [];
         }
 
-        var claimed = messages.Select(m => new ClaimedMessage(m, m.AvailableAfter)).ToList();
+        // Claim each message only if it is unchanged since it was read. Another processor (in this app or another
+        // instance) that claimed it first has changed its attempts and due time, so the update matches nothing.
+        var claimed = new List<ClaimedMessage>(messages.Count);
         foreach (var message in messages)
         {
-            message.Attempts++;
-            message.AvailableAfter = currentTime + _consumerRegistry.ResolveConsumerTimeout(message) +
-                                     LeaseGracePeriodSeconds;
+            var dueAt = message.AvailableAfter;
+            var attempts = message.Attempts;
+            var leaseUntil = currentTime + _consumerRegistry.ResolveConsumerTimeout(message) + LeaseGracePeriodSeconds;
+
+            var updated = await dbContext.Set<ConsumerMessage>()
+                .Where(m => m.Id == message.Id && m.AvailableAfter == dueAt && m.Attempts == attempts)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(m => m.Attempts, attempts + 1)
+                    .SetProperty(m => m.AvailableAfter, leaseUntil), cancellationToken);
+            if (updated == 0)
+            {
+                continue;
+            }
+
+            message.Attempts = attempts + 1;
+            message.AvailableAfter = leaseUntil;
+            claimed.Add(new ClaimedMessage(message, dueAt));
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return claimed;
     }

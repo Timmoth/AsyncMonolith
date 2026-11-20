@@ -102,8 +102,18 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
 
             foreach (var message in messages)
             {
+                // Move the schedule on only if no other processor has already done so for this occurrence.
+                var dueAt = message.AvailableAfter;
+                var next = message.GetNextOccurrence(_timeProvider);
+                var updated = await set
+                    .Where(m => m.Id == message.Id && m.AvailableAfter == dueAt)
+                    .ExecuteUpdateAsync(s => s.SetProperty(m => m.AvailableAfter, next), cancellationToken);
+                if (updated == 0)
+                {
+                    continue;
+                }
+
                 producer.Produce(message);
-                message.AvailableAfter = message.GetNextOccurrence(_timeProvider);
                 processedScheduledMessageCount++;
             }
 

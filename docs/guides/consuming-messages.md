@@ -1,7 +1,8 @@
 - **Independent Consumption**: Each message will be consumed independently by each consumer set up to handle it.
 - **Periodic Querying**: Each instance of your app will periodically query the `consumer_messages` table for a batch of available messages to process.
   - The query takes place at the frequency defined by `ProcessorMaxDelay`, if a full batch is returned it will delay by `ProcessorMinDelay`.
-- **Concurrency**: Each app instance can run multiple parallel consumer processors defined by `ConsumerMessageProcessorCount`, unless using `AsyncMonolith.Ef`.
+- **Multiple instances**: Any number of app instances can process the same tables, with every database package. A processor claims each message with a conditional update, so a message is only ever claimed by one processor at a time, and each schedule occurrence fires once. The PostgreSQL, SQL Server, MySQL and MariaDB packages also lock rows while claiming, so processors skip each other's batches instead of competing for them.
+- **Rails**: Each rail (`[ConsumerRailId]`) gets its own processor, so a slow consumer on one rail doesn't hold up consumers on another.
 - **Batching**: Consumer messages will be read from the `consumer_messages` table in batches defined by `ConsumerMessageBatchSize`.
 - **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure.
 - **Timeout**: Consumers timeout after the number of seconds defined by the `ConsumerTimeout` attribute or the `DefaultConsumerTimeout` if not set.
