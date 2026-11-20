@@ -14,6 +14,8 @@ Tests are split into two groups:
   dotnet test --project AsyncMonolith.Tests --filter-trait "Category=Integration"
   ```
 
+On Apple Silicon, SQL Server runs under emulation and needs about 2 GB per container. If SQL Server containers exit with code 114, give Docker more memory or run the tests one class at a time with `--parallel none` (about 9 minutes for the whole suite).
+
 Add `--coverage --coverage-output-format cobertura` to either command for a coverage report. CI uploads one for each run as an artifact.
 
 

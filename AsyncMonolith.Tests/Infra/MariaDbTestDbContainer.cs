@@ -10,9 +10,10 @@ public class MariaDbTestDbContainer : TestDbContainerBase
     public override async Task InitializeContainerAsync()
     {
         var container = new MariaDbBuilder("mariadb:11.8").Build();
+        // Kept before starting, so a container that fails to start is still cleaned up.
+        DbContainer = container;
         await container.StartAsync();
         ConnectionString = container.GetConnectionString();
-        DbContainer = container;
     }
 
     public override void AddDb(IServiceCollection services)
