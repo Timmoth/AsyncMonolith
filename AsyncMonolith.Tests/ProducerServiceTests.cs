@@ -19,7 +19,7 @@ public class ProducerServiceTests
     private ServiceProvider Setup()
     {
         var services = new ServiceCollection();
-        var (fakeTime, _) = services.AddTestServices(DbType.Ef, AsyncMonolithSettings.Default);
+        var (fakeTime, _) = services.AddTestServices(DbType.Ef, new AsyncMonolithOptions());
         FakeTime = fakeTime;
         services.AddInMemoryDb();
         return services.BuildServiceProvider();

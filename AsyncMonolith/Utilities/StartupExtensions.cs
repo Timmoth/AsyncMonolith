@@ -28,71 +28,18 @@ public static class StartupExtensions
         return modelBuilder;
     }
 
-    internal static void InternalConfigureAsyncMonolithSettings(
+    internal static void InternalConfigureAsyncMonolithOptions(
         this IServiceCollection services,
-        AsyncMonolithSettings settings)
+        Action<AsyncMonolithOptions> configure)
     {
-        if (settings.AttemptDelay < 0)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.AttemptDelay must be positive.");
-        }
-
-        if (settings.MaxAttemptDelay < 0)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.MaxAttemptDelay must be positive.");
-        }
-
-        if (settings.MaxAttempts < 1)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.MaxAttempts must be at least 1.");
-        }
-
-        if (settings.ProcessorMaxDelay < 1)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.ProcessorMaxDelay must be at least 1.");
-        }
-
-        if (settings.ProcessorMinDelay < 0)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.ProcessorMinDelay must be positive.");
-        }
-
-        if (settings.ProcessorMinDelay > settings.ProcessorMaxDelay)
-        {
-            throw new ArgumentException(
-                "AsyncMonolithSettings.ProcessorMaxDelay must be greater than AsyncMonolithSettings.ProcessorMinDelay.");
-        }
-
-        if (settings.ProcessorBatchSize < 1)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.ProcessorBatchSize must be at least 1.");
-        }
-
-        if (settings.DefaultConsumerTimeout < 1)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.DefaultConsumerTimeout must be at least 1.");
-        }
-
-        if (settings.DefaultConsumerTimeout > 3600)
-        {
-            throw new ArgumentException("AsyncMonolithSettings.DefaultConsumerTimeout must be less then 3600.");
-        }
-
-        services.Configure<AsyncMonolithSettings>(options =>
-        {
-            options.AttemptDelay = settings.AttemptDelay;
-            options.MaxAttemptDelay = settings.MaxAttemptDelay;
-            options.MaxAttempts = settings.MaxAttempts;
-            options.ProcessorMaxDelay = settings.ProcessorMaxDelay;
-            options.ProcessorMinDelay = settings.ProcessorMinDelay;
-            options.ProcessorBatchSize = settings.ProcessorBatchSize;
-            options.DefaultConsumerTimeout = settings.DefaultConsumerTimeout;
-        });
+        services.AddOptions<AsyncMonolithOptions>().Configure(configure).ValidateOnStart();
+        services.TryAddEnumerable(ServiceDescriptor
+            .Singleton<IValidateOptions<AsyncMonolithOptions>, AsyncMonolithOptionsValidator>());
     }
 
-    internal static void InternalAddAsyncMonolith<T>(
+    internal static AsyncMonolithBuilder InternalAddAsyncMonolith<T>(
         this IServiceCollection services,
-        AsyncMonolithSettings settings) where T : DbContext
+        Action<AsyncMonolithOptions> configure) where T : DbContext
     {
         if (services.Any(d => d.ServiceType == typeof(AsyncMonolithRegistration)))
         {
@@ -102,8 +49,12 @@ public static class StartupExtensions
         }
 
         services.AddSingleton<AsyncMonolithRegistration>();
-        services.InternalConfigureAsyncMonolithSettings(settings);
-        services.InternalRegisterAsyncMonolithConsumers(settings);
+        services.InternalConfigureAsyncMonolithOptions(configure);
+
+        // The assemblies to scan are needed now, to register the consumer types.
+        var registration = new AsyncMonolithOptions();
+        configure(registration);
+        services.InternalRegisterAsyncMonolithConsumers(registration);
 
         // TryAdd, so a host can register its own implementation before or instead of these.
         services.TryAddSingleton(TimeProvider.System);
@@ -119,11 +70,12 @@ public static class StartupExtensions
             serviceProvider.GetRequiredService<ConsumerRegistry>().RailIds.ToArray()));
 
         services.AddHostedService<ScheduledMessageProcessor<T>>();
+        return new AsyncMonolithBuilder(services);
     }
 
     internal static void InternalRegisterAsyncMonolithConsumers(
         this IServiceCollection services,
-        AsyncMonolithSettings settings)
+        AsyncMonolithOptions settings)
     {
         services.AddAsyncMonolithConsumers(settings.AssembliesToRegister.ToArray());
     }
@@ -154,7 +106,7 @@ public static class StartupExtensions
             services.AddSingleton(registered);
             services.AddOptions();
             services.TryAddSingleton(serviceProvider => BuildConsumerRegistry(registered,
-                serviceProvider.GetRequiredService<IOptions<AsyncMonolithSettings>>().Value));
+                serviceProvider.GetRequiredService<IOptions<AsyncMonolithOptions>>().Value));
         }
 
         foreach (var assembly in assemblies)
@@ -187,7 +139,7 @@ public static class StartupExtensions
                          ConsumerInvoker.PayloadTypeOf(t) is not null);
 
     internal static ConsumerRegistry BuildConsumerRegistry(IEnumerable<Assembly> assemblies,
-        AsyncMonolithSettings settings)
+        AsyncMonolithOptions settings)
     {
         var consumerServiceDictionary = new Dictionary<string, Type>();
         var payloadConsumerDictionary = new Dictionary<string, List<string>>();
@@ -204,16 +156,17 @@ public static class StartupExtensions
         {
             var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
 
-            var timeoutDuration = settings.DefaultConsumerTimeout;
+            var defaultTimeout = (int)settings.DefaultConsumerTimeout.TotalSeconds;
+            var timeoutDuration = defaultTimeout;
             var attribute = Attribute.GetCustomAttribute(consumerType, typeof(ConsumerTimeoutAttribute));
             if (attribute is ConsumerTimeoutAttribute timeoutAttribute)
             {
-                timeoutDuration = timeoutAttribute.Duration;
+                timeoutDuration = timeoutAttribute.Seconds;
             }
 
             if (timeoutDuration <= 0)
             {
-                timeoutDuration = settings.DefaultConsumerTimeout;
+                timeoutDuration = defaultTimeout;
             }
 
             consumerTimeoutDictionary[consumerName] = timeoutDuration;

@@ -15,7 +15,7 @@ public class NamingTests
 
     private static void Register(params System.Reflection.Assembly[] assemblies)
     {
-        var settings = AsyncMonolithSettings.Default;
+        var settings = new AsyncMonolithOptions();
         settings.RegisterTypesFromAssemblies(assemblies);
         var services = new ServiceCollection();
         services.InternalRegisterAsyncMonolithConsumers(settings);

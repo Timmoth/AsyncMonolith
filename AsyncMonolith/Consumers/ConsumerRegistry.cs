@@ -10,7 +10,7 @@ public sealed class ConsumerRegistry
     /// <summary>
     ///     Gets the async monolith settings.
     /// </summary>
-    private readonly AsyncMonolithSettings _settings;
+    private readonly AsyncMonolithOptions _settings;
 
     /// <summary>
     ///     Gets the dictionary that maps consumer names to their associated time out.
@@ -61,7 +61,7 @@ public sealed class ConsumerRegistry
         IReadOnlyDictionary<string, int> consumerAttemptsDictionary, 
         IReadOnlyDictionary<string, int> consumerRailIdDictionary, 
         IReadOnlyDictionary<string, ConsumerInstanceExecutionMode> consumerExecutionModeDictionary, 
-        AsyncMonolithSettings settings)
+        AsyncMonolithOptions settings)
     {
         ConsumerTypeDictionary = consumerTypeDictionary;
         PayloadConsumerDictionary = payloadConsumerDictionary;
@@ -123,7 +123,7 @@ public sealed class ConsumerRegistry
             return timeout;
         }
 
-        return _settings.DefaultConsumerTimeout;
+        return (int)_settings.DefaultConsumerTimeout.TotalSeconds;
     }
 
     /// <summary>
@@ -193,6 +193,6 @@ public sealed class ConsumerRegistry
             return timeout;
         }
 
-        return _settings.DefaultConsumerTimeout;
+        return (int)_settings.DefaultConsumerTimeout.TotalSeconds;
     }
 }

@@ -10,13 +10,13 @@ namespace AsyncMonolith.Ef;
 /// </summary>
 public sealed class EfConsumerMessageFetcher : IConsumerMessageFetcher
 {
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EfConsumerMessageFetcher"/> class.
     /// </summary>
-    /// <param name="options">The options for AsyncMonolithSettings.</param>
-    public EfConsumerMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    /// <param name="options">The options for AsyncMonolithOptions.</param>
+    public EfConsumerMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
@@ -35,7 +35,7 @@ public sealed class EfConsumerMessageFetcher : IConsumerMessageFetcher
         return consumerSet
             .Where(m => m.AvailableAfter <= currentTime && m.RailId == railId)
             .OrderBy(m => m.CreatedAt).ThenBy(m => m.Id)
-            .Take(_options.Value.ProcessorBatchSize)
+            .Take(_options.Value.BatchSize)
             .ToListAsync(cancellationToken);
     }
 }

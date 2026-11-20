@@ -22,7 +22,7 @@ Stores consumer messages that have reached `AsyncMonolith.MaxAttempts`, poisoned
 
 ## ConsumerMessageProcessor
 
-A background service that periodically fetches available messages from the 'consumer_messages' table. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithSettings.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
+A background service that periodically fetches available messages from the 'consumer_messages' table. Once a message is found, it's row-level locked to prevent other processes from fetching it. The corresponding consumer attempts to process the message. If successful, the message is removed from the `consumer_messages` table; otherwise, the processor increments the messages `attempts` by one and delays processing for a defined number of seconds (`AsyncMonolithOptions.AttemptDelay`). If the number of attempts reaches the limit defined by `AsyncMonolith.MaxAttempts`, the message is moved to the `poisoned_messages` table.
 
 ## ScheduledMessageProcessor
 
@@ -34,5 +34,5 @@ Used to resolve all the consumers able to process a given payload, and resolve i
 
 ## Notes 📋
 
-- The background services wait for `AsyncMonolithSettings.ProcessorMaxDelay` seconds before fetching another batch of messages. If a full batch is fetched, the delay is reduced to `AsyncMonolithSettings.ProcessorMinDelay` seconds between cycles.
+- The background services wait for `AsyncMonolithOptions.IdlePollInterval` before fetching another batch of messages. If a full batch is fetched, the delay is reduced to `AsyncMonolithOptions.ProcessorMinDelay` seconds between cycles.
 - Configuring concurrent consumer / scheduled message processors will throw a startup exception when using AsyncMonolith.Ef (due to no built in support for row level locking)

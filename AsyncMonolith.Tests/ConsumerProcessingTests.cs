@@ -52,7 +52,7 @@ public class ConsumerProcessingTests
     [Fact]
     public async Task Failed_message_is_retried_after_the_attempt_delay()
     {
-        await using var host = await SqliteTestHost.Create(s => s.AttemptDelay = 30);
+        await using var host = await SqliteTestHost.Create(s => s.AttemptDelay = TimeSpan.FromSeconds(30));
         await host.Produce(new ExceptionConsumerMessage { Name = "boom" });
         var start = host.Now;
 
@@ -79,7 +79,7 @@ public class ConsumerProcessingTests
         await using var host = await SqliteTestHost.Create(s =>
         {
             s.MaxAttempts = 3;
-            s.AttemptDelay = 0;
+            s.AttemptDelay = TimeSpan.FromSeconds(0);
         });
         await host.Produce(new ExceptionConsumerMessage { Name = "boom" }, insertId: "insert-1");
         var original = (await host.ConsumerMessages()).ShouldHaveSingleItem();
@@ -114,7 +114,7 @@ public class ConsumerProcessingTests
         await using var host = await SqliteTestHost.Create(s =>
         {
             s.MaxAttempts = 10;
-            s.AttemptDelay = 0;
+            s.AttemptDelay = TimeSpan.FromSeconds(0);
         });
         await host.Produce(new ExceptionConsumer2AttemptsMessage { Name = "boom" });
 
@@ -152,7 +152,7 @@ public class ConsumerProcessingTests
     [Fact]
     public async Task Batch_size_limits_how_many_messages_are_processed_at_once()
     {
-        await using var host = await SqliteTestHost.Create(s => s.ProcessorBatchSize = 2);
+        await using var host = await SqliteTestHost.Create(s => s.BatchSize = 2);
         for (var i = 0; i < 5; i++)
         {
             await host.Produce(new SingleConsumerMessage { Name = $"m{i}" });
@@ -168,7 +168,7 @@ public class ConsumerProcessingTests
     [Fact]
     public async Task Oldest_messages_are_processed_first()
     {
-        await using var host = await SqliteTestHost.Create(s => s.ProcessorBatchSize = 1);
+        await using var host = await SqliteTestHost.Create(s => s.BatchSize = 1);
         await host.Produce(new OrderedMessage { Name = "newer" });
         await host.Produce(new OrderedMessage { Name = "older" });
 
@@ -188,7 +188,7 @@ public class ConsumerProcessingTests
     [Fact]
     public async Task Messages_created_in_the_same_second_are_taken_in_id_order()
     {
-        await using var host = await SqliteTestHost.Create(s => s.ProcessorBatchSize = 1);
+        await using var host = await SqliteTestHost.Create(s => s.BatchSize = 1);
         await host.Produce(new OrderedMessage { Name = "first" });
         await host.Produce(new OrderedMessage { Name = "second" });
         // Swap the ids so that id order differs from insertion order.

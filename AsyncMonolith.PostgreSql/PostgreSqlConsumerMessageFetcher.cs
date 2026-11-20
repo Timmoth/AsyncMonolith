@@ -19,13 +19,13 @@ public sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
                     FOR UPDATE SKIP LOCKED 
                     LIMIT @batchSize";
 
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PostgreSqlConsumerMessageFetcher"/> class.
     /// </summary>
     /// <param name="options">The options for the AsyncMonolith settings.</param>
-    public PostgreSqlConsumerMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    public PostgreSqlConsumerMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
@@ -44,7 +44,7 @@ public sealed class PostgreSqlConsumerMessageFetcher : IConsumerMessageFetcher
         return consumerSet
             .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime),
                 new NpgsqlParameter("@railId", railId),
-                new NpgsqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+                new NpgsqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);
     }
 }

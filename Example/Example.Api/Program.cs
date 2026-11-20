@@ -32,11 +32,11 @@ public class Program
         builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(settings =>
         {
             settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
-            settings.AttemptDelay = 10;
+            settings.AttemptDelay = TimeSpan.FromSeconds(10);
             settings.MaxAttempts = 5;
-            settings.ProcessorMinDelay = 10;
-            settings.ProcessorMaxDelay = 100;
-            settings.ProcessorBatchSize = 10;
+            settings.BusyPollInterval = TimeSpan.FromMilliseconds(10);
+            settings.IdlePollInterval = TimeSpan.FromMilliseconds(100);
+            settings.BatchSize = 10;
         });
         
         builder.Services.AddOpenTelemetry()

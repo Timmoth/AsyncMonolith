@@ -18,13 +18,13 @@ public class ScheduledMessageFetcherTests : DbTestsBase
         try
         {
             // Given
-            var settings = AsyncMonolithSettings.Default;
+            var settings = new AsyncMonolithOptions();
             var serviceProvider = await Setup(dbContainer, settings);
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var fetcher = serviceProvider.GetRequiredService<IScheduledMessageFetcher>();
             var idGenerator = serviceProvider.GetRequiredService<IAsyncMonolithIdGenerator>();
 
-            for (var i = 0; i < 2 * settings.ProcessorBatchSize; i++)
+            for (var i = 0; i < 2 * settings.BatchSize; i++)
             {
                 dbContext.ScheduledMessages.Add(new ScheduledMessage
                 {
@@ -45,7 +45,7 @@ public class ScheduledMessageFetcherTests : DbTestsBase
                 CancellationToken.None);
 
             // Then
-            dbMessages.Count.ShouldBe(settings.ProcessorBatchSize);
+            dbMessages.Count.ShouldBe(settings.BatchSize);
         }
         finally
         {

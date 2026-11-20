@@ -26,7 +26,7 @@ All packages now share one version and must be upgraded together. From 11.0.0 th
 - Several app instances can safely share the tables with any database package. Claims and schedule occurrences use conditional updates, so a message is processed by one processor at a time and a schedule fires once per occurrence.
 - Fetch order is deterministic (oldest first, then by id). See [Ordering](guides/consuming-messages.md#ordering) for what is and isn't guaranteed.
 - Consumers can write to the database on SQLite. Messages are claimed and leased in a short transaction, consumers run outside it, and each message is completed in its own short write. If the app stops mid-message, the message is retried once its consumer timeout plus 30 seconds has passed.
-- Retries back off exponentially from `AttemptDelay` up to the new `MaxAttemptDelay` setting (default 300 seconds).
+- Retries back off exponentially from `AttemptDelay` up to the new `MaxAttemptDelay` option (default 5 minutes).
 - The last error is stored on retried and poisoned messages.
 - `IPoisonedMessageService` counts, lists, retries and deletes poisoned messages.
 - `IScheduleService.EnsureSchedule` creates or updates a schedule by tag, so it can run at every startup.
@@ -35,6 +35,10 @@ All packages now share one version and must be upgraded together. From 11.0.0 th
 - `AddAsyncMonolithConsumers` lets modules register their own consumers alongside the host's `Add*AsyncMonolith` call.
 
 **Breaking changes**
+- `AsyncMonolithSettings` is now `AsyncMonolithOptions`, configured through the standard options pattern and validated when the host starts (an `OptionsValidationException` instead of an `ArgumentException` at registration). Times are `TimeSpan`s, and some names changed: `ProcessorBatchSize` → `BatchSize`, `ProcessorMaxDelay` (ms) → `IdlePollInterval`, `ProcessorMinDelay` (ms) → `BusyPollInterval`. `AsyncMonolithSettings.Default` is gone; use `new AsyncMonolithOptions()`.
+- `Add*AsyncMonolith` returns an `AsyncMonolithBuilder` (for `.BindConfiguration(...)` and `.AddConsumers(...)`) instead of `IServiceCollection`, and the obsolete overloads taking an `Assembly` are removed. The TestHelpers setup methods take `Action<AsyncMonolithOptions>`.
+- `[ConsumerTimeout]`'s `Duration` property is now `Seconds`.
+- Consumers implement `IConsumer<TPayload>` and receive a `ConsumeContext`; `BaseConsumer<T>` is removed.
 - PostgreSQL, SQL Server, MySQL and MariaDB users: messages are no longer written until you call `SaveChanges`. If you produced messages without saving, call `SaveChangesAsync`.
 - `Add*AsyncMonolith` no longer registers `DbContext` as an alias for your context, and throws if called twice (modules use `AddAsyncMonolithConsumers`). Its services use `TryAdd`, so services you register first win.
 - Removed public types: `EfProducerService`, `PostgreSqlProducerService`, `MsSqlProducerService`, `MySqlProducerService`, `MariaDbProducerService` and the unused `ScheduledMessageProcessorFactory`. Resolve `IProducerService` instead.

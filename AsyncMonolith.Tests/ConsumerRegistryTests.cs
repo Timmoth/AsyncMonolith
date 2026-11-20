@@ -11,7 +11,7 @@ public class ConsumerRegistryTests
     private static ServiceProvider Setup()
     {
         var services = new ServiceCollection();
-        services.AddTestServices(DbType.Ef, AsyncMonolithSettings.Default);
+        services.AddTestServices(DbType.Ef, new AsyncMonolithOptions());
         services.AddInMemoryDb();
 
         return services.BuildServiceProvider();

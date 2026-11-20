@@ -20,6 +20,7 @@
 		<PackageReference Include="Cronos" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
 	</ItemGroup>
 	<ItemGroup>
 		<InternalsVisibleTo Include="$(AssemblyName).Ef" />

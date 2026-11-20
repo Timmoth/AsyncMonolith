@@ -18,13 +18,13 @@ public sealed class PostgreSqlScheduledMessageFetcher : IScheduledMessageFetcher
                     FOR UPDATE SKIP LOCKED 
                     LIMIT @batchSize";
 
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PostgreSqlScheduledMessageFetcher"/> class.
     /// </summary>
     /// <param name="options">The options for the AsyncMonolith.</param>
-    public PostgreSqlScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    public PostgreSqlScheduledMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
@@ -41,7 +41,7 @@ public sealed class PostgreSqlScheduledMessageFetcher : IScheduledMessageFetcher
     {
         return scheduledMessageSet
             .FromSqlRaw(PgSql, new NpgsqlParameter("@currentTime", currentTime),
-                new NpgsqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+                new NpgsqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);
     }
 }

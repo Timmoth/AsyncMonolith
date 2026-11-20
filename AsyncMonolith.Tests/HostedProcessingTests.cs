@@ -25,7 +25,7 @@ public sealed class HostedProcessingTests : IAsyncLifetime
 
     public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
-    private async Task StartHost(Action<AsyncMonolithSettings>? configure = null, bool registerAsModule = false)
+    private async Task StartHost(Action<AsyncMonolithOptions>? configure = null, bool registerAsModule = false)
     {
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddDbContext<TestDbContext>(o => o.UseSqlite($"Data Source={_path}"));
@@ -40,8 +40,8 @@ public sealed class HostedProcessingTests : IAsyncLifetime
                 s.RegisterTypesFromAssemblyContaining<HostedProcessingTests>();
             }
 
-            s.ProcessorMaxDelay = 50;
-            s.ProcessorMinDelay = 10;
+            s.IdlePollInterval = TimeSpan.FromMilliseconds(50);
+            s.BusyPollInterval = TimeSpan.FromMilliseconds(10);
             configure?.Invoke(s);
         });
         if (registerAsModule)
@@ -148,7 +148,7 @@ public sealed class HostedProcessingTests : IAsyncLifetime
         await StartHost(s =>
         {
             s.MaxAttempts = 2;
-            s.AttemptDelay = 0;
+            s.AttemptDelay = TimeSpan.FromSeconds(0);
         });
 
         await Produce(new ExceptionConsumerMessage { Name = "boom" });

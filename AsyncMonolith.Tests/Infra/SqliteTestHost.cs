@@ -46,7 +46,7 @@ public sealed class SqliteTestHost : IAsyncDisposable
     public ScheduledMessageProcessor<TestDbContext> ScheduledProcessor =>
         Services.GetRequiredService<ScheduledMessageProcessor<TestDbContext>>();
 
-    public static async Task<SqliteTestHost> Create(Action<AsyncMonolithSettings>? configure = null,
+    public static async Task<SqliteTestHost> Create(Action<AsyncMonolithOptions>? configure = null,
         bool fileDatabase = false)
     {
         SqliteConnection? connection = null;
@@ -61,7 +61,7 @@ public sealed class SqliteTestHost : IAsyncDisposable
             await connection.OpenAsync();
         }
 
-        var settings = AsyncMonolithSettings.Default;
+        var settings = new AsyncMonolithOptions();
         configure?.Invoke(settings);
 
         var services = new ServiceCollection();

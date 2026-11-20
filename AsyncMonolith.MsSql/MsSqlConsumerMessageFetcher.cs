@@ -17,13 +17,13 @@ public sealed class MsSqlConsumerMessageFetcher : IConsumerMessageFetcher
                 WHERE available_after <= @currentTime AND rail_id = @railId
                 ORDER BY created_at, id";
 
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MsSqlConsumerMessageFetcher"/> class.
     /// </summary>
     /// <param name="options">The options for the AsyncMonolith settings.</param>
-    public MsSqlConsumerMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    public MsSqlConsumerMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
@@ -42,7 +42,7 @@ public sealed class MsSqlConsumerMessageFetcher : IConsumerMessageFetcher
         return consumerSet
             .FromSqlRaw(MsSql, new SqlParameter("@currentTime", currentTime),
                 new SqlParameter("@railId", railId),
-                new SqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+                new SqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);
     }
 }

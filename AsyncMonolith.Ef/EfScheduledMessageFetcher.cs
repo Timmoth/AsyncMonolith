@@ -10,13 +10,13 @@ namespace AsyncMonolith.Ef;
 /// </summary>
 public sealed class EfScheduledMessageFetcher : IScheduledMessageFetcher
 {
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EfScheduledMessageFetcher"/> class.
     /// </summary>
     /// <param name="options">The options for AsyncMonolith.</param>
-    public EfScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    public EfScheduledMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
@@ -33,7 +33,7 @@ public sealed class EfScheduledMessageFetcher : IScheduledMessageFetcher
     {
         return scheduledMessageSet.Where(m => m.AvailableAfter <= currentTime)
             .OrderBy(m => m.AvailableAfter).ThenBy(m => m.Id)
-            .Take(_options.Value.ProcessorBatchSize)
+            .Take(_options.Value.BatchSize)
             .ToListAsync(cancellationToken);
     }
 }

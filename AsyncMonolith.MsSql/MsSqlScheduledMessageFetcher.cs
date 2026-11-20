@@ -16,13 +16,13 @@ public sealed class MsSqlScheduledMessageFetcher : IScheduledMessageFetcher
                         FROM scheduled_messages WITH (ROWLOCK, READPAST)
                         WHERE available_after <= @currentTime";
 
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MsSqlScheduledMessageFetcher"/> class.
     /// </summary>
     /// <param name="options">The options for the AsyncMonolith settings.</param>
-    public MsSqlScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    public MsSqlScheduledMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
@@ -39,7 +39,7 @@ public sealed class MsSqlScheduledMessageFetcher : IScheduledMessageFetcher
     {
         return scheduledMessageSet
             .FromSqlRaw(MsSql, new SqlParameter("@currentTime", currentTime),
-                new SqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+                new SqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);
     }
 }

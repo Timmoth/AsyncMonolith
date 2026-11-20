@@ -20,32 +20,26 @@ public class RetryAndPoisonedMessageTests
     [InlineData(4, 80)]
     [InlineData(5, 100)]
     [InlineData(1000, 100)]
-    public void Retry_delay_doubles_each_attempt_up_to_the_maximum(int attempts, long expected)
+    public void Retry_delay_doubles_each_attempt_up_to_the_maximum(int attempts, int expectedSeconds)
     {
-        new AsyncMonolithSettings { AttemptDelay = 10, MaxAttemptDelay = 100 }.GetRetryDelay(attempts)
-            .ShouldBe(expected);
+        new AsyncMonolithOptions { AttemptDelay = TimeSpan.FromSeconds(10), MaxAttemptDelay = TimeSpan.FromSeconds(100) }
+            .GetRetryDelay(attempts).ShouldBe(TimeSpan.FromSeconds(expectedSeconds));
     }
 
     [Fact]
     public void Retry_delay_never_drops_below_the_attempt_delay()
     {
-        var settings = new AsyncMonolithSettings { AttemptDelay = 600, MaxAttemptDelay = 300 };
+        var options = new AsyncMonolithOptions
+            { AttemptDelay = TimeSpan.FromMinutes(10), MaxAttemptDelay = TimeSpan.FromMinutes(5) };
 
-        settings.GetRetryDelay(1).ShouldBe(600);
-        settings.GetRetryDelay(3).ShouldBe(600);
+        options.GetRetryDelay(1).ShouldBe(TimeSpan.FromMinutes(10));
+        options.GetRetryDelay(3).ShouldBe(TimeSpan.FromMinutes(10));
     }
 
     [Fact]
     public void Zero_attempt_delay_retries_immediately()
     {
-        new AsyncMonolithSettings { AttemptDelay = 0 }.GetRetryDelay(5).ShouldBe(0);
-    }
-
-    [Fact]
-    public void Negative_max_attempt_delay_is_rejected()
-    {
-        Should.Throw<ArgumentException>(() => new ServiceCollection().InternalConfigureAsyncMonolithSettings(
-            new AsyncMonolithSettings { MaxAttemptDelay = -1 }));
+        new AsyncMonolithOptions { AttemptDelay = TimeSpan.Zero }.GetRetryDelay(5).ShouldBe(TimeSpan.Zero);
     }
 
     [Fact]
@@ -53,8 +47,8 @@ public class RetryAndPoisonedMessageTests
     {
         await using var host = await SqliteTestHost.Create(s =>
         {
-            s.AttemptDelay = 10;
-            s.MaxAttemptDelay = 25;
+            s.AttemptDelay = TimeSpan.FromSeconds(10);
+            s.MaxAttemptDelay = TimeSpan.FromSeconds(25);
             s.MaxAttempts = 10;
         });
         await host.Produce(new ExceptionConsumerMessage { Name = "boom" });

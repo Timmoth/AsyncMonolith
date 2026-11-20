@@ -221,7 +221,7 @@ public class SchedulingTests
     [Fact]
     public async Task Scheduled_processor_respects_the_batch_size()
     {
-        await using var host = await SqliteTestHost.Create(s => s.ProcessorBatchSize = 2);
+        await using var host = await SqliteTestHost.Create(s => s.BatchSize = 2);
         for (var i = 0; i < 3; i++)
         {
             await host.Schedule(new SingleConsumerMessage { Name = $"s{i}" }, "0 * * * * *");

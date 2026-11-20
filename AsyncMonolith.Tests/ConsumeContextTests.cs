@@ -15,7 +15,7 @@ public class ConsumeContextTests
 
     private static async Task<(SqliteTestHost Host, ContextRecorder Recorder)> Host()
     {
-        var host = await SqliteTestHost.Create(s => s.AttemptDelay = 0);
+        var host = await SqliteTestHost.Create(s => s.AttemptDelay = TimeSpan.FromSeconds(0));
         return (host, host.Services.GetRequiredService<ContextRecorder>());
     }
 
@@ -71,7 +71,7 @@ public class ConsumeContextTests
     [Fact]
     public void A_consumer_class_handling_two_payloads_is_rejected_at_startup()
     {
-        var settings = AsyncMonolithSettings.Default;
+        var settings = new AsyncMonolithOptions();
         settings.RegisterTypesFromAssemblies(ClashingTypes.ConsumerOfTwoPayloads());
         var services = new ServiceCollection();
 

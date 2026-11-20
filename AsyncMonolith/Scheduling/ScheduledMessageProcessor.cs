@@ -17,7 +17,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
 {
     private readonly ILogger<ScheduledMessageProcessor<T>> _logger;
     private readonly IScheduledMessageFetcher _messageFetcher;
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
 
@@ -30,7 +30,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     /// <param name="scopeFactory">The service scope factory.</param>
     /// <param name="messageFetcher">The scheduled message fetcher.</param>
     public ScheduledMessageProcessor(ILogger<ScheduledMessageProcessor<T>> logger,
-        TimeProvider timeProvider, IOptions<AsyncMonolithSettings> options, IServiceScopeFactory scopeFactory,
+        TimeProvider timeProvider, IOptions<AsyncMonolithOptions> options, IServiceScopeFactory scopeFactory,
         IScheduledMessageFetcher messageFetcher)
     {
         _logger = logger;
@@ -48,14 +48,14 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = _options.Value.ProcessorMaxDelay;
+            var delay = _options.Value.IdlePollInterval;
             try
             {
                 var processedScheduledMessages = await ProcessBatch(stoppingToken);
 
-                if (processedScheduledMessages >= _options.Value.ProcessorBatchSize)
+                if (processedScheduledMessages >= _options.Value.BatchSize)
                 {
-                    delay = _options.Value.ProcessorMinDelay;
+                    delay = _options.Value.BusyPollInterval;
                 }
             }
             catch (Exception ex)
@@ -63,7 +63,7 @@ public sealed class ScheduledMessageProcessor<T> : BackgroundService where T : D
                 _logger.ScheduleBatchFailed(ex);
             }
 
-            if (delay >= 10)
+            if (delay > TimeSpan.Zero)
             {
                 await Task.Delay(delay, stoppingToken);
             }

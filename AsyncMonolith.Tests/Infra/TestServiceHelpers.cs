@@ -25,13 +25,22 @@ public static class TestServiceHelpers
     }
 
     public static (FakeTimeProvider fakeTime, TestConsumerInvocations invocations) AddTestServices(
-        this ServiceCollection services, DbType dbType, AsyncMonolithSettings settings)
+        this ServiceCollection services, DbType dbType, AsyncMonolithOptions settings)
     {
         var fakeTime = new FakeTimeProvider(DateTimeOffset.Parse("2020-08-31T10:00:00.0000000Z", System.Globalization.CultureInfo.InvariantCulture));
         services.AddSingleton<TimeProvider>(fakeTime);
         services.AddLogging();
 
-        services.InternalConfigureAsyncMonolithSettings(settings);
+        services.InternalConfigureAsyncMonolithOptions(o =>
+        {
+            o.MaxAttempts = settings.MaxAttempts;
+            o.AttemptDelay = settings.AttemptDelay;
+            o.MaxAttemptDelay = settings.MaxAttemptDelay;
+            o.DefaultConsumerTimeout = settings.DefaultConsumerTimeout;
+            o.BatchSize = settings.BatchSize;
+            o.IdlePollInterval = settings.IdlePollInterval;
+            o.BusyPollInterval = settings.BusyPollInterval;
+        });
         settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
         
         

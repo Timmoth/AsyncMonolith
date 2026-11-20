@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using AsyncMonolith.Consumers;
+﻿using AsyncMonolith.Consumers;
 using AsyncMonolith.Producers;
 using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
@@ -12,45 +11,26 @@ namespace AsyncMonolith.MsSql;
 /// <summary>
 /// AsyncMonolith MsSql startup extensions
 /// </summary>
+/// <summary>
+///     Registers AsyncMonolith for SQL Server.
+/// </summary>
 public static class StartupExtensions
 {
     /// <summary>
-    /// Adds the MsSqlAsyncMonolith services to the IServiceCollection.
+    ///     Registers AsyncMonolith: the producer, schedule, poisoned message and statistics services, and the
+    ///     background processors. Call it once, in the host.
     /// </summary>
-    /// <typeparam name="T">The DbContext type.</typeparam>
-    /// <param name="services">The IServiceCollection to add the services to.</param>
-    /// <param name="settings">The action used to configure the settings.</param>
-    /// <returns>A reference to this instance after the operation has completed.</returns>
-    public static IServiceCollection AddMsSqlAsyncMonolith<T>(
+    /// <typeparam name="T">The DbContext containing the AsyncMonolith tables.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">Sets options and the assemblies to scan for consumers.</param>
+    /// <returns>A builder to bind configuration or add more consumer assemblies.</returns>
+    public static AsyncMonolithBuilder AddMsSqlAsyncMonolith<T>(
         this IServiceCollection services,
-        Action<AsyncMonolithSettings> settings) where T : DbContext =>
-        AddMsSqlAsyncMonolith<T>(services, settings, AsyncMonolithSettings.Default);
-    
-    /// <summary>
-    /// Adds the MsSqlAsyncMonolith services to the IServiceCollection.
-    /// </summary>
-    /// <typeparam name="T">The type of the DbContext.</typeparam>
-    /// <param name="services">The IServiceCollection to add the services to.</param>
-    /// <param name="assembly">The assembly containing the DbContext and message handlers.</param>
-    /// <param name="settings">The optional AsyncMonolithSettings.</param>
-    /// <returns>A reference to this instance after the operation has completed.</returns>
-    [Obsolete("This method is obsolete. Use the method that accepts an Action<AsyncMonolithSettings> instead.")]
-    public static IServiceCollection AddMsSqlAsyncMonolith<T>(this IServiceCollection services, Assembly assembly,
-        AsyncMonolithSettings? settings = null) where T : DbContext =>
-        AddMsSqlAsyncMonolith<T>(
-            services,
-            configuration => configuration.RegisterTypesFromAssembly(assembly),
-            settings ?? AsyncMonolithSettings.Default);
-
-    private static IServiceCollection AddMsSqlAsyncMonolith<T>(
-        this IServiceCollection services,
-        Action<AsyncMonolithSettings> configuration,
-        AsyncMonolithSettings settings) where T : DbContext
+        Action<AsyncMonolithOptions>? configure = null) where T : DbContext
     {
-        configuration(settings);
-        services.InternalAddAsyncMonolith<T>(settings);
+        var builder = services.InternalAddAsyncMonolith<T>(configure ?? (_ => { }));
         services.TryAddSingleton<IConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
         services.TryAddSingleton<IScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
-        return services;
+        return builder;
     }
 }

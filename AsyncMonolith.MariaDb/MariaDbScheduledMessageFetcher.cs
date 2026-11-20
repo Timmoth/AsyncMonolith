@@ -18,13 +18,13 @@ public sealed class MariaDbScheduledMessageFetcher : IScheduledMessageFetcher
                     LIMIT @batchSize 
                     FOR UPDATE SKIP LOCKED";
 
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MariaDbScheduledMessageFetcher"/> class.
     /// </summary>
     /// <param name="options">The options for AsyncMonolith.</param>
-    public MariaDbScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    public MariaDbScheduledMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
@@ -41,7 +41,7 @@ public sealed class MariaDbScheduledMessageFetcher : IScheduledMessageFetcher
     {
         return scheduledMessageSet
             .FromSqlRaw(MariaDb, new MySqlParameter("@currentTime", currentTime),
-                new MySqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+                new MySqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);
     }
 }

@@ -9,14 +9,14 @@ public sealed class ConsumerTimeoutAttribute : Attribute
     /// <summary>
     /// Initializes a new instance of the <see cref="ConsumerTimeoutAttribute"/> class with the specified duration.
     /// </summary>
-    /// <param name="duration">The duration of the consumer timeout.</param>
-    public ConsumerTimeoutAttribute(int duration)
+    /// <param name="seconds">The timeout in seconds, between 1 and 3600.</param>
+    public ConsumerTimeoutAttribute(int seconds)
     {
-        Duration = duration;
+        Seconds = seconds;
     }
 
     /// <summary>
     /// Gets the duration of the consumer timeout.
     /// </summary>
-    public int Duration { get; }
+    public int Seconds { get; }
 }

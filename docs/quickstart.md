@@ -57,20 +57,23 @@ Register your dependencies and configure settings
 	// services.AddMySqlAsyncMonolith
 	// services.AddPostgreSqlAsyncMonolith
 	// services.AddMariaDbAsyncMonolith
-    builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(settings =>
+    builder.Services.AddPostgreSqlAsyncMonolith<ApplicationDbContext>(options =>
     {
-        settings.RegisterTypesFromAssembly(Assembly.GetExecutingAssembly());
-        settings.AttemptDelay = 10, // Seconds before a failed message is retried
-        settings.MaxAttempts = 5, // Number of times a failed message is retried
-        settings.ProcessorMinDelay = 10, // Minimum millisecond delay before the next batch is processed
-        settings.ProcessorMaxDelay = 1000, // Maximum millisecond delay before the next batch is processed
-		settings.ProcessorBatchSize = 5, // The number of messages to process in a single batch
-        settings.ConsumerMessageProcessorCount = 2, // The number of concurrent consumer message processors to run in each app instance
-        settings.ScheduledMessageProcessorCount = 1, // The number of concurrent scheduled message processors to run in each app instance
-        settings.DefaultConsumerTimeout = 10 // The default number of seconds before a consumer will timeout
-    });
+        options.RegisterTypesFromAssemblyContaining<Program>();
+        options.MaxAttempts = 5; // Attempts before a message is poisoned
+        options.AttemptDelay = TimeSpan.FromSeconds(10); // First retry delay; doubles each retry
+        options.MaxAttemptDelay = TimeSpan.FromMinutes(5); // Longest retry delay
+        options.DefaultConsumerTimeout = TimeSpan.FromSeconds(10); // Before a consumer is cancelled
+        options.BatchSize = 5; // Messages a processor takes at once
+        options.IdlePollInterval = TimeSpan.FromSeconds(1); // Wait after a batch that wasn't full
+        options.BusyPollInterval = TimeSpan.FromMilliseconds(10); // Wait after a full batch
+    })
+    .BindConfiguration("AsyncMonolith"); // Optional: override any option from appsettings.json
 ```
-The following methods are available on the `AsyncMonolithSettings` passed into the `settings` lambda:
+
+Options are validated when the host starts, so an invalid value stops startup with an `OptionsValidationException` that names it. In `appsettings.json`, write times as `"00:00:30"`.
+
+The following methods are available on the `AsyncMonolithOptions` passed into the `options` lambda:
 
 - `RegisterTypesFromAssemblyContaining<T>()`
 - `RegisterTypesFromAssemblyContaining(Type type)`

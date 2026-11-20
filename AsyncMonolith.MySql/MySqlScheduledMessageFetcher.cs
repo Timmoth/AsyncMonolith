@@ -18,13 +18,13 @@ public sealed class MySqlScheduledMessageFetcher : IScheduledMessageFetcher
                     LIMIT @batchSize 
                     FOR UPDATE SKIP LOCKED";
 
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MySqlScheduledMessageFetcher"/> class.
     /// </summary>
     /// <param name="options">The options for AsyncMonolith.</param>
-    public MySqlScheduledMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    public MySqlScheduledMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
@@ -41,7 +41,7 @@ public sealed class MySqlScheduledMessageFetcher : IScheduledMessageFetcher
     {
         return scheduledMessageSet
             .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime),
-                new MySqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+                new MySqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);
     }
 }

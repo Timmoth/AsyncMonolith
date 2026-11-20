@@ -17,7 +17,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     private readonly IConsumerMessageFetcher _consumerMessageFetcher;
     private readonly ConsumerRegistry _consumerRegistry;
     private readonly ILogger<ConsumerMessageProcessor<T>> _logger;
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
 
@@ -34,7 +34,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     public ConsumerMessageProcessor(ILogger<ConsumerMessageProcessor<T>> logger,
         TimeProvider timeProvider,
         ConsumerRegistry consumerRegistry,
-        IOptions<AsyncMonolithSettings> options,
+        IOptions<AsyncMonolithOptions> options,
         IServiceScopeFactory scopeFactory,
         IConsumerMessageFetcher consumerMessageFetcher)
     {
@@ -64,13 +64,13 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = _options.Value.ProcessorMaxDelay;
+            var delay = _options.Value.IdlePollInterval;
             try
             {
                 var processedMessageCount = await ProcessBatch(stoppingToken);
-                if (processedMessageCount == _options.Value.ProcessorBatchSize)
+                if (processedMessageCount == _options.Value.BatchSize)
                 {
-                    delay = _options.Value.ProcessorMinDelay;
+                    delay = _options.Value.BusyPollInterval;
                 }
             }
             catch (Exception ex)
@@ -78,7 +78,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
                 _logger.ConsumerBatchFailed(ex);
             }
 
-            if (delay >= 10)
+            if (delay > TimeSpan.Zero)
             {
                 await Task.Delay(delay, stoppingToken);
             }
@@ -219,7 +219,7 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
         if (message.Attempts < _consumerRegistry.ResolveConsumerMaxAttempts(message))
         {
             var retryAt = _timeProvider.GetUtcNow().ToUnixTimeSeconds() +
-                          _options.Value.GetRetryDelay(message.Attempts);
+                          (long)_options.Value.GetRetryDelay(message.Attempts).TotalSeconds;
             await leased.ExecuteUpdateAsync(s => s
                 .SetProperty(m => m.AvailableAfter, retryAt)
                 .SetProperty(m => m.LastError, error), cancellationToken);

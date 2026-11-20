@@ -94,9 +94,9 @@ public class MultipleInstanceTests
                 builder.Services.AddEfAsyncMonolith<TestDbContext>(s =>
                 {
                     s.RegisterTypesFromAssemblyContaining<MultipleInstanceTests>();
-                    s.ProcessorMaxDelay = 20;
-                    s.ProcessorMinDelay = 0;
-                    s.ProcessorBatchSize = 5;
+                    s.IdlePollInterval = TimeSpan.FromMilliseconds(20);
+                    s.BusyPollInterval = TimeSpan.FromMilliseconds(0);
+                    s.BatchSize = 5;
                 });
                 instances.Add(builder.Build());
             }

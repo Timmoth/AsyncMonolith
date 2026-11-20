@@ -19,13 +19,13 @@ public sealed class MySqlConsumerMessageFetcher : IConsumerMessageFetcher
                     LIMIT @batchSize 
                     FOR UPDATE SKIP LOCKED";
 
-    private readonly IOptions<AsyncMonolithSettings> _options;
+    private readonly IOptions<AsyncMonolithOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MySqlConsumerMessageFetcher"/> class.
     /// </summary>
     /// <param name="options">The options for AsyncMonolith settings.</param>
-    public MySqlConsumerMessageFetcher(IOptions<AsyncMonolithSettings> options)
+    public MySqlConsumerMessageFetcher(IOptions<AsyncMonolithOptions> options)
     {
         _options = options;
     }
@@ -44,7 +44,7 @@ public sealed class MySqlConsumerMessageFetcher : IConsumerMessageFetcher
         return consumerSet
             .FromSqlRaw(MySql, new MySqlParameter("@currentTime", currentTime),
                 new MySqlParameter("@railId", railId),
-                new MySqlParameter("@batchSize", _options.Value.ProcessorBatchSize))
+                new MySqlParameter("@batchSize", _options.Value.BatchSize))
             .ToListAsync(cancellationToken);
     }
 }

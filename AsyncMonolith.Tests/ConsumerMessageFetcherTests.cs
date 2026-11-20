@@ -19,14 +19,14 @@ public class ConsumerMessageFetcherTests : DbTestsBase
         try
         {
             // Given
-            var settings = AsyncMonolithSettings.Default;
+            var settings = new AsyncMonolithOptions();
             var serviceProvider = await Setup(dbContainer, settings);
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var producer = serviceProvider.GetRequiredService<IProducerService>();
             var fetcher = serviceProvider.GetRequiredService<IConsumerMessageFetcher>();
 
             var messages = new List<SingleConsumerMessage>();
-            for (var i = 0; i < 2 * settings.ProcessorBatchSize; i++)
+            for (var i = 0; i < 2 * settings.BatchSize; i++)
             {
                 messages.Add(new SingleConsumerMessage
                 {
@@ -42,7 +42,7 @@ public class ConsumerMessageFetcherTests : DbTestsBase
                 CancellationToken.None);
 
             // Then
-            dbMessages.Count.ShouldBe(settings.ProcessorBatchSize);
+            dbMessages.Count.ShouldBe(settings.BatchSize);
         }
         finally
         {
@@ -59,7 +59,7 @@ public class ConsumerMessageFetcherTests : DbTestsBase
         try
         {
             // Given
-            var settings = AsyncMonolithSettings.Default;
+            var settings = new AsyncMonolithOptions();
             var serviceProvider = await Setup(dbContainer, settings);
             var dbContext = serviceProvider.GetRequiredService<TestDbContext>();
             var producer = serviceProvider.GetRequiredService<IProducerService>();
