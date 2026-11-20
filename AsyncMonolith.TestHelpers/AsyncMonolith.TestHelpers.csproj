@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IsAsyncMonolithPackage>true</IsAsyncMonolithPackage>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageId>AsyncMonolith.TestHelpers</PackageId>
 		<Description>Fakes and helpers for testing AsyncMonolith consumers with xunit v3.</Description>

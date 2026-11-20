@@ -1,6 +1,6 @@
 <Project>
-  <!-- Metadata for the published packages (the projects with GeneratePackageOnBuild). -->
-  <PropertyGroup Condition="'$(GeneratePackageOnBuild)' == 'true'">
+  <!-- Metadata for the published packages (the projects with IsAsyncMonolithPackage). -->
+  <PropertyGroup Condition="'$(IsAsyncMonolithPackage)' == 'true'">
     <Authors>Tim Jones</Authors>
     <Company>Aptacode</Company>
     <Copyright>Copyright (c) Tim Jones</Copyright>
@@ -24,7 +24,7 @@
     <EnablePackageValidation>true</EnablePackageValidation>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(GeneratePackageOnBuild)' == 'true'">
+  <ItemGroup Condition="'$(IsAsyncMonolithPackage)' == 'true'">
     <None Include="$(MSBuildThisFileDirectory)AsyncMonolith/logo.png" Pack="true" PackagePath="\" Visible="false" />
     <None Include="$(MSBuildThisFileDirectory)PACKAGE.md" Pack="true" PackagePath="README.md" Visible="false" />
   </ItemGroup>
