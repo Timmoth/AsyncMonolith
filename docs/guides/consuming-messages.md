@@ -5,7 +5,7 @@
 - **Rails**: Each rail (`[ConsumerRailId]`) gets its own processor, so a slow consumer on one rail doesn't hold up consumers on another.
 - **Batching**: Consumer messages will be read from the `consumer_messages` table in batches defined by `BatchSize`.
 - **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure.
-- **Timeout**: Consumers timeout after the number of seconds defined by the `ConsumerTimeout` attribute or the `DefaultConsumerTimeout` if not set.
+- **Timeout**: Consumers timeout after the number of seconds defined by the `ConsumerTimeout` attribute or the `DefaultConsumerTimeout` if not set. **Pass the `CancellationToken` to everything your consumer awaits.** A consumer that ignores it is abandoned two seconds after its timeout so its rail can carry on, but it may keep running in the background while the message is retried.
 
 Consumers implement `IConsumer<TPayload>`. The `ConsumeContext` describes the message and this attempt: `MessageId`, `DeduplicationKey`, `Attempt` (starting at 1), `MaxAttempts`, `IsLastAttempt`, `CreatedAt`, `ConsumerName`, `PayloadName` and `TraceId`. Use them for idempotency checks and logging.
 

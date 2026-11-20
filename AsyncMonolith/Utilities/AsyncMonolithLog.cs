@@ -23,6 +23,10 @@ internal static partial class AsyncMonolithLog
     [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Successfully scheduled message")]
     public static partial void ScheduledMessagesProduced(this ILogger logger);
 
+    [LoggerMessage(EventId = 8, Level = LogLevel.Error,
+        Message = "Consumer '{ConsumerType}' ignored cancellation after its {TimeoutSeconds} second timeout and was abandoned. Consumers must honour their CancellationToken.")]
+    public static partial void ConsumerAbandoned(this ILogger logger, string consumerType, int timeoutSeconds);
+
     [LoggerMessage(EventId = 6, Level = LogLevel.Error,
         Message = "Schedule '{ScheduleId}' (tag '{Tag}') can't be evaluated and will be checked again in an hour.")]
     public static partial void ScheduleInvalid(this ILogger logger, Exception exception, string scheduleId,

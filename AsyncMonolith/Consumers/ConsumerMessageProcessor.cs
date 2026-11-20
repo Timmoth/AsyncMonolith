@@ -92,6 +92,11 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
     internal const int LeaseGracePeriodSeconds = 30;
 
     /// <summary>
+    ///     How long after its timeout the processor keeps waiting for a consumer to stop before abandoning it.
+    /// </summary>
+    internal static readonly TimeSpan AbandonGracePeriod = TimeSpan.FromSeconds(2);
+
+    /// <summary>
     ///     Claims and processes the next batch of consumer messages.
     /// </summary>
     /// <remarks>
@@ -298,8 +303,25 @@ internal sealed class ConsumerMessageProcessor<T> : BackgroundService where T : 
 
             var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
             var context = ConsumeContext.For(message, _consumerRegistry.ResolveConsumerMaxAttempts(message));
-            await ConsumerInvoker.Invoke(consumer, message, context, _options.Value.SerializerOptions,
+            var consuming = ConsumerInvoker.Invoke(consumer, message, context, _options.Value.SerializerOptions,
                 timeoutCancellationToken.Token);
+            try
+            {
+                // Don't wait indefinitely for a consumer that ignores its cancellation token: it would hold up its
+                // rail, and its lease would expire while it ran.
+                await consuming.WaitAsync(TimeSpan.FromSeconds(consumerTimeout) + AbandonGracePeriod,
+                    cancellationToken);
+            }
+            catch (TimeoutException ex)
+            {
+                // Observe the abandoned task's eventual failure so it isn't reported as unobserved.
+                _ = consuming.ContinueWith(t => _ = t.Exception, CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                _logger.ConsumerAbandoned(message.ConsumerType, consumerTimeout);
+                return $"Timed out after {consumerTimeout} seconds and did not stop when cancelled.";
+            }
 
             activity?.SetStatus(ActivityStatusCode.Ok);
             _logger.ConsumerMessageProcessed(message.ConsumerType);

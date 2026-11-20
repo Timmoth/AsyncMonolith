@@ -18,3 +18,19 @@ public class TimeoutConsumer : IConsumer<TimeoutConsumerMessage>
         await Task.Delay(TimeSpan.FromSeconds(message.Delay), cancellationToken);
     }
 }
+/// <summary>Ignores its cancellation token, as a badly written consumer might.</summary>
+public class StubbornMessage : IConsumerPayload
+{
+}
+
+[ConsumerTimeout(1)]
+public class StubbornConsumer(TestConsumerInvocations invocations) : IConsumer<StubbornMessage>
+{
+    public async Task Consume(StubbornMessage payload, ConsumeContext context, CancellationToken cancellationToken)
+    {
+        invocations.Increment(nameof(StubbornConsumer));
+#pragma warning disable CA2016 // Deliberately not passing the token
+        await Task.Delay(TimeSpan.FromSeconds(20));
+#pragma warning restore CA2016
+    }
+}

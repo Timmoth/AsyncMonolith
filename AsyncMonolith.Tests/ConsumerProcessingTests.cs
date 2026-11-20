@@ -150,6 +150,24 @@ public class ConsumerProcessingTests
     }
 
     [Fact]
+    public async Task A_consumer_that_ignores_cancellation_is_abandoned_after_its_timeout()
+    {
+        await using var host = await SqliteTestHost.Create();
+        await host.Produce(new StubbornMessage());
+        await host.Produce(new SingleConsumerMessage { Name = "after" });
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        (await host.ConsumerProcessor.ProcessBatch(Ct)).ShouldBe(1);
+
+        // 1 second timeout + 2 second grace, not the consumer's 20 seconds
+        stopwatch.Elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(10));
+        host.Invocations.GetInvocationCount(nameof(SingleConsumer)).ShouldBe(1);
+        var stubborn = (await host.ConsumerMessages()).ShouldHaveSingleItem();
+        stubborn.Attempts.ShouldBe(1);
+        stubborn.LastError.ShouldBe("Timed out after 1 seconds and did not stop when cancelled.");
+    }
+
+    [Fact]
     public async Task Batch_size_limits_how_many_messages_are_processed_at_once()
     {
         await using var host = await SqliteTestHost.Create(s => s.BatchSize = 2);
