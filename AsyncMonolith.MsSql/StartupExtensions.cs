@@ -5,6 +5,7 @@ using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AsyncMonolith.MsSql;
 
@@ -48,9 +49,9 @@ public static class StartupExtensions
     {
         configuration(settings);
         services.InternalAddAsyncMonolith<T>(settings);
-        services.AddScoped<IProducerService, MsSqlProducerService<T>>();
-        services.AddSingleton<IConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
-        services.AddSingleton<IScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
+        services.TryAddScoped<IProducerService, MsSqlProducerService<T>>();
+        services.TryAddSingleton<IConsumerMessageFetcher, MsSqlConsumerMessageFetcher>();
+        services.TryAddSingleton<IScheduledMessageFetcher, MsSqlScheduledMessageFetcher>();
         return services;
     }
 }

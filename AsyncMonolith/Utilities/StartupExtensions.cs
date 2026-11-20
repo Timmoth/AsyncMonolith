@@ -93,13 +93,23 @@ public static class StartupExtensions
         this IServiceCollection services,
         AsyncMonolithSettings settings) where T : DbContext
     {
+        if (services.Any(d => d.ServiceType == typeof(AsyncMonolithRegistration)))
+        {
+            throw new InvalidOperationException(
+                "AsyncMonolith is already registered. Call Add*AsyncMonolith once, in the host; modules register " +
+                "their consumers with AddAsyncMonolithConsumers.");
+        }
+
+        services.AddSingleton<AsyncMonolithRegistration>();
         services.InternalConfigureAsyncMonolithSettings(settings);
         services.InternalRegisterAsyncMonolithConsumers(settings);
-        services.AddSingleton<IAsyncMonolithIdGenerator>(new AsyncMonolithIdGenerator());
-        services.AddScoped<IScheduleService, ScheduleService<T>>();
-        services.AddScoped<IPoisonedMessageService, PoisonedMessageService<T>>();
-        services.AddScoped<IQueueStatisticsService, QueueStatisticsService<T>>();
-        services.AddScoped<DbContext>(sp => sp.GetRequiredService<T>());
+
+        // TryAdd, so a host can register its own implementation before or instead of these.
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<IAsyncMonolithIdGenerator, AsyncMonolithIdGenerator>();
+        services.TryAddScoped<IScheduleService, ScheduleService<T>>();
+        services.TryAddScoped<IPoisonedMessageService, PoisonedMessageService<T>>();
+        services.TryAddScoped<IQueueStatisticsService, QueueStatisticsService<T>>();
 
         // One processor per rail. Rails are read when the host starts, after every module has
         // registered its consumers.
@@ -277,6 +287,9 @@ public static class StartupExtensions
     }
 
     private sealed class ConsumerAssemblies : HashSet<Assembly>;
+
+    /// <summary>Marks that Add*AsyncMonolith has been called.</summary>
+    private sealed class AsyncMonolithRegistration;
 
     private static string RegisterPayloadName(Dictionary<string, Type> payloadTypes, Type payloadType)
     {

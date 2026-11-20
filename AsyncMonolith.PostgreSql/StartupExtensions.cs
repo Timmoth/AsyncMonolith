@@ -5,6 +5,7 @@ using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AsyncMonolith.PostgreSql;
 
@@ -50,9 +51,9 @@ public static class StartupExtensions
     {
         configuration(settings);
         services.InternalAddAsyncMonolith<T>(settings);
-        services.AddScoped<IProducerService, PostgreSqlProducerService<T>>();
-        services.AddSingleton<IConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
-        services.AddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
+        services.TryAddScoped<IProducerService, PostgreSqlProducerService<T>>();
+        services.TryAddSingleton<IConsumerMessageFetcher, PostgreSqlConsumerMessageFetcher>();
+        services.TryAddSingleton<IScheduledMessageFetcher, PostgreSqlScheduledMessageFetcher>();
         return services;
     }
 }

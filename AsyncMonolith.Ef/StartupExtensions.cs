@@ -5,6 +5,7 @@ using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AsyncMonolith.Ef;
 
@@ -53,9 +54,9 @@ public static class StartupExtensions
         configuration(settings);
 
         services.InternalAddAsyncMonolith<T>(settings);
-        services.AddScoped<IProducerService, EfProducerService<T>>();
-        services.AddSingleton<IConsumerMessageFetcher, EfConsumerMessageFetcher>();
-        services.AddSingleton<IScheduledMessageFetcher, EfScheduledMessageFetcher>();
+        services.TryAddScoped<IProducerService, EfProducerService<T>>();
+        services.TryAddSingleton<IConsumerMessageFetcher, EfConsumerMessageFetcher>();
+        services.TryAddSingleton<IScheduledMessageFetcher, EfScheduledMessageFetcher>();
         return services;
     }
 }

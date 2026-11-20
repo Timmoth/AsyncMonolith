@@ -5,6 +5,7 @@ using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AsyncMonolith.MariaDb;
 /// <summary>
@@ -50,9 +51,9 @@ public static class StartupExtensions
         configuration(settings);
 
         services.InternalAddAsyncMonolith<T>(settings);
-        services.AddScoped<IProducerService, MariaDbProducerService<T>>();
-        services.AddSingleton<IConsumerMessageFetcher, MariaDbConsumerMessageFetcher>();
-        services.AddSingleton<IScheduledMessageFetcher, MariaDbScheduledMessageFetcher>();
+        services.TryAddScoped<IProducerService, MariaDbProducerService<T>>();
+        services.TryAddSingleton<IConsumerMessageFetcher, MariaDbConsumerMessageFetcher>();
+        services.TryAddSingleton<IScheduledMessageFetcher, MariaDbScheduledMessageFetcher>();
         return services;
     }
 }

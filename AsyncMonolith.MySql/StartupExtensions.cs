@@ -5,6 +5,7 @@ using AsyncMonolith.Scheduling;
 using AsyncMonolith.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AsyncMonolith.MySql;
 /// <summary>
@@ -47,9 +48,9 @@ public static class StartupExtensions
     {
         configuration(settings);
         services.InternalAddAsyncMonolith<T>(settings);
-        services.AddScoped<IProducerService, MySqlProducerService<T>>();
-        services.AddSingleton<IConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
-        services.AddSingleton<IScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
+        services.TryAddScoped<IProducerService, MySqlProducerService<T>>();
+        services.TryAddSingleton<IConsumerMessageFetcher, MySqlConsumerMessageFetcher>();
+        services.TryAddSingleton<IScheduledMessageFetcher, MySqlScheduledMessageFetcher>();
         return services;
     }
 }
