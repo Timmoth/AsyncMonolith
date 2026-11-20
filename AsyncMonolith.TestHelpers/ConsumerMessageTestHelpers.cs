@@ -36,7 +36,7 @@ public static class ConsumerMessageTestHelpers
     /// <param name="dbContext">The database context.</param>
     /// <returns>A list of consumer messages.</returns>
     public static async Task<List<ConsumerMessage>> GetConsumerMessages<T, TPayload>(this DbContext dbContext)
-        where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
+        where T : IConsumer<TPayload> where TPayload : IConsumerPayload
     {
         var consumerType = typeof(T);
         var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
@@ -58,7 +58,7 @@ public static class ConsumerMessageTestHelpers
     /// <param name="payload">The payload.</param>
     /// <returns>A list of consumer messages.</returns>
     public static async Task<List<ConsumerMessage>> GetConsumerMessages<T, TPayload>(this DbContext dbContext, TPayload payload)
-        where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
+        where T : IConsumer<TPayload> where TPayload : IConsumerPayload
     {
         var consumerType = typeof(T);
         var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
@@ -82,7 +82,7 @@ public static class ConsumerMessageTestHelpers
     /// <param name="payload">The payload.</param>
     /// <returns>The single consumer message.</returns>
     public static async Task<ConsumerMessage> AssertSingleConsumerMessage<T, TPayload>(this DbContext dbContext, TPayload payload)
-        where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
+        where T : IConsumer<TPayload> where TPayload : IConsumerPayload
     {
         var consumerType = typeof(T);
         var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
@@ -131,7 +131,7 @@ public static class ConsumerMessageTestHelpers
     /// <param name="id">The ID.</param>
     /// <returns>The single consumer message.</returns>
     public static async Task<ConsumerMessage> AssertSingleConsumerMessageById<T, TPayload>(this DbContext dbContext, TPayload payload,
-        string id) where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
+        string id) where T : IConsumer<TPayload> where TPayload : IConsumerPayload
     {
         var consumerType = typeof(T);
         var consumerName = AsyncMonolithNames.ForConsumer(consumerType);

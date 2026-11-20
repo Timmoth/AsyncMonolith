@@ -69,7 +69,7 @@ Consuming messages
 ```csharp
 [ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
 [ConsumerAttempts(1)] // Consumer messages moved to poisoned table after 1 failed attempt
-public class DeleteUsersPosts : BaseConsumer<UserDeleted>
+public class DeleteUsersPosts : IConsumer<UserDeleted>
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -78,7 +78,7 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
         _dbContext = dbContext;
     }
 
-    public override Task Consume(UserDeleted message, CancellationToken cancellationToken)
+    public Task Consume(UserDeleted message, ConsumeContext context, CancellationToken cancellationToken)
     {
         ...
 		await _dbContext.SaveChangesAsync(cancellationToken);

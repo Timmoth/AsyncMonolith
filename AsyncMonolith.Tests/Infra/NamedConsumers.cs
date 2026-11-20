@@ -12,9 +12,9 @@ public class NamedMessage : IConsumerPayload
 }
 
 [ConsumerName("tests.named.consumer")]
-public class NamedConsumer(TestConsumerInvocations invocations) : BaseConsumer<NamedMessage>
+public class NamedConsumer(TestConsumerInvocations invocations) : IConsumer<NamedMessage>
 {
-    public override Task Consume(NamedMessage payload, CancellationToken cancellationToken)
+    public Task Consume(NamedMessage payload, ConsumeContext context, CancellationToken cancellationToken)
     {
         invocations.Increment(nameof(NamedConsumer));
         return Task.CompletedTask;
@@ -50,22 +50,53 @@ public static class ClashingTypes
 
             var payload = payloadBuilder.CreateType();
 
-            var baseType = typeof(BaseConsumer<>).MakeGenericType(payload);
             var consumerBuilder = module.DefineType($"{namespaces[i]}.{consumerName ?? $"SendEmailConsumer{i}"}",
-                TypeAttributes.Public | TypeAttributes.Class, baseType);
+                TypeAttributes.Public | TypeAttributes.Class, typeof(object));
             consumerBuilder.DefineDefaultConstructor(MethodAttributes.Public);
-            var consume = consumerBuilder.DefineMethod("Consume",
-                MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig,
-                typeof(Task), [payload, typeof(CancellationToken)]);
-            var il = consume.GetILGenerator();
-            il.Emit(OpCodes.Call, typeof(Task).GetProperty(nameof(Task.CompletedTask))!.GetMethod!);
-            il.Emit(OpCodes.Ret);
-            consumerBuilder.DefineMethodOverride(consume,
-                baseType.GetMethod("Consume", [payload, typeof(CancellationToken)])!);
+            ImplementConsumer(consumerBuilder, payload, "Consume");
             consumerBuilder.CreateType();
         }
 
         return assembly;
+    }
+
+    /// <summary>Builds an assembly with one consumer class that implements IConsumer&lt;T&gt; for two payloads.</summary>
+    public static Assembly ConsumerOfTwoPayloads()
+    {
+        var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName($"TwoPayloads{Guid.NewGuid():N}"),
+            AssemblyBuilderAccess.Run);
+        var module = assembly.DefineDynamicModule("TwoPayloads");
+        string[] names = ["First", "Second"];
+        var payloads = names.Select(name =>
+        {
+            var builder = module.DefineType($"TwoPayloads.{name}", TypeAttributes.Public | TypeAttributes.Class,
+                typeof(object), [typeof(IConsumerPayload)]);
+            builder.DefineDefaultConstructor(MethodAttributes.Public);
+            return builder.CreateType();
+        }).ToList();
+
+        var consumer = module.DefineType("TwoPayloads.BothConsumer", TypeAttributes.Public | TypeAttributes.Class,
+            typeof(object));
+        consumer.DefineDefaultConstructor(MethodAttributes.Public);
+        ImplementConsumer(consumer, payloads[0], "ConsumeFirst");
+        ImplementConsumer(consumer, payloads[1], "ConsumeSecond");
+        consumer.CreateType();
+        return assembly;
+    }
+
+    /// <summary>Implements IConsumer&lt;payload&gt; with a method that does nothing.</summary>
+    private static void ImplementConsumer(TypeBuilder consumer, Type payload, string methodName)
+    {
+        var consumerInterface = typeof(IConsumer<>).MakeGenericType(payload);
+        consumer.AddInterfaceImplementation(consumerInterface);
+        var consume = consumer.DefineMethod(methodName,
+            MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.HideBySig |
+            MethodAttributes.NewSlot | MethodAttributes.Final,
+            typeof(Task), [payload, typeof(ConsumeContext), typeof(CancellationToken)]);
+        var il = consume.GetILGenerator();
+        il.Emit(OpCodes.Call, typeof(Task).GetProperty(nameof(Task.CompletedTask))!.GetMethod!);
+        il.Emit(OpCodes.Ret);
+        consumer.DefineMethodOverride(consume, consumerInterface.GetMethod(nameof(IConsumer<IConsumerPayload>.Consume))!);
     }
 
     /// <summary>Builds an assembly with a payload that has no consumer.</summary>

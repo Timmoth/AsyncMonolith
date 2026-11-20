@@ -9,9 +9,9 @@ public class OrderedMessage : IConsumerPayload
     [JsonPropertyName("name")] public required string Name { get; set; }
 }
 
-public class OrderedConsumer(TestConsumerInvocations invocations) : BaseConsumer<OrderedMessage>
+public class OrderedConsumer(TestConsumerInvocations invocations) : IConsumer<OrderedMessage>
 {
-    public override Task Consume(OrderedMessage payload, CancellationToken cancellationToken)
+    public Task Consume(OrderedMessage payload, ConsumeContext context, CancellationToken cancellationToken)
     {
         invocations.Increment($"{nameof(OrderedConsumer)}:{payload.Name}");
         return Task.CompletedTask;
@@ -23,18 +23,18 @@ public class MixedOutcomeMessage : IConsumerPayload
 {
 }
 
-public class MixedSuccessConsumer(TestConsumerInvocations invocations) : BaseConsumer<MixedOutcomeMessage>
+public class MixedSuccessConsumer(TestConsumerInvocations invocations) : IConsumer<MixedOutcomeMessage>
 {
-    public override Task Consume(MixedOutcomeMessage payload, CancellationToken cancellationToken)
+    public Task Consume(MixedOutcomeMessage payload, ConsumeContext context, CancellationToken cancellationToken)
     {
         invocations.Increment(nameof(MixedSuccessConsumer));
         return Task.CompletedTask;
     }
 }
 
-public class MixedFailureConsumer(TestConsumerInvocations invocations) : BaseConsumer<MixedOutcomeMessage>
+public class MixedFailureConsumer(TestConsumerInvocations invocations) : IConsumer<MixedOutcomeMessage>
 {
-    public override Task Consume(MixedOutcomeMessage payload, CancellationToken cancellationToken)
+    public Task Consume(MixedOutcomeMessage payload, ConsumeContext context, CancellationToken cancellationToken)
     {
         invocations.Increment(nameof(MixedFailureConsumer));
         throw new InvalidOperationException("Always fails");
@@ -48,9 +48,9 @@ public class InvalidAttributesMessage : IConsumerPayload
 
 [ConsumerTimeout(0)]
 [ConsumerAttempts(-1)]
-public class InvalidAttributesConsumer : BaseConsumer<InvalidAttributesMessage>
+public class InvalidAttributesConsumer : IConsumer<InvalidAttributesMessage>
 {
-    public override Task Consume(InvalidAttributesMessage payload, CancellationToken cancellationToken) =>
+    public Task Consume(InvalidAttributesMessage payload, ConsumeContext context, CancellationToken cancellationToken) =>
         Task.CompletedTask;
 }
 
@@ -88,9 +88,9 @@ public class ParallelProbeMessage : IConsumerPayload
 }
 
 [ConsumerExecutionMode(ConsumerInstanceExecutionMode.Parallel)]
-public class ParallelProbeConsumer(ConcurrencyProbe probe) : BaseConsumer<ParallelProbeMessage>
+public class ParallelProbeConsumer(ConcurrencyProbe probe) : IConsumer<ParallelProbeMessage>
 {
-    public override Task Consume(ParallelProbeMessage payload, CancellationToken cancellationToken) =>
+    public Task Consume(ParallelProbeMessage payload, ConsumeContext context, CancellationToken cancellationToken) =>
         probe.Enter(2, cancellationToken);
 }
 
@@ -99,8 +99,8 @@ public class SequentialProbeMessage : IConsumerPayload
 }
 
 [ConsumerExecutionMode(ConsumerInstanceExecutionMode.Sequential)]
-public class SequentialProbeConsumer(ConcurrencyProbe probe) : BaseConsumer<SequentialProbeMessage>
+public class SequentialProbeConsumer(ConcurrencyProbe probe) : IConsumer<SequentialProbeMessage>
 {
-    public override Task Consume(SequentialProbeMessage payload, CancellationToken cancellationToken) =>
+    public Task Consume(SequentialProbeMessage payload, ConsumeContext context, CancellationToken cancellationToken) =>
         probe.Enter(2, cancellationToken);
 }

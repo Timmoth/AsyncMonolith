@@ -103,7 +103,7 @@ Create messages and consumers
     // Define Consumer
     [ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
     [ConsumerAttempts(1)] // Consumer messages moved to poisoned table after 1 failed attempt
-    public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
+    public class ValueSubmittedConsumer : IConsumer<ValueSubmitted>
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IProducerService _producerService;
@@ -114,7 +114,7 @@ Create messages and consumers
             _producerService = producerService;
         }
 
-        public override Task Consume(ValueSubmitted message, CancellationToken cancellationToken)
+        public Task Consume(ValueSubmitted message, ConsumeContext context, CancellationToken cancellationToken)
         {
             ...
 	        await _dbContext.SaveChangesAsync(cancellationToken);

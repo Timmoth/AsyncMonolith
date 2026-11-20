@@ -15,7 +15,7 @@ public class WritingConsumerMessage : IConsumerPayload
 /// </summary>
 [ConsumerTimeout(10)]
 [ConsumerAttempts(1)]
-public class WritingConsumer : BaseConsumer<WritingConsumerMessage>
+public class WritingConsumer : IConsumer<WritingConsumerMessage>
 {
     private readonly TestDbContext _dbContext;
     private readonly IProducerService _producer;
@@ -26,7 +26,7 @@ public class WritingConsumer : BaseConsumer<WritingConsumerMessage>
         _producer = producer;
     }
 
-    public override async Task Consume(WritingConsumerMessage message, CancellationToken cancellationToken)
+    public async Task Consume(WritingConsumerMessage message, ConsumeContext context, CancellationToken cancellationToken)
     {
         await _producer.Produce(new SingleConsumerMessage { Name = message.Name },
             cancellationToken: cancellationToken);

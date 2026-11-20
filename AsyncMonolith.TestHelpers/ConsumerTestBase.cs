@@ -94,7 +94,7 @@ namespace AsyncMonolith.TestHelpers
         /// <param name="payload">The payload.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        protected async Task Process<T, TPayload>(TPayload payload, CancellationToken cancellationToken = default) where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
+        protected async Task Process<T, TPayload>(TPayload payload, CancellationToken cancellationToken = default) where T : IConsumer<TPayload> where TPayload : IConsumerPayload
         {
             using var scope = Services.CreateScope();
             await TestConsumerMessageProcessor.Process<T, TPayload>(scope, payload, cancellationToken);

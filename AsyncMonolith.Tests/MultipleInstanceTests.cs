@@ -90,6 +90,7 @@ public class MultipleInstanceTests
                 builder.Services.AddDbContext<TestDbContext>(o => o.UseSqlite($"Data Source={path}"));
                 builder.Services.AddSingleton<TestConsumerInvocations>();
                 builder.Services.AddSingleton<ConcurrencyProbe>();
+        builder.Services.AddSingleton<ContextRecorder>();
                 builder.Services.AddEfAsyncMonolith<TestDbContext>(s =>
                 {
                     s.RegisterTypesFromAssemblyContaining<MultipleInstanceTests>();

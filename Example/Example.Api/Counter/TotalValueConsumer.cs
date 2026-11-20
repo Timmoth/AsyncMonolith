@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Example.Api.Counter;
 
 [ConsumerExecutionMode(ConsumerInstanceExecutionMode.Parallel)]
-public class TotalValueConsumer : BaseConsumer<ValuePersisted>
+public class TotalValueConsumer : IConsumer<ValuePersisted>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly TotalValueService _totalValueService;
@@ -15,7 +15,7 @@ public class TotalValueConsumer : BaseConsumer<ValuePersisted>
         _dbContext = dbContext;
     }
 
-    public override async Task Consume(ValuePersisted message, CancellationToken cancellationToken)
+    public async Task Consume(ValuePersisted message, ConsumeContext context, CancellationToken cancellationToken)
     {
         var totalValue = await _dbContext.SubmittedValues.SumAsync(v => v.Value, cancellationToken);
         _totalValueService.Set(totalValue);

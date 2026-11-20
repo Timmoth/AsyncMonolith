@@ -181,31 +181,6 @@ public class ConfigurationTests
     }
 
     [Fact]
-    public async Task BaseConsumer_deserializes_the_payload_for_the_typed_consumer()
-    {
-        var invocations = new TestConsumerInvocations();
-        var consumer = new OrderedConsumer(invocations);
-        var message = MessageFor(nameof(OrderedConsumer));
-        message.Payload = JsonSerializer.Serialize(new OrderedMessage { Name = "typed" });
-
-        await consumer.Consume(message, TestContext.Current.CancellationToken);
-
-        invocations.Order.ShouldBe(["OrderedConsumer:typed"]);
-    }
-
-    [Fact]
-    public async Task BaseConsumer_rejects_a_null_payload()
-    {
-        var consumer = new OrderedConsumer(new TestConsumerInvocations());
-        var message = MessageFor(nameof(OrderedConsumer));
-        message.Payload = "null";
-
-        var exception = await Should.ThrowAsync<InvalidOperationException>(() =>
-            consumer.Consume(message, TestContext.Current.CancellationToken));
-        exception.Message.ShouldContain(nameof(OrderedConsumer));
-    }
-
-    [Fact]
     public void AddEfAsyncMonolith_registers_the_services_and_background_processors()
     {
         var services = new ServiceCollection();

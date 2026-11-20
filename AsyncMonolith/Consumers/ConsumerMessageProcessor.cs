@@ -296,15 +296,9 @@ public sealed class ConsumerMessageProcessor<T> : BackgroundService where T : Db
 
             using var scope = _scopeFactory.CreateScope();
 
-            // Resolve the consumer
-            if (scope.ServiceProvider.GetRequiredService(consumerType)
-                is not IConsumer consumer)
-            {
-                throw new InvalidOperationException($"Couldn't resolve consumer service of type: '{message.ConsumerType}'");
-            }
-
-            // Execute the consumer
-            await consumer.Consume(message, timeoutCancellationToken.Token);
+            var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
+            var context = ConsumeContext.For(message, _consumerRegistry.ResolveConsumerMaxAttempts(message));
+            await ConsumerInvoker.Invoke(consumer, message, context, null, timeoutCancellationToken.Token);
 
             activity?.SetStatus(ActivityStatusCode.Ok);
             _logger.ConsumerMessageProcessed(message.ConsumerType);

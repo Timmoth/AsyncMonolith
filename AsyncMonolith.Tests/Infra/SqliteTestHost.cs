@@ -81,6 +81,7 @@ public sealed class SqliteTestHost : IAsyncDisposable
         services.AddSingleton<ConsumerMessageProcessor<TestDbContext>>();
         services.AddSingleton<ScheduledMessageProcessor<TestDbContext>>();
         services.AddSingleton<ConcurrencyProbe>();
+        services.AddSingleton<ContextRecorder>();
 
         var provider = services.BuildServiceProvider();
         using (var scope = provider.CreateScope())

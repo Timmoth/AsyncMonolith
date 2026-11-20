@@ -2,7 +2,7 @@ using AsyncMonolith.Consumers;
 
 namespace AsyncMonolith.Tests.Infra;
 
-public class ExceptionConsumer : BaseConsumer<ExceptionConsumerMessage>
+public class ExceptionConsumer : IConsumer<ExceptionConsumerMessage>
 {
     private readonly TestConsumerInvocations _consumerInvocations;
 
@@ -11,7 +11,7 @@ public class ExceptionConsumer : BaseConsumer<ExceptionConsumerMessage>
         _consumerInvocations = consumerInvocations;
     }
 
-    public override Task Consume(ExceptionConsumerMessage message, CancellationToken cancellationToken)
+    public Task Consume(ExceptionConsumerMessage message, ConsumeContext context, CancellationToken cancellationToken)
     {
         _consumerInvocations.Increment(nameof(ExceptionConsumer));
         throw new InvalidOperationException();

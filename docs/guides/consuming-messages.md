@@ -7,12 +7,14 @@
 - **Idempotency**: Ensure your Consumers are idempotent, since they will be retried on failure.
 - **Timeout**: Consumers timeout after the number of seconds defined by the `ConsumerTimeout` attribute or the `DefaultConsumerTimeout` if not set.
 
+Consumers implement `IConsumer<TPayload>`. The `ConsumeContext` describes the message and this attempt: `MessageId`, `DeduplicationKey`, `Attempt` (starting at 1), `MaxAttempts`, `IsLastAttempt`, `CreatedAt`, `ConsumerName`, `PayloadName` and `TraceId`. Use them for idempotency checks and logging.
+
 Example
 
 ```csharp
 [ConsumerTimeout(5)] // Consumer timeouts after 5 seconds
 [ConsumerAttempts(1)] // Consumer messages moved to poisoned table after 1 failed attempt
-public class DeleteUsersPosts : BaseConsumer<UserDeleted>
+public class DeleteUsersPosts : IConsumer<UserDeleted>
 {
     private readonly ApplicationDbContext _dbContext;
 
@@ -21,7 +23,7 @@ public class DeleteUsersPosts : BaseConsumer<UserDeleted>
         _dbContext = dbContext;
     }
 
-    public override Task Consume(UserDeleted message, CancellationToken cancellationToken)
+    public Task Consume(UserDeleted message, ConsumeContext context, CancellationToken cancellationToken)
     {
         ...
 		await _dbContext.SaveChangesAsync(cancellationToken);

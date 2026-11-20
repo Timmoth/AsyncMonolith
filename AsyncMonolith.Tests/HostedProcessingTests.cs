@@ -32,6 +32,7 @@ public sealed class HostedProcessingTests : IAsyncLifetime
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<TestConsumerInvocations>();
         builder.Services.AddSingleton<ConcurrencyProbe>();
+        builder.Services.AddSingleton<ContextRecorder>();
         builder.Services.AddEfAsyncMonolith<TestDbContext>(s =>
         {
             if (!registerAsModule)

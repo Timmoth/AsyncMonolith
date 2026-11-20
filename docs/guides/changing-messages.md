@@ -14,7 +14,7 @@ Give a type a stable name to decouple it from the class name:
 public class SendEmail : IConsumerPayload { ... }
 
 [ConsumerName("minicms.email.sender")]
-public class SendEmailConsumer : BaseConsumer<SendEmail> { ... }
+public class SendEmailConsumer : IConsumer<SendEmail> { ... }
 ```
 
 To rename a class that already has stored messages, add the attribute with the old class name first.

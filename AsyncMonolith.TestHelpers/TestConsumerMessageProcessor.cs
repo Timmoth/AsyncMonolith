@@ -36,16 +36,10 @@ public static class TestConsumerMessageProcessor
 
         var consumerType = consumerRegistry.ResolveConsumerType(message);
 
-        // Resolve the consumer
-        if (scope.ServiceProvider.GetRequiredService(consumerType)
-            is not IConsumer consumer)
-        {
-            Assert.Fail($"Couldn't resolve consumer service of type: '{message.ConsumerType}'");
-            return null;
-        }
-
-        // Execute the consumer
-        await consumer.Consume(message, cancellationToken);
+        var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
+        var maxAttempts = scope.ServiceProvider.GetRequiredService<ConsumerRegistry>().ResolveConsumerMaxAttempts(message);
+        await ConsumerInvoker.Invoke(consumer, message, ConsumeContext.For(message, maxAttempts), null,
+            cancellationToken);
 
         consumerMessageSet.Remove(message);
 
@@ -80,16 +74,10 @@ public static class TestConsumerMessageProcessor
             return null;
         }
 
-        // Resolve the consumer
-        if (scope.ServiceProvider.GetRequiredService(consumerType)
-            is not IConsumer consumer)
-        {
-            Assert.Fail($"Couldn't resolve consumer service of type: '{message.ConsumerType}'");
-            return null;
-        }
-
-        // Execute the consumer
-        await consumer.Consume(message, cancellationToken);
+        var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
+        var maxAttempts = scope.ServiceProvider.GetRequiredService<ConsumerRegistry>().ResolveConsumerMaxAttempts(message);
+        await ConsumerInvoker.Invoke(consumer, message, ConsumeContext.For(message, maxAttempts), null,
+            cancellationToken);
 
         consumerMessageSet.Remove(message);
 
@@ -102,38 +90,25 @@ public static class TestConsumerMessageProcessor
     /// <summary>
     /// Processes the consumer message of type T and TPayload with the given payload.
     /// </summary>
-    /// <typeparam name="T">The type of BaseConsumer.</typeparam>
+    /// <typeparam name="T">The consumer type.</typeparam>
     /// <typeparam name="TPayload">The type of IConsumerPayload.</typeparam>
     /// <param name="scope">The service scope.</param>
     /// <param name="payload">The payload for the consumer message.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     public static async Task Process<T, TPayload>(IServiceScope scope, TPayload payload,
-        CancellationToken cancellationToken = default) where T : BaseConsumer<TPayload> where TPayload : IConsumerPayload
+        CancellationToken cancellationToken = default) where T : IConsumer<TPayload> where TPayload : IConsumerPayload
     {
-        var consumerType = typeof(T);
-
-        // Resolve the consumer
-        if (scope.ServiceProvider.GetRequiredService(consumerType)
-            is not IConsumer consumer)
+        var consumer = scope.ServiceProvider.GetRequiredService<T>();
+        var context = new ConsumeContext
         {
-            Assert.Fail($"Couldn't resolve consumer service of type: '{consumerType.Name}'");
-            return;
-        }
-
-        // Execute the consumer
-        await consumer.Consume(new ConsumerMessage
-        {
-            Attempts = 0,
-            AvailableAfter = 0,
-            ConsumerType = AsyncMonolithNames.ForConsumer(consumerType),
-            CreatedAt = 0,
-            Id = string.Empty,
-            InsertId = string.Empty,
-            Payload = JsonSerializer.Serialize(payload),
-            PayloadType = AsyncMonolithNames.ForPayload<TPayload>(),
-            TraceId = null,
-            SpanId = null,
-            RailId = 0
-        }, cancellationToken);
+            MessageId = "test-message",
+            DeduplicationKey = "test-message",
+            Attempt = 1,
+            MaxAttempts = 1,
+            CreatedAt = DateTimeOffset.UnixEpoch,
+            ConsumerName = AsyncMonolithNames.ForConsumer<T>(),
+            PayloadName = AsyncMonolithNames.ForPayload<TPayload>()
+        };
+        await consumer.Consume(payload, context, cancellationToken);
     }
 }

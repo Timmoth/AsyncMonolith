@@ -183,8 +183,8 @@ public static class StartupExtensions
         this IServiceCollection services) => services.AddAsyncMonolithConsumers(typeof(TMarker).Assembly);
 
     private static IEnumerable<Type> FindConsumerTypes(IEnumerable<Type> types) =>
-        types.Where(t => t is { IsAbstract: false, BaseType.IsGenericType: true } &&
-                         t.BaseType.GetGenericTypeDefinition() == typeof(BaseConsumer<>));
+        types.Where(t => t is { IsClass: true, IsAbstract: false, IsGenericTypeDefinition: false } &&
+                         ConsumerInvoker.PayloadTypeOf(t) is not null);
 
     internal static ConsumerRegistry BuildConsumerRegistry(IEnumerable<Assembly> assemblies,
         AsyncMonolithSettings settings)
@@ -202,11 +202,6 @@ public static class StartupExtensions
 
         foreach (var consumerType in FindConsumerTypes(typesToScan))
         {
-            if (consumerType.BaseType == null || string.IsNullOrEmpty(consumerType.Name))
-            {
-                continue;
-            }
-
             var consumerName = AsyncMonolithNames.ForConsumer(consumerType);
 
             var timeoutDuration = settings.DefaultConsumerTimeout;
@@ -256,7 +251,7 @@ public static class StartupExtensions
             consumerRailIdDictionary[consumerName] = consumerRailId;
 
             // Get the generic argument (T) of the consumer type
-            var payloadType = consumerType.BaseType.GetGenericArguments()[0];
+            var payloadType = ConsumerInvoker.PayloadTypeOf(consumerType)!;
 
             if (!consumerServiceDictionary.TryAdd(consumerName, consumerType))
             {

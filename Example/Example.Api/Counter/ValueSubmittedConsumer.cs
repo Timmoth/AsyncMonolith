@@ -4,7 +4,7 @@ using Example.Api.Spam;
 
 namespace Example.Api.Counter;
 
-public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
+public class ValueSubmittedConsumer : IConsumer<ValueSubmitted>
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IProducerService _producerService;
@@ -15,7 +15,7 @@ public class ValueSubmittedConsumer : BaseConsumer<ValueSubmitted>
         _producerService = producerService;
     }
 
-    public override async Task Consume(ValueSubmitted message, CancellationToken cancellationToken = default)
+    public async Task Consume(ValueSubmitted message, ConsumeContext context, CancellationToken cancellationToken)
     {
         var newValue = new SubmittedValue
         {
